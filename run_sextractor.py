@@ -65,11 +65,20 @@ if __name__=='__main__':
     weight_str = args.weight + ',' + args.weight
     out_cat = os.path.join( args.working_dir, '%s_cat.fits' %args.label )
     out_seg = os.path.join( args.working_dir, '%s_seg.fits' %args.label )
+
+    chain = args.working_dir.split('/')
+    working_path = '/'
+    for sub in chain:
+        working_path = os.path.join(working_path, sub)
+        if not os.path.exists(working_path):
+            subprocess.call( ['mkdir', working_path] )
+        
+    #if not os.path.exists(args.working_dir):
+        #subprocess.call( ['mkdir', args.working_dir] )
+   
     log_file = os.path.join( args.working_dir, '%s_log.txt' %args.label )
     log = open(log_file, 'w')
-    if not os.path.exists(args.working_dir):
-        subprocess.call( ['mkdir', args.working_dir], stdout=log, stderr=log )
-   
+
     subprocess.call( ['sex', im_str, 
                       '-c', args.sex_config, 
                       '-WEIGHT_IMAGE', weight_str, 
