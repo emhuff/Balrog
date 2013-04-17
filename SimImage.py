@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import galsim
 import numpy as np
 import pyfits
