@@ -43,7 +43,8 @@ class SextractorEngine():
         so formatting should be the same as in the sextractor documentation (even though this can be slightly annoying to type).
 
         Methods or SextractorEngine:
-            Use the run() method to run sextractor.
+            Use the run() method to run sextractor. The optional logfile argument is where to write the sextractor logging output. By default, it goes
+            to the same directory as the catalog, stripping off .fits type extensions and appending _log.txt
 
             auto_checkimage_name() is a convenience function for automatically populating the CHECKIMAGE_NAME field, based on the CHECKIMAGE_TYPE and current
             image or catalog name. By default the output directory for the check files is the same as the catalogs, and the check files are named with the same
@@ -133,7 +134,7 @@ class SextractorEngine():
         self.config['CHECKIMAGE_NAME'] = nstr
     
 
-    def run(self):
+    def run(self, logfile=None):
         args = ['sex', self.config['IMAGE']]
         for key in self.config.keys():
             if key=='IMAGE':
@@ -141,7 +142,12 @@ class SextractorEngine():
             else:
                 args.append( '-%s' %key )
             args.append( str(self.config[key]) )
-        subprocess.call( args )
+
+        if logfile==None:
+            logfile = self._strip('CATALOG_NAME',['cat.fits','.fits']) + '_log.txt'
+    
+        log = open(logfile,'w')
+        subprocess.call( args, stdout=log, stderr=log )
 
 
 if __name__=='__main__':
@@ -150,5 +156,5 @@ if __name__=='__main__':
     eng.config['CHECKIMAGE_TYPE'] = 'BACKGROUND,-BACKGROUND'
     eng.auto_checkimage_name(dir=['bg','mbg'])
     print eng.config['CHECKIMAGE_NAME']
-    #eng.run()
+    eng.run()
     
