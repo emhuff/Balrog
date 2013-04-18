@@ -32,6 +32,15 @@ class SextractorEngine():
         
         Technically SextractorEngine() can be called with no arguments, but the sextractor run will fail if you do not supply an image and a weight file.
         The fields that can be supplied in the constructor are the sextractor config parameters which take file paths (and CHECKIMAGE_TYPE, which is related to CHECKIMAGE_NAMES).
+           IMAGE 
+           WEIGHT_IMAGE 
+           CATALOG_NAME 
+           c
+           PARAMETERS_NAME
+           STARNNW_NAME
+           FILTER_NAME
+           CHECKIMAGE_TYPE
+           CHECKIMAGE_NAME
         However, any other parameters available to configure sextractor can also be modified simply by adding them to the object's config dictionary. 
        
         The image(s) to give to sextractor are normally only given on the command line (i.e. not in the config file). The dictionary keyword for it here is 'IMAGE'.
@@ -42,7 +51,7 @@ class SextractorEngine():
         In the sextractor documenation sextractor keyword, value pairs in the config file are primarily upper case. I stuck with the same case conventions as sextractor, 
         so formatting should be the same as in the sextractor documentation (even though this can be slightly annoying to type).
 
-        Methods or SextractorEngine:
+        Methods of SextractorEngine:
             Use the run() method to run sextractor. The optional logfile argument is where to write the sextractor logging output. By default, it goes
             to the same directory as the catalog, stripping off .fits type extensions and appending _log.txt
 
@@ -149,6 +158,8 @@ class SextractorEngine():
         log = open(logfile,'w')
         subprocess.call( args, stdout=log, stderr=log )
 
+
+##### Example of how to use the class
 
 if __name__=='__main__':
 
