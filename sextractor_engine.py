@@ -2,10 +2,6 @@
 
 import subprocess
 import os
-import sys
-import pyfits
-import math
-import argparse
 
 
 class DEFAULT:
