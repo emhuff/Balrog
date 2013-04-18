@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import run_sextractor
 import subprocess
 import os
 import numpy
+
+from run_sextractor import *
 
 def run_sex(args):
     """
@@ -15,7 +16,10 @@ def run_sex(args):
 
     #os.system( './run_sextractor.py %s' %arg_str )
     """
-    args.insert( 0, './run_sextractor.py' )
+
+    this_dir = '/'.join( os.path.realpath(__file__).split('/')[:-1] )
+    exc = os.path.join( this_dir, 'run_sextractor.py' )
+    args.insert( 0, exc )
     subprocess.call(args)
     return 'Done'
 

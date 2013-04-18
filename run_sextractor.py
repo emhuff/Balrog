@@ -8,6 +8,9 @@ import math
 import argparse
 
 class DEFAULT:
+    IMAGE = 'None'
+    WEIGHT = 'None'
+
     BALROG_DIR = '/'.join( os.path.realpath(__file__).split('/')[:-1] )
 
     ASTRO_DIR = os.path.join( BALROG_DIR, 'astro_config' )
@@ -26,8 +29,8 @@ class Parser():
 
     def __init__(self):
         self.parser = argparse.ArgumentParser()
-        self.parser.add_argument( "-i", "--image", help="Real image to insert simulated galaxies into", type=str, default="None" )
-        self.parser.add_argument( "-w", "--weight", help="Real weight map to insert simulated galaxies into", type=str, default="None" )
+        self.parser.add_argument( "-i", "--image", help="Real image to insert simulated galaxies into", type=str, default=DEFAULT.IMAGE )
+        self.parser.add_argument( "-w", "--weight", help="Real weight map to insert simulated galaxies into", type=str, default=DEFAULT.WEIGHT )
         #self.parser.add_argument( "-o", "--output_dir", help="Output directory where final results are written", type=str, default=DEFAULT.OUTPUT_DIR )
         self.parser.add_argument( "-wd", "--working_dir", help="Working directory where intermdediate files are written", type=str, default=DEFAULT.WORKING_DIR )
         self.parser.add_argument( "-l", "--label", help="Label prepended to intermediate files", type=str, default=DEFAULT.LABEL )
@@ -61,8 +64,10 @@ if __name__=='__main__':
     parser = Parser()
     args = parser.args
 
-    im_str = args.image + ',' + args.image
-    weight_str = args.weight + ',' + args.weight
+    #im_str = args.image + ',' + args.image
+    im_str = args.image
+    #weight_str = args.weight + ',' + args.weight
+    weight_str = args.weight
     out_cat = os.path.join( args.working_dir, '%s_cat.fits' %args.label )
     out_seg = os.path.join( args.working_dir, '%s_seg.fits' %args.label )
 
