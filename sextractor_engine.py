@@ -150,18 +150,21 @@ class SextractorEngine():
 
         if logfile==None:
             logfile = self._strip('CATALOG_NAME',['cat.fits','.fits']) + '_log.txt'
+            #logfile = self.config['CATALOG_NAME'].replace('.fits,','.fits_').replace('.cat.fits','.fits').replace('.fits','') + '_log.txt' 
     
         log = open(logfile,'w')
         subprocess.call( args, stdout=log, stderr=log )
+        log.close()
 
 
 ##### Example of how to use the class
 
 if __name__=='__main__':
 
-    eng = SextractorEngine(IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/images/sptw2_r.13.fits', WEIGHT_IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/weights/sptw2_r.13.fits', CHECKIMAGE_TYPE='BACKGROUND', CATALOG_NAME='catalog')
+    eng = SextractorEngine(IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/images/sptw2_r.13.fits', WEIGHT_IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/weights/sptw2_r.13.fits', CHECKIMAGE_TYPE='BACKGROUND')
     eng.config['CHECKIMAGE_TYPE'] = 'BACKGROUND,-BACKGROUND'
     eng.auto_checkimage_name(dir=['bg','mbg'])
     print eng.config['CHECKIMAGE_NAME']
+    print eng.config['IMAGE']
     eng.run()
     
