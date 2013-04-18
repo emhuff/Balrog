@@ -162,8 +162,6 @@ class SextractorEngine():
 if __name__=='__main__':
 
     eng = SextractorEngine(IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/images/sptw2_r.13.fits', WEIGHT_IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/weights/sptw2_r.13.fits', CHECKIMAGE_TYPE='BACKGROUND')
-    eng.config['CHECKIMAGE_TYPE'] = 'BACKGROUND,-BACKGROUND'
-    eng.auto_checkimage_name(dir=['bg','mbg'])
     print eng.config['CHECKIMAGE_NAME']
     print eng.config['IMAGE']
     eng.run()
