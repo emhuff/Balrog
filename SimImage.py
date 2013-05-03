@@ -19,6 +19,7 @@ def defineParameters():
         parameters_list.append(parameters)
     return parameters_list
 
+    
 def defineCalibration():
     '''
     This sets the number of counts per unit flux. Used to set the
@@ -60,12 +61,19 @@ if __name__ == "__main__":
         OutputFile = sys.argv[2]
     else:
         OutputFile = 'example_with_simimages.fits'
+    if len(sys.argv) > 3:
+        PSFExFile = sys.argv[3]
+    else:
+        PSFExFile = 'example.psfcat.psf'
         
     rng = galsim.UniformDeviate()
     parameters_list = defineParameters()
     calib = defineCalibration()
     bigImage = getBigImage(ImageFile)
+    psfmodel = galsim.des.DES_PSFEx(PSFExFile)
     center = bigImage.bounds.center()
+
+
     for parameters in parameters_list:
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
                                   parameters['half light radius'],flux = parameters['flux'])
@@ -78,9 +86,16 @@ if __name__ == "__main__":
         dx = x-ix
         dy = y-iy
         pos = galsim.PositionD(x,y) * bigImage.getScale()
-        smallImage = sersicObj.draw(dx=bigImage.getScale())
+        sersicObj.applyShift(dx*bigImage.getScale(),dy*bigImage.getScale())
+        # Convolve with the pixel.
+        pix = galsim.Pixel(bigImage.getScale())
+        psf = psfmodel.getPSF(pos,bigImage.getScale())
+        finalPSF = galsim.Convolve([pix,psf])
+        sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
+        smallImage = sersicObjConv.draw(dx=bigImage.getScale())
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
+        
         bounds = smallImage.bounds & bigImage.bounds
 
         bigImage[bounds] += smallImage[bounds]
