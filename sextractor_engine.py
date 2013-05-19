@@ -59,7 +59,7 @@ class SextractorEngine():
 
         A few notes:
             If you change some config parameters in the dictionary, and then change the config file referenced in the dictionary, the values in the dictionary will still take
-            precednece over those in the (new) file.  Anything in the dictionary will become an explicit command line argument given to sextractor.
+            precedence over those in the (new) file.  Anything in the dictionary will become an explicit command line argument given to sextractor.
             To avoid this, if you would like to start fresh, with a new config file, call the constructor, e.g.
             SE = SextractorEngine( IMAGE=image.fits, WEIGHT_IMAGE=weight.fits, c=new_sex.config )
             where you could also specificy different params file, etc. if you wanted.
