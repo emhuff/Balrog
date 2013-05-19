@@ -5,6 +5,7 @@ import numpy as np
 import pyfits
 import math
 import sys
+from optparse import OptionParser
 
 def defineParameters():
     ngal = 50
@@ -29,26 +30,31 @@ def defineCalibration():
     calibParams['gain'] = 10000.0
     return calibParams
 
-def getBigImage(file='example.fits',subRegion= None):
+def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
     '''
     Takes a filename for the large image to be simulated. Reads in a
-    smaller piece of that image defined (somehow) by subRegion, and
-    returns the subRegion as a GalSim image object.
+    smaller piece of that image defined by subRegion (which is a
+    galsim._galsim.bounds object), and returns the subRegion as a GalSim
+    image object.
     '''
     bigImage = galsim.fits.read(file)
     pixelScale = 0.1
     bigImage.setScale(pixelScale)
-
-    """ 
-    example for getting at subimage
-
-    ### gets first 10 rows, lines 101-200
-    ### indexing is working like numpy indexing
-    ### so in function arguments, one option would be to specify these 4 numbers, for example maybe as [ (r1,r2), (c1,c2) ]
-    sub_bigImage = bigImage.array( [0:10, 100:200] )
-    """
-
-    return bigImage
+    bigCenter = bigImage.bounds.center()
+    subBounds = bigImage.bounds
+    if subRegion[0]  > 0:
+        subBounds.xmin = subRegion[0]
+    if subRegion[1]  > 0:
+        subBounds.xmax = subRegion[1]
+    if subRegion[2]  > 0:
+        subBounds.ymin = subRegion[2]
+    if subRegion[3]  > 0:
+        subBounds.ymax = subRegion[3]
+    bigImage = bigImage[subBounds]
+    subCenter = bigImage.bounds.center()
+    centOffset = subCenter - bigCenter
+    offset = galsim.PositionD(centOffset.x,centOffset.y)
+    return bigImage, offset
 
 if __name__ == "__main__":
     '''
@@ -59,30 +65,40 @@ if __name__ == "__main__":
        SimImage inputFileName  outputFileName
 
     TODO:
-       Implement subRegion definition.
-       Implement psf model and convolution.
     '''
-    
-    if len(sys.argv) > 1:
-        ImageFile = sys.argv[1]
-    else:
-        ImageFile = 'example.fits'
-    if len(sys.argv) > 2:
-        OutputFile = sys.argv[2]
-    else:
-        OutputFile = 'example_with_simimages.fits'
-    if len(sys.argv) > 3:
-        PSFExFile = sys.argv[3]
-    else:
-        PSFExFile = 'example.psfcat.psf'
-        
+    parser = OptionParser()
+    parser.add_option("-i", "--image", action="store",dest="ImageFile",
+                      type="string",help="Image file to be read",default="example.fits")
+    parser.add_option("-o", "--output",action="store",type="string",
+                      dest="OutputFile",default="example_output.fits",
+                      help="file to put the output simulated image in.")
+    parser.add_option("-p", "--psfmodel",action="store",type="string",
+                      dest="PSFExFile",default="example.psfcat.psf",
+                      help="File containing PSFEx psf model to use.")
+    parser.add_option("--xmin",action="store",type="int",default="-1",
+                      help="minimum column of extracted subImage.",dest="xmin")
+    parser.add_option("--xmax",action="store",type="int",default="-1",
+                      help="minimum column of extracted subImage.",dest="xmax")
+    parser.add_option("--ymin",action="store",type="int",default="-1",
+                      help="minimum column of extracted subImage.",dest="ymin")
+    parser.add_option("--ymax",action="store",type="int",default="-1",
+                      help="minimum column of extracted subImage.",dest="ymax")
+
+    (opts,args ) = parser.parse_args()
+
+    '''
+    Work out whether the user wants to extract a piece of the original
+    image to do the simulations on.
+    '''
+    subRegion = (opts.xmin,opts.xmax,opts.ymin,opts.ymax)
+
     rng = galsim.UniformDeviate()
     parameters_list = defineParameters()
     calib = defineCalibration()
-    bigImage = getBigImage(ImageFile)
-    psfmodel = galsim.des.DES_PSFEx(PSFExFile)
+    bigImage, offset = getBigImage(opts.ImageFile,subRegion=subRegion)
+    psfmodel = galsim.des.DES_PSFEx(opts.PSFExFile)
     center = bigImage.bounds.center()
-
+    
 
     for parameters in parameters_list:
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
@@ -99,17 +115,16 @@ if __name__ == "__main__":
         sersicObj.applyShift(dx*bigImage.getScale(),dy*bigImage.getScale())
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
-        psf = psfmodel.getPSF(pos,bigImage.getScale())
+        psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
         smallImage = sersicObjConv.draw(dx=bigImage.getScale())
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
-        
         bounds = smallImage.bounds & bigImage.bounds
-
+        
         bigImage[bounds] += smallImage[bounds]
     
-    bigImage.write(OutputFile)
+    bigImage.write(opts.OutputFile)
 
     
