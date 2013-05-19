@@ -38,6 +38,16 @@ def getBigImage(file='example.fits',subRegion= None):
     bigImage = galsim.fits.read(file)
     pixelScale = 0.1
     bigImage.setScale(pixelScale)
+
+    """ 
+    example for getting at subimage
+
+    ### gets first 10 rows, lines 101-200
+    ### indexing is working like numpy indexing
+    ### so in function arguments, one option would be to specify these 4 numbers, for example maybe as [ (r1,r2), (c1,c2) ]
+    sub_bigImage = bigImage.array( [0:10, 100:200] )
+    """
+
     return bigImage
 
 if __name__ == "__main__":
