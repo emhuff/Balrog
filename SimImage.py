@@ -6,6 +6,7 @@ import pyfits
 import math
 import sys
 from optparse import OptionParser
+import sextractor_engine 
 
 def defineParameters():
     ngal = 50
@@ -65,6 +66,7 @@ if __name__ == "__main__":
        SimImage inputFileName  outputFileName
 
     TODO:
+       SExtractor interface.
     '''
     parser = OptionParser()
     parser.add_option("-i", "--image", action="store",dest="ImageFile",
@@ -72,17 +74,26 @@ if __name__ == "__main__":
     parser.add_option("-o", "--output",action="store",type="string",
                       dest="OutputFile",default="example_output.fits",
                       help="file to put the output simulated image in.")
+    parser.add_option("-w", "--weightin",action="store",type="string",
+                      dest="WeightMapIn",default="example_weight_in.fits",
+                      help="file to read the weight map from.")
+    parser.add_option("-v", "--weightout",action="store",type="string",
+                      dest="WeightMapOut",default="example_weight_out.fits",
+                      help="file to write the extracted weight map to.")
+    parser.add_option("-t", "--catalogout",action="store",type="string",
+                      dest="CatalogOutFile",default="example_catalog.fits",
+                      help="file to write the extracted weight map to.")
     parser.add_option("-p", "--psfmodel",action="store",type="string",
                       dest="PSFExFile",default="example.psfcat.psf",
                       help="File containing PSFEx psf model to use.")
     parser.add_option("--xmin",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage.",dest="xmin")
+                      help="minimum column of extracted subImage, unit-indexed",dest="xmin")
     parser.add_option("--xmax",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage.",dest="xmax")
+                      help="minimum column of extracted subImage, unit-indexed",dest="xmax")
     parser.add_option("--ymin",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage.",dest="ymin")
+                      help="minimum column of extracted subImage, unit-indexed",dest="ymin")
     parser.add_option("--ymax",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage.",dest="ymax")
+                      help="minimum column of extracted subImage, unit-indexed",dest="ymax")
 
     (opts,args ) = parser.parse_args()
 
@@ -124,7 +135,15 @@ if __name__ == "__main__":
         bounds = smallImage.bounds & bigImage.bounds
         
         bigImage[bounds] += smallImage[bounds]
-    
-    bigImage.write(opts.OutputFile)
 
     
+    bigImage.write(opts.OutputFile)
+    # Next, write the subImage weightmap.
+    subWeight, Wcent = getBigImage(opts.WeightMapIn,subRegion=subRegion)
+    subWeight.write(opts.WeightMapOut)
+
+    eng = sextractor_engine.SextractorEngine(IMAGE=opts.OutputFile,
+                                             WEIGHT_IMAGE=opts.WeightMapOut,
+                                             CHECKIMAGE_TYPE='BACKGROUND',
+                                             CATALOG_NAME=opts.CatalogOutFile)
+    eng.run()
