@@ -16,8 +16,8 @@ def defineParameters():
         parameters['Sersic index'] = 4.0
         parameters['half light radius'] = 2.5
         parameters['flux'] = np.random.lognormal(mean=5.,sigma=1.)
-        parameters['g1'] = 0.1*np.random.randn()
-        parameters['g2'] = 0.1*np.random.randn()
+        parameters['g1'] = 0.2*np.random.randn()
+        parameters['g2'] = 0.2*np.random.randn()
         parameters_list.append(parameters)
     return parameters_list
 
@@ -82,18 +82,18 @@ if __name__ == "__main__":
                       help="file to write the extracted weight map to.")
     parser.add_option("-t", "--catalogout",action="store",type="string",
                       dest="CatalogOutFile",default="example_catalog.fits",
-                      help="file to write the extracted weight map to.")
+                      help="file to write the SExtractor catalog to.")
     parser.add_option("-p", "--psfmodel",action="store",type="string",
                       dest="PSFExFile",default="example.psfcat.psf",
                       help="File containing PSFEx psf model to use.")
     parser.add_option("--xmin",action="store",type="int",default="-1",
                       help="minimum column of extracted subImage, unit-indexed",dest="xmin")
     parser.add_option("--xmax",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage, unit-indexed",dest="xmax")
+                      help="maximum column of extracted subImage, unit-indexed",dest="xmax")
     parser.add_option("--ymin",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage, unit-indexed",dest="ymin")
+                      help="minimum row of extracted subImage, unit-indexed",dest="ymin")
     parser.add_option("--ymax",action="store",type="int",default="-1",
-                      help="minimum column of extracted subImage, unit-indexed",dest="ymax")
+                      help="minimum row of extracted subImage, unit-indexed",dest="ymax")
 
     (opts,args ) = parser.parse_args()
 
