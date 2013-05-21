@@ -150,6 +150,7 @@ if __name__ == "__main__":
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
         psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
+        psf.setFlux(parameters['flux']')
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
         smallImage = galsim.ImageD(int(np.ceil(5*parameters['half light radius'])),
