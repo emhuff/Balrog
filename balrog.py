@@ -12,7 +12,7 @@ def defineParameters(x=None,y=None):
     parameters = {}
     parameters['Sersic index'] = 4.0
     parameters['half light radius'] = 2.5
-    parameters['flux'] = np.random.lognormal(mean=5.,sigma=1.)
+    parameters['flux'] = 10000*np.random.randn()+100.
     parameters['g1'] = 0.2*np.random.randn()
     parameters['g2'] = 0.2*np.random.randn()
     parameters['x'] = x
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
-        smallImage = galsim.ImageD(50,50)
+        smallImage = galsim.ImageD(np.ceil(5*parameters['half light radius']),)
         smallImage = sersicObjConv.draw(dx=bigImage.getScale(),image=smallImage)
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
