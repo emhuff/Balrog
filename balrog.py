@@ -70,6 +70,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
     subCenter = bigImage.bounds.center()
     centOffset = subCenter - bigCenter
     offset = galsim.PositionD(centOffset.x,centOffset.y)
+    bigImage.setOrigin(1,1)
     return bigImage, offset
 
 if __name__ == "__main__":
