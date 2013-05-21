@@ -44,7 +44,7 @@ def writeFitsCatalog(catalog,fileName):
     tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
     hdu = pyfits.PrimaryHDU()
     thdulist = pyfits.HDUList([hdu,tbhdu])
-    thdulist.writeto(fileName)
+    thdulist.writeto(fileName,clobber=True)
 
 def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
     '''
