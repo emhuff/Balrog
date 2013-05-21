@@ -147,7 +147,7 @@ if __name__ == "__main__":
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
         psf = psfmodel.getPSF(pos+offset,bigImage.getScale())
-        psf.setFlux(parameters['flux'])
+        psf.setFlux(1.)
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
         postageStampSize = int(max(np.ceil(5*parameters['half light radius']),25))
