@@ -149,14 +149,14 @@ if __name__ == "__main__":
         sersicObj.applyShift(dx*bigImage.getScale(),dy*bigImage.getScale())
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
+        print pos-offset
         psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
         psf.setFlux(parameters['flux'])
-        print parameters['flux']
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
         smallImage = galsim.ImageD(int(np.ceil(5*parameters['half light radius'])),
                                    int(np.ceil(5*parameters['half light radius'])))
-        smallImage = finalPSF.draw(dx=bigImage.getScale(),image=smallImage)
+        smallImage = sersicObjConv.draw(dx=bigImage.getScale(),image=smallImage)
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
         bounds = smallImage.bounds & bigImage.bounds
