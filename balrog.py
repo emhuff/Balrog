@@ -12,7 +12,7 @@ def defineParameters(x=None,y=None):
     parameters = {}
     parameters['Sersic index'] = 4.0
     parameters['half light radius'] = 2.5
-    parameters['flux'] = 10000*np.random.randn()+100.
+    parameters['flux'] = 10000*np.random.rand()+100.
     parameters['g1'] = 0.2*np.random.randn()
     parameters['g2'] = 0.2*np.random.randn()
     parameters['x'] = x
@@ -151,6 +151,7 @@ if __name__ == "__main__":
         pix = galsim.Pixel(bigImage.getScale())
         psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
         psf.setFlux(parameters['flux'])
+        print parameters['flux']
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
         smallImage = galsim.ImageD(int(np.ceil(5*parameters['half light radius'])),
