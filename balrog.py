@@ -150,8 +150,8 @@ if __name__ == "__main__":
         psf.setFlux(parameters['flux'])
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
-        smallImage = galsim.ImageD(int(np.ceil(5*parameters['half light radius'])),
-                                   int(np.ceil(5*parameters['half light radius'])))
+        postageStampSize = int(max(np.ceil(5*parameters['half light radius'],25)))
+        smallImage = galsim.ImageD(postageStampSize,postageStampSize)
         smallImage = sersicObjConv.draw(dx=bigImage.getScale(),image=smallImage)
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
