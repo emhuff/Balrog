@@ -56,7 +56,6 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
     bigImage = galsim.fits.read(file)
     pixelScale = 0.1
     bigImage.setScale(pixelScale)
-    bigCenter = bigImage.bounds.center()
     subBounds = bigImage.bounds
     if subRegion[0]  > 0:
         subBounds.xmin = subRegion[0]
@@ -67,9 +66,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
     if subRegion[3]  > 0:
         subBounds.ymax = subRegion[3]
     bigImage = bigImage[subBounds]
-    subCenter = bigImage.bounds.center()
-    centOffset = subCenter - bigCenter
-    offset = galsim.PositionD(centOffset.x,centOffset.y)
+    offset = galsim.PositionD(subRegion[0],subRegion[2])
     bigImage.setOrigin(1,1)
     return bigImage, offset
 
@@ -149,8 +146,8 @@ if __name__ == "__main__":
         sersicObj.applyShift(dx*bigImage.getScale(),dy*bigImage.getScale())
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
-        print pos+offset
-        psf = psfmodel.getPSF(pos+offset,bigImage.getScale())
+        print offset
+        psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
         psf.setFlux(parameters['flux'])
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
