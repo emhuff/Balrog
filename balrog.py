@@ -152,9 +152,9 @@ if __name__ == "__main__":
         psf = psfmodel.getPSF(pos-offset,bigImage.getScale())
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
-        smallImage = finalPSF.ImageD(int(np.ceil(5*parameters['half light radius'])),
+        smallImage = galsim.ImageD(int(np.ceil(5*parameters['half light radius'])),
                                    int(np.ceil(5*parameters['half light radius'])))
-        smallImage = sersicObjConv.draw(dx=bigImage.getScale(),image=smallImage)
+        smallImage = finalPSF.draw(dx=bigImage.getScale(),image=smallImage)
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
         bounds = smallImage.bounds & bigImage.bounds
