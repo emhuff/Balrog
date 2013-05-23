@@ -11,7 +11,7 @@ import sextractor_engine
 def defineParameters(x=None,y=None):
     parameters = {}
     parameters['Sersic index'] = 1.0
-    parameters['half light radius'] = 1.0# + 1.5*np.random.rand()
+    parameters['half light radius'] = 0.5 #  arcsec
     parameters['flux'] = 100000*np.random.rand()+100.
     parameters['g1'] = 0.2*np.random.randn()
     parameters['g2'] = 0.2*np.random.randn()
@@ -27,6 +27,7 @@ def defineCalibration():
     '''
     calibParams = {}
     calibParams['gain'] = 10000.0
+    calibParams['pixel_scale'] = 0.27
     return calibParams
 
 def writeFitsCatalog(catalog,fileName):
@@ -46,7 +47,7 @@ def writeFitsCatalog(catalog,fileName):
     thdulist = pyfits.HDUList([hdu,tbhdu])
     thdulist.writeto(fileName,clobber=True)
 
-def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
+def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration=calibration):
     '''
     Takes a filename for the large image to be simulated. Reads in a
     smaller piece of that image defined by subRegion (which is a
@@ -54,7 +55,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None)):
     image object.
     '''
     bigImage = galsim.fits.read(file)
-    pixelScale = 0.1
+    pixelScale = calibration['pixel_scale']
     bigImage.setScale(pixelScale)
     subBounds = bigImage.bounds
     if subRegion[0]  > 0:
@@ -124,7 +125,7 @@ if __name__ == "__main__":
 
     rng = galsim.UniformDeviate()
     calib = defineCalibration()
-    bigImage, offset = getBigImage(opts.ImageFile,subRegion=subRegion)
+    bigImage, offset = getBigImage(opts.ImageFile,subRegion=subRegion,calibration=calib)
     psfmodel = galsim.des.DES_PSFEx(opts.PSFExFile)
     center = bigImage.bounds.center()
     inputCatalog =[]
