@@ -11,7 +11,7 @@ import sextractor_engine
 def defineParameters(x=None,y=None):
     parameters = {}
     parameters['Sersic index'] = 1.0
-    parameters['half light radius'] = 0.5 #  arcsec
+    parameters['half light radius'] = 0.6 #  arcsec
     parameters['flux'] = 10000*np.random.rand()+100.
     parameters['g1'] = 0.2*np.random.randn()
     parameters['g2'] = 0.2*np.random.randn()
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         inputCatalog.append(parameters)
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
                                   parameters['half light radius'],flux = parameters['flux'],
-                                  trunc=5*parameters['half light radius'])
+                                  trunc=5*parameters['half lightradius'])
         sersicObj.applyShear(g1=parameters['g1'],g2=parameters['g2'])
         
         ix = int(np.floor(x+.05))
