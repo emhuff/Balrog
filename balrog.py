@@ -170,6 +170,5 @@ if __name__ == "__main__":
     eng = sextractor_engine.SextractorEngine(IMAGE=opts.OutputFile,
                                              WEIGHT_IMAGE=opts.WeightMapOut,
                                              CHECKIMAGE_TYPE='SEGMENTATION,BACKGROUND',
-                                             CHECKIMAGE_NAME=segFile+','+backgroundFile,
                                              CATALOG_NAME=opts.CatalogOutFile)
     eng.run()
