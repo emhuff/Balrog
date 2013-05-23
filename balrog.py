@@ -47,7 +47,7 @@ def writeFitsCatalog(catalog,fileName):
     thdulist = pyfits.HDUList([hdu,tbhdu])
     thdulist.writeto(fileName,clobber=True)
 
-def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration=calibration):
+def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration=None):
     '''
     Takes a filename for the large image to be simulated. Reads in a
     smaller piece of that image defined by subRegion (which is a
@@ -55,7 +55,10 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     image object.
     '''
     bigImage = galsim.fits.read(file)
-    pixelScale = calibration['pixel_scale']
+    if calibration is not None:
+        pixelScale = calibration['pixel_scale']
+    else:
+        pixelScale = 0.27
     bigImage.setScale(pixelScale)
     subBounds = bigImage.bounds
     if subRegion[0]  > 0:
