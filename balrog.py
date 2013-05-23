@@ -11,8 +11,8 @@ import sextractor_engine
 def defineParameters(x=None,y=None):
     parameters = {}
     parameters['Sersic index'] = 1.0
-    parameters['half light radius'] = 1.50# + 1.5*np.random.rand()
-    parameters['flux'] = 10000*np.random.rand()+100.
+    parameters['half light radius'] = 1.0# + 1.5*np.random.rand()
+    parameters['flux'] = 100000*np.random.rand()+100.
     parameters['g1'] = 0.2*np.random.randn()
     parameters['g2'] = 0.2*np.random.randn()
     parameters['x'] = x
