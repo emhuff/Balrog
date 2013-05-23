@@ -139,7 +139,8 @@ if __name__ == "__main__":
         parameters = defineParameters(x=x,y=y)
         inputCatalog.append(parameters)
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
-                                  parameters['half light radius'],flux = parameters['flux'])
+                                  parameters['half light radius'],flux = parameters['flux'],
+                                  trunc=5*parameters['half_light_radius'])
         sersicObj.applyShear(g1=parameters['g1'],g2=parameters['g2'])
         
         ix = int(np.floor(x+.05))
@@ -152,9 +153,9 @@ if __name__ == "__main__":
         pix = galsim.Pixel(bigImage.getScale())
         psf = psfmodel.getPSF(pos+offset,bigImage.getScale())
         psf.setFlux(1.)
-        finalPSF = galsim.Convolve([pix,psf])
-        sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
-        postageStampSize = int(max(np.ceil(100*parameters['half light radius']),500))
+        sersicObj = galsim.Convolve([psf,sersicObj])
+        sersicObjConv = galsim.Convolve([pix,sersicObj])
+        postageStampSize = int(max(np.ceil(6*parameters['half light radius']),25)
         smallImage = galsim.ImageD(postageStampSize,postageStampSize)
         smallImage = sersicObjConv.draw(dx=bigImage.getScale(),image=smallImage)
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
