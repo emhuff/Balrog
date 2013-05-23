@@ -150,7 +150,7 @@ if __name__ == "__main__":
         psf.setFlux(1.)
         finalPSF = galsim.Convolve([pix,psf])
         sersicObjConv = galsim.Convolve([finalPSF,sersicObj])
-        postageStampSize = int(max(np.ceil(20*parameters['half light radius']),50))
+        postageStampSize = int(max(np.ceil(100*parameters['half light radius']),50))
         smallImage = galsim.ImageD(postageStampSize,postageStampSize)
         smallImage = sersicObjConv.draw(dx=bigImage.getScale(),image=smallImage)
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
@@ -169,6 +169,7 @@ if __name__ == "__main__":
 
     eng = sextractor_engine.SextractorEngine(IMAGE=opts.OutputFile,
                                              WEIGHT_IMAGE=opts.WeightMapOut,
-                                             CHECKIMAGE_TYPE='BACKGROUND',
+                                             CHECKIMAGE_TYPE='SEGMENTATION,BACKGROUND',
+                                             CHECKIMAGE_NAME=segFile+','+backgroundFile,
                                              CATALOG_NAME=opts.CatalogOutFile)
     eng.run()
