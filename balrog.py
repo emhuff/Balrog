@@ -140,7 +140,7 @@ if __name__ == "__main__":
         inputCatalog.append(parameters)
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
                                   parameters['half light radius'],flux = parameters['flux'],
-                                  trunc=5*parameters['half_light_radius'])
+                                  trunc=5*parameters['half light radius'])
         sersicObj.applyShear(g1=parameters['g1'],g2=parameters['g2'])
         
         ix = int(np.floor(x+.05))
