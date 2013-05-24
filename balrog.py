@@ -88,7 +88,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
 
     hdulist = pyfits.open(file)
     hdulist[0].header['CRPIX1'] -= subRegion[0]
-    hdulist[1].header['CRPIX2'] -= subRegion[2]
+    hdulist[0].header['CRPIX2'] -= subRegion[2]
     wcs = pywcs.WCS(hdulist[0].header)
     hdulist.close()
     return bigImage, offset, wcs
