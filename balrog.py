@@ -48,7 +48,7 @@ def writeFitsCatalog(catalog,fileName):
     thdulist = pyfits.HDUList([hdu,tbhdu])
     thdulist.writeto(fileName,clobber=True)
 
-def writeFitsImage(image,outFile,xmin,ymin,xmax,ymax,wcs=None):
+def writeFitsImage(image,outFile,wcs=None):
     '''
     Write a GalSim Image to extension 0 of a .fits header.
     Optionally, write the wcs.
@@ -56,12 +56,7 @@ def writeFitsImage(image,outFile,xmin,ymin,xmax,ymax,wcs=None):
     imArr = image.array
     header = wcs.to_header()
     hdu = pyfits.PrimaryHDU(imArr,header=header)
-    hdu.header['XMIN'] = xmin
-    hdu.header['YMIN'] = ymin
-    hdu.header['XMAX'] = xmax
-    hdu.header['YMAX'] = ymax
-    hdulist = pyfits.HDUList([hdu])
-    hdulist.writeto(outFile,clobber=True)
+    hdu.writeto(outFile,clobber=True)
     
 def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration=None):
     '''
@@ -92,9 +87,10 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     #bigImage.setOrigin(1,1)
 
     hdulist = pyfits.open(file)
-    hdulist[0].header['CRPIX1'] -= subregion[0]
-    hdulist[1].header['CRPIX2'] -= subregion[2]
+    hdulist[0].header['CRPIX1'] -= subRegion[0]
+    hdulist[1].header['CRPIX2'] -= subRegion[2]
     wcs = pywcs.WCS(hdulist[0].header)
+    hdulist.close()
     return bigImage, offset, wcs
 
 if __name__ == "__main__":
