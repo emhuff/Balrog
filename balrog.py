@@ -180,7 +180,8 @@ if __name__ == "__main__":
         bigImage[bounds] += smallImage[bounds]
 
     # Record the catalog of generated objects.
-    writeFitsCatalog(inputCatalog,opts.CatalogInFile)
+    if opts.ngal > 0:
+        writeFitsCatalog(inputCatalog,opts.CatalogInFile)
     # Write the subImage file.
     #bigImage.write(opts.OutputFile)
     writeFitsImage(bigImage,opts.OutputFile,opts.xmin,opts.ymin,opts.xmax,opts.ymax)
