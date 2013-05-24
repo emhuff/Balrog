@@ -3,6 +3,7 @@
 import galsim
 import numpy as np
 import pyfits
+import pywcs
 import math
 import sys
 from optparse import OptionParser
@@ -47,20 +48,20 @@ def writeFitsCatalog(catalog,fileName):
     thdulist = pyfits.HDUList([hdu,tbhdu])
     thdulist.writeto(fileName,clobber=True)
 
-def writeFitsImage(image,outFile,xmin,ymin,xmax,ymax):
+def writeFitsImage(image,outFile,xmin,ymin,xmax,ymax,wcs=None):
     '''
     Write a GalSim Image to extension 0 of a .fits header.
+    Optionally, write the wcs.
     '''
     imArr = image.array
-    hdu = pyfits.PrimaryHDU(imArr)
+    header = wcs.to_header()
+    hdu = pyfits.PrimaryHDU(imArr,header=header)
     hdu.header['XMIN'] = xmin
     hdu.header['YMIN'] = ymin
     hdu.header['XMAX'] = xmax
     hdu.header['YMAX'] = ymax
     hdulist = pyfits.HDUList([hdu])
     hdulist.writeto(outFile,clobber=True)
-
-    
     
 def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration=None):
     '''
@@ -68,7 +69,9 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     smaller piece of that image defined by subRegion (which is a
     galsim._galsim.bounds object), and returns the subRegion as a GalSim
     image object.
+    We want to preserve the wcs.
     '''
+
     bigImage = galsim.fits.read(file)
     if calibration is not None:
         pixelScale = calibration['pixel_scale']
@@ -87,7 +90,12 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     bigImage = bigImage[subBounds]
     offset = galsim.PositionD(subRegion[0],subRegion[2])
     #bigImage.setOrigin(1,1)
-    return bigImage, offset
+
+    hdulist = pyfits.open(file)
+    hdulist[0].header['CRPIX1'] -= subregion[0]
+    hdulist[1].header['CRPIX2'] -= subregion[2]
+    wcs = pywcs.WCS(hdulist[0].header)
+    return bigImage, offset, wcs
 
 if __name__ == "__main__":
     '''
@@ -143,7 +151,7 @@ if __name__ == "__main__":
 
     rng = galsim.UniformDeviate()
     calib = defineCalibration()
-    bigImage, offset = getBigImage(opts.ImageFile,subRegion=subRegion,calibration=calib)
+    bigImage, offset, wcs = getBigImage(opts.ImageFile,subRegion=subRegion,calibration=calib)
     psfmodel = galsim.des.DES_PSFEx(opts.PSFExFile)
     center = bigImage.bounds.center()
     inputCatalog =[]
@@ -176,7 +184,6 @@ if __name__ == "__main__":
         smallImage.addNoise(galsim.CCDNoise(gain=calib['gain'],read_noise=0))
         smallImage.setCenter(ix,iy)
         bounds = smallImage.bounds & bigImage.bounds
-        
         bigImage[bounds] += smallImage[bounds]
 
     # Record the catalog of generated objects.
@@ -184,7 +191,7 @@ if __name__ == "__main__":
         writeFitsCatalog(inputCatalog,opts.CatalogInFile)
     # Write the subImage file.
     #bigImage.write(opts.OutputFile)
-    writeFitsImage(bigImage,opts.OutputFile,opts.xmin,opts.ymin,opts.xmax,opts.ymax)
+    writeFitsImage(bigImage,opts.OutputFile,wcs)
     # Next, write the subImage weightmap.
     subWeight, Wcent = getBigImage(opts.WeightMapIn,subRegion=subRegion)
     subWeight.write(opts.WeightMapOut)
