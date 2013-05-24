@@ -47,6 +47,21 @@ def writeFitsCatalog(catalog,fileName):
     thdulist = pyfits.HDUList([hdu,tbhdu])
     thdulist.writeto(fileName,clobber=True)
 
+def writeFitsImage(image,outFile,xmin,ymin,xmax,ymax):
+    '''
+    Write a GalSim Image to extension 0 of a .fits header.
+    '''
+    imArr = image.array
+    hdu = pyfits.PrimaryHDU(imArr)
+    hdu.header['XMIN'] = xmin
+    hdu.header['YMIN'] = ymin
+    hdu.header['XMAX'] = xmax
+    hdu.header['YMAX'] = ymax
+    hdulist = pyfits.HDUList([hdu])
+    hdulist.writeto(outFile,clobber=True)
+
+    
+    
 def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration=None):
     '''
     Takes a filename for the large image to be simulated. Reads in a
@@ -167,11 +182,13 @@ if __name__ == "__main__":
     # Record the catalog of generated objects.
     writeFitsCatalog(inputCatalog,opts.CatalogInFile)
     # Write the subImage file.
-    bigImage.write(opts.OutputFile)
+    #bigImage.write(opts.OutputFile)
+    writeFitsImage(bigImage,opts.OutputFile,opts.xmin,opts.ymin,opts.xmax,opts.ymax)
     # Next, write the subImage weightmap.
     subWeight, Wcent = getBigImage(opts.WeightMapIn,subRegion=subRegion)
     subWeight.write(opts.WeightMapOut)
-
+    
+    
     eng = sextractor_engine.SextractorEngine(IMAGE=opts.OutputFile,
                                              WEIGHT_IMAGE=opts.WeightMapOut,
                                              CHECKIMAGE_TYPE='SEGMENTATION,BACKGROUND',
