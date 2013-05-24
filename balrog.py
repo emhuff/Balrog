@@ -189,7 +189,7 @@ if __name__ == "__main__":
     #bigImage.write(opts.OutputFile)
     writeFitsImage(bigImage,opts.OutputFile,wcs)
     # Next, write the subImage weightmap.
-    subWeight, Wcent = getBigImage(opts.WeightMapIn,subRegion=subRegion)
+    subWeight, Wcent, Ewcs = getBigImage(opts.WeightMapIn,subRegion=subRegion)
     subWeight.write(opts.WeightMapOut)
     
     
