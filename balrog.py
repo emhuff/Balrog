@@ -86,7 +86,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
         subBounds.ymax = subRegion[3]
     bigImage = bigImage[subBounds]
     offset = galsim.PositionD(subRegion[0],subRegion[2])
-    bigImage.setOrigin(1,1)
+    #bigImage.setOrigin(1,1)
     return bigImage, offset
 
 if __name__ == "__main__":
@@ -149,8 +149,8 @@ if __name__ == "__main__":
     inputCatalog =[]
 
     for i in range(opts.ngal):
-        x = np.random.random_sample()*bigImage.array.shape[0]
-        y = np.random.random_sample()*bigImage.array.shape[1]
+        x = np.random.random_sample()*bigImage.array.shape[0]+subregion[0]
+        y = np.random.random_sample()*bigImage.array.shape[1]+subregion[2]
         parameters = defineParameters(x=x,y=y)
         inputCatalog.append(parameters)
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         sersicObj.applyShift(dx*bigImage.getScale(),dy*bigImage.getScale())
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
-        psf = psfmodel.getPSF(pos+offset,bigImage.getScale())
+        psf = psfmodel.getPSF(pos,bigImage.getScale())
         psf.setFlux(1.)
         sersicObj = galsim.Convolve([psf,sersicObj])
         sersicObjConv = galsim.Convolve([pix,sersicObj])
