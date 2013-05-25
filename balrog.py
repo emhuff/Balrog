@@ -66,7 +66,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     image object.
     We want to preserve the wcs.
     '''
-
+    print 'Reading:'
     bigImage = galsim.fits.read(file)
     if calibration is not None:
         pixelScale = calibration['pixel_scale']
@@ -91,6 +91,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     hdulist[0].header['CRPIX2'] -= subRegion[2]
     wcs = pywcs.WCS(hdulist[0].header)
     hdulist.close()
+    print 'Done Reading.'
     return bigImage, offset, wcs
 
 if __name__ == "__main__":
@@ -157,8 +158,9 @@ if __name__ == "__main__":
         y = np.random.random_sample()*bigImage.array.shape[1]+subregion[2]
         parameters = defineParameters(x=x,y=y)
         inputCatalog.append(parameters)
-        sersicObj = galsim.Sersic(n=parameters['Sersic index'],half_light_radius=
-                                  parameters['half light radius'],flux = parameters['flux'],
+        sersicObj = galsim.Sersic(n=parameters['Sersic index'],
+                                  half_light_radius=parameters['half light radius'],
+                                  flux = parameters['flux'],
                                   trunc=5*parameters['half light radius'])
         sersicObj.applyShear(g1=parameters['g1'],g2=parameters['g2'])
         
