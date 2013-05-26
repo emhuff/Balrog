@@ -66,7 +66,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     image object.
     We want to preserve the wcs.
     '''
-    print 'Reading:'
+
     bigImage = galsim.fits.read(file)
     if calibration is not None:
         pixelScale = calibration['pixel_scale']
@@ -91,7 +91,7 @@ def getBigImage(file='example.fits',subRegion= (None,None,None,None),calibration
     hdulist[0].header['CRPIX2'] -= subRegion[2]
     wcs = pywcs.WCS(hdulist[0].header)
     hdulist.close()
-    print 'Done Reading.'
+    
     return bigImage, offset, wcs
 
 if __name__ == "__main__":
