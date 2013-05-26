@@ -154,8 +154,8 @@ if __name__ == "__main__":
     inputCatalog =[]
 
     for i in range(opts.ngal):
-        x = np.random.random_sample()*bigImage.array.shape[0]+subregion[0]
-        y = np.random.random_sample()*bigImage.array.shape[1]+subregion[2]
+        x = np.random.random_sample()*bigImage.array.shape[0]+subRegion[0]
+        y = np.random.random_sample()*bigImage.array.shape[1]+subRegion[2]
         parameters = defineParameters(x=x,y=y)
         inputCatalog.append(parameters)
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],
