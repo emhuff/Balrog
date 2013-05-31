@@ -156,7 +156,7 @@ if __name__ == "__main__":
     for i in range(opts.ngal):
         x = np.random.random_sample()*bigImage.array.shape[0]+subRegion[0]
         y = np.random.random_sample()*bigImage.array.shape[1]+subRegion[2]
-        parameters = defineParameters(x=x,y=y)
+        parameters = defineParameters(x=x-subRegion[0],y=y-subRegion[2])
         inputCatalog.append(parameters)
         sersicObj = galsim.Sersic(n=parameters['Sersic index'],
                                   half_light_radius=parameters['half light radius'],
