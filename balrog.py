@@ -164,12 +164,12 @@ if __name__ == "__main__":
                                   trunc=5*parameters['half light radius'])
         sersicObj.applyShear(g1=parameters['g1'],g2=parameters['g2'])
         
-        ix = int(np.floor(x+.05))
-        iy = int(np.floor(y+.05))
+        ix = int(np.floor(x))
+        iy = int(np.floor(y))
         dx = x-ix
         dy = y-iy
-        pos = galsim.PositionD(x,y) * bigImage.getScale()
-        sersicObj.applyShift(dx*bigImage.getScale(),dy*bigImage.getScale())
+        pos = galsim.PositionD(x,y)
+        sersicObj.applyShift(dx,dy)
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
         psf = psfmodel.getPSF(pos,bigImage.getScale())
