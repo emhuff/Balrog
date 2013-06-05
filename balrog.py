@@ -173,6 +173,7 @@ if __name__ == "__main__":
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
         psf = psfmodel.getPSF(pos,bigImage.getScale())
+
         psf.setFlux(1.)
         sersicObj = galsim.Convolve([psf,sersicObj])
         sersicObjConv = galsim.Convolve([pix,sersicObj])
