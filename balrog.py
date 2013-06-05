@@ -172,8 +172,8 @@ if __name__ == "__main__":
         sersicObj.applyShift(dx,dy)
         # Convolve with the pixel.
         pix = galsim.Pixel(bigImage.getScale())
+        # Build psf model. This is where things usually go wrong.
         psf = psfmodel.getPSF(pos,bigImage.getScale())
-
         psf.setFlux(1.)
         sersicObj = galsim.Convolve([psf,sersicObj])
         sersicObjConv = galsim.Convolve([pix,sersicObj])
