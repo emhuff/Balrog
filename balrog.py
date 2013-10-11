@@ -142,11 +142,11 @@ SExtractor interface.
     parser.add_option("-p", "--psfmodel",action="store",type="string",
                       dest="PSFExFile",default="example.psfcat.psf",
                       help="File containing PSFEx psf model to use.")
-    parser.add_option("--xmin",action="store",type="int",default="-1",
+    parser.add_option("--xmin",action="store",type="int",default="0",
                       help="Minimum column of extracted subImage, unit-indexed",dest="xmin")
     parser.add_option("--xmax",action="store",type="int",default="-1",
                       help="Maximum column of extracted subImage, unit-indexed",dest="xmax")
-    parser.add_option("--ymin",action="store",type="int",default="-1",
+    parser.add_option("--ymin",action="store",type="int",default="0",
                       help="Minimum row of extracted subImage, unit-indexed",dest="ymin")
     parser.add_option("--ymax",action="store",type="int",default="-1",
                       help="Minimum row of extracted subImage, unit-indexed",dest="ymax")
@@ -160,8 +160,6 @@ SExtractor interface.
 Work out whether the user wants to extract a piece of the original
 image to do the simulations on.
 '''
-
-    #account for -1 in subregion
     subRegion = (opts.xmin,opts.xmax,opts.ymin,opts.ymax)# Limits the area being observed
 
     rng = galsim.UniformDeviate() # Random number generator, never gets used?
