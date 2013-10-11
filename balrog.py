@@ -102,8 +102,8 @@ We want to preserve the wcs.
 
     # Extracts image WCS
     hdulist = pyfits.open(file)
-    hdulist[0].header['CRPIX1'] -= subRegion[0]
-    hdulist[0].header['CRPIX2'] -= subRegion[2]
+    #hdulist[0].header['CRPIX1'] -= subRegion[0]
+    #hdulist[0].header['CRPIX2'] -= subRegion[2]
     wcs = pywcs.WCS(hdulist[0].header)
     hdulist.close()
     
@@ -219,8 +219,12 @@ image to do the simulations on.
     # Write the subImage file.
     #bigImage.write(opts.OutputFile)
     writeFitsImage(bigImage,opts.OutputFile,wcs)
-    # Next, write the subImage weightmap.
-    subWeight, Wcent, Ewcs = getBigImage(opts.WeightMapIn,subRegion=subRegion)
+    
+    # Resize the weight map
+    imageRegion = (subRegion[0], bigImage.array.shape[1]+subRegion[0], subRegion[1], bigImage.array.shape[0]+subRegion[2])
+    subWeight, Wcent, Ewcs = getBigImage(opts.WeightMapIn,subRegion=imageRegion)
+
+
     subWeight.write(opts.WeightMapOut)
     
     # Runs SourceExtractor, which generates catalogs from the image.
