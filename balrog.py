@@ -189,7 +189,8 @@ image to do the simulations on.
         dx = x-ix # Decimal of x
         dy = y-iy # Decimal of y
         pos = galsim.PositionD(x,y) # Double position of x and y
-        sersicObj.applyShift(dx,dy) # What is the shift, and why is it the decimal component of x and y?
+        # Shifts the galaxy in the image, as otherwise the galaxy would only have a random integer position
+        sersicObj.applyShift(dx,dy)
 
         # Make the pixel model
         pix = galsim.Pixel(bigImage.getScale())
