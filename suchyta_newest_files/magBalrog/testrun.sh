@@ -1,0 +1,16 @@
+./balrog.py \
+--ngal 625 \
+--xmin 12001 \
+--xmax 16000 \
+--ymin 12001 \
+--ymax 16000 \
+--imagein /n/des/suchyta.1/des/SV/SV_clusters_project_home/coadd_products/rxj/images/rxj_i.44.fits \
+--imageout simulation_files/spacedImage.fits \
+--weightin /n/des/suchyta.1/des/SV/SV_clusters_project_home/coadd_products/rxj/weights/rxj_i.44.fits \
+--weightout simulation_files/spacedWeight.fits \
+--psfin /n/des/suchyta.1/des/SV/SV_clusters_project_home/coadd_products/rxj/psfmodels/rxj_i.44_det_rriizz.43.42.44.40.44.40.faint.deg8/rxj_i.44.psfcat.psf \
+--psfout simulation_files/spaced.psfcat.psf \
+--catalogsample /n/des/suchyta.1/des/SV/SV_clusters_project_home/coadd_products/rxj/catalogs/rxj_i.44_det_rriizz.43.42.44.40.44.40_nomodel.cat.fits \
+--catalogtruth simulation_files/spacedTruthCatalog.fits \
+--catalogmeasured simulation_files/spacedModelMeasuredCatalog.fits \
+--noisetype calib
