@@ -345,7 +345,6 @@ if __name__ == "__main__":
     if opts.assoc!=None:
         CopyAssoc(opts, assocnames)
 
-
     #If chosen, Clean up image files you don't need anymore
     if opts.clean:
         Cleanup(opts)
