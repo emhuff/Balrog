@@ -3,6 +3,8 @@
 import subprocess
 import os
 
+#import utils
+#from defaults import *
 
 class DEFAULT:
     IMAGE = 'NONE'
@@ -110,6 +112,12 @@ class SextractorEngine():
         self._catalog_name(IMAGE,CATALOG_NAME)
         self._checkimage(CHECKIMAGE_TYPE, CHECKIMAGE_NAME)
 
+        self.path = 'sex'
+
+
+    def Path(self, path):
+        self.path = path
+
 
     def auto_checkimage_name(self, dir=None, named_by='image'):
         tlist = self.config['CHECKIMAGE_TYPE'].split(',')
@@ -140,7 +148,9 @@ class SextractorEngine():
     
 
     def run(self, logfile=None):
-        args = ['sex', self.config['IMAGE']]
+        #sex = utils.astro_code(SEX_DIR,'sex')
+        #args = ['sex', self.config['IMAGE']]
+        args = [self.path, self.config['IMAGE']]
         for key in self.config.keys():
             if key=='IMAGE':
                 continue

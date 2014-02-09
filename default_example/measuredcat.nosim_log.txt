@@ -1,0 +1,86 @@
+
+> WARNING: NTHREADS != 1 ignored: this build of SExtractor is single-threaded
+
+[1M> 
+[1A----- SExtractor 2.17.0 started on 2014-02-09 at 08:01:16 with 1 thread
+
+[1M> Setting catalog parameters
+[1A[1M> Reading detection filter
+[1A[1M> Initializing Neural Network
+[1A[1M> Reading Neural Network Weights
+[1A[1M> Initializing catalog
+[1A[1M> Looking for example.out.nosim.fits
+[1A----- Detecting from: example.out.nosim.fits
+      "Unnamed" / no ext. header / 1000x1000 / 32 bits (floats)
+[1M> Looking for example.out.nosim.fits
+[1A----- Measuring from: example.out.nosim.fits
+      "Unnamed" / no ext. header / 1000x1000 / 32 bits (floats)
+[1M> Looking for example_weight.out.nosim.fits
+[1A----- Weighting from: example_weight.out.nosim.fits
+      "Unnamed" / no ext. header / 1000x1000 / 32 bits (floats)
+[1M> Looking for example_weight.out.nosim.fits
+[1A----- Weighting from: example_weight.out.nosim.fits
+      "Unnamed" / no ext. header / 1000x1000 / 32 bits (floats)
+Measurement image:[1M> Setting up background maps
+[1A[1M> Setting up background map at line:  256
+[1A[1M> Setting up background map at line:  512
+[1A[1M> Setting up background map at line:  768
+[1A[1M> Filtering background map(s)
+[1A[1M> Computing background d-map
+[1A[1M> Computing background-noise d-map
+[1A(M)   Background: 0.000229188 RMS: 1          / Threshold: 1.5        
+Detection image: [1M> Setting up background maps
+[1A[1M> Setting up background map at line:  256
+[1A[1M> Setting up background map at line:  512
+[1A[1M> Setting up background map at line:  768
+[1A[1M> Filtering background map(s)
+[1A[1M> Computing background d-map
+[1A[1M> Computing background-noise d-map
+[1A(D)   Background: 0.000229188 RMS: 1          / Threshold: 1.5        
+[1M> Reading ASSOC input-list...
+[1A[1M> Scanning image
+[1A[1M> Line:   25  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:   50  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:   75  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  100  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  125  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  150  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  175  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  200  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  225  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  250  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  275  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  300  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  325  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  350  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  375  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  400  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  425  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  450  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  475  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  500  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  525  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  550  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  575  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  600  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  625  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  650  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  675  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  700  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  725  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  750  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  775  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  800  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  825  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  850  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  875  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  900  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  925  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  950  Objects:        0 detected /        0 sextracted
+[1A[1M> Line:  975  Objects:        0 detected /        0 sextracted
+[1A[1M> Line: 1000  Objects:        0 detected /        0 sextracted
+[1A      Objects: detected 0        / sextracted 0               
+
+[1M> Closing files
+[1A[1M> 
+[1A> All done (in 0.1 s: 7053.6 lines/s , 0.0 detection/s)
