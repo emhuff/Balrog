@@ -26,14 +26,14 @@ ComponentRule is for aspects of the Sersic profile models. You can model a galax
     key --> Which parameter of the sersic profile: ['mag', 'halflightradius', 'sersicindex', 'axisratio', 'beta']
             They all come with defaults, and you overwrite them however you want.  
             You won't want the default mag, halflightradius, or sersicindex since there aren't obvious defaults to use here.
-            (axisratio = b/a, default is uniform between 1/3 and 1/1 (galsim didn't seem to like to draw very elliptial))
+            (axisratio = b/a, default is uniform between 1/3 and 1/1 (galsim didn't seem to like to draw very elliptial objects))
             (beta is the angle the major axis makes with x-direction, default is uniform between -90 and 90 degrees)
     type --> How you want to sample your galaxies. The other parameters should make sense then give this type).
              I've given an example of all the types I've implemented so far (uniform prob., gaussian, one value, sampling from
              a catalog, or the catch all where the user gives an array. Catalog sampling can be done jointly or independtly
              between different parameters, but more than likely you want joint)
 
-There are shortcut classes is you want, e.g. see the end of model_class.py for all of them:
+There are shortcut classes if you want, e.g. see the end of model_class.py for all of them:
     deVaucouleur()
     Exponential()
     BulgeDisk()

@@ -182,9 +182,6 @@ def GetArgs():
     if args.ymax==-1:
         args.ymax = pyfits.open(args.imagein)[0].header['NAXIS2']
 
-    if args.gain==None:
-        args.gain = pyfits.open(args.imagein)[0].header['GAIN']
-
     try:
         args.gain = float(args.gain)
     except:
