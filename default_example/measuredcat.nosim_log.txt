@@ -2,7 +2,7 @@
 > WARNING: NTHREADS != 1 ignored: this build of SExtractor is single-threaded
 
 [1M> 
-[1A----- SExtractor 2.17.0 started on 2014-02-09 at 08:01:16 with 1 thread
+[1A----- SExtractor 2.17.0 started on 2014-02-14 at 16:40:48 with 1 thread
 
 [1M> Setting catalog parameters
 [1A[1M> Reading detection filter
@@ -83,4 +83,4 @@ Detection image: [1M> Setting up background maps
 
 [1M> Closing files
 [1A[1M> 
-[1A> All done (in 0.1 s: 7053.6 lines/s , 0.0 detection/s)
+[1A> All done (in 0.1 s: 7773.3 lines/s , 0.0 detection/s)
