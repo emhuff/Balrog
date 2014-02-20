@@ -32,6 +32,7 @@ def CustomParseArgs(args):
         args.mag = '%sMAG' %(args.band.upper())
 
 
+### How you want to simulate your galaxies
 def SimulationRules(args, rules):
     cat = args.catalogsample
     ext = args.ext
@@ -47,7 +48,7 @@ def SimulationRules(args, rules):
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
     rules.nProfiles = 1
-    rules.axisratio = [Random(0.33, 1)]
+    rules.axisratio = [Random(0.01, 1)]
     rules.beta = [Random(-90, 90) ]
     rules.halflightradius = [Catalog(cat,ext,args.reff)]
     rules.magnitude = [Catalog(cat,ext,args.mag)]
@@ -57,14 +58,14 @@ def SimulationRules(args, rules):
     '''
     cat = 'SomethingYouMade.fits'
     ext = 0
-    nProfiles = 2
-    axisratio = [Random(0.33, 1), Same(0)]
-    #axisratio = [Random(0.33, 1), Same( (0,'axisratio') )]
-    beta = [Random(-90, 90), Same(0)]
-    halflightradius = [Catalog(cat,ext,'DISKSIZE'), Catalog(cat,ext,'BULGESIZE')]
-    halflightradius = [Same(1), Catalog(cat,ext,'BULGESIZE')]
-    magnitude = [Catalog(cat,ext,'DISKMAG'), Catalog(cat,ext,'BULGEMAG')]
-    sersicindex = [Value(1), Value(4)]
+    rules.nProfiles = 2
+    rules.axisratio = [Random(0.33, 1), Same(0)]
+    #rules.axisratio = [Random(0.33, 1), Same( (0,'axisratio') )]
+    rules.beta = [Random(-90, 90), Same(0)]
+    rules.halflightradius = [Catalog(cat,ext,'DISKSIZE'), Catalog(cat,ext,'BULGESIZE')]
+    rules.halflightradius = [Same(1), Catalog(cat,ext,'BULGESIZE')]
+    rules.magnitude = [Catalog(cat,ext,'DISKMAG'), Catalog(cat,ext,'BULGEMAG')]
+    rules.sersicindex = [Value(1), Value(4)]
     '''
 
 # These are extra configurations to give to sextractor which will override the ones in the config file

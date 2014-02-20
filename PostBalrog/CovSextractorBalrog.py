@@ -34,7 +34,7 @@ def GetTruthModelBulgeDisk(file, zp=30):
         pos = assockeys[key]
         k = key.replace('_0', '')
         truth[k] = data['VECTOR_ASSOC'][:,pos]
-    truth['halflightradius'] = truth['halflightradius'] / np.sqrt(truth['axisratio'])
+    truth['halflightradius'] = truth['halflightradius']
     truth['mag'] = -2.5 * np.log10(truth['flux']) + zp
     truth['surfacebrightness'] = truth['mag'] / (np.pi * np.power(truth['halflightradius'],2.0))
 
@@ -51,7 +51,8 @@ def GetTruthModelBulgeDisk(file, zp=30):
     ok = (bulge['fluxerr'] > 0)
     bulge['s/n'] = np.zeros(len(ok))
     bulge['s/n'][ok] = bulge['flux'][ok] / bulge['fluxerr'][ok]
-
+    
+    """
     pd = [('flux','FLUX_DISK'),
           ('fluxerr', 'FLUXERR_DISK'),
           ('mag', 'MAG_DISK'),
@@ -65,6 +66,7 @@ def GetTruthModelBulgeDisk(file, zp=30):
     ok = (disk['fluxerr'] > 0)
     disk['s/n'] = np.zeros(len(ok))
     disk['s/n'][ok] = disk['flux'][ok] / disk['fluxerr'][ok]
+    """
 
     pm = [('x','XMODEL_IMAGE'),
           ('y','YMODEL_IMAGE'),
@@ -85,24 +87,45 @@ def GetTruthModelBulgeDisk(file, zp=30):
           ('mumax', 'MU_MAX_MODEL'),
           ('mueff', 'MU_EFF_MODEL'),
           ('mumean', 'MU_MEAN_MODEL'),
-          ('R50', 'FLUX_RADIUS')]
+          ('R50', 'FLUX_RADIUS'),
+          ('chi2', 'CHI2_MODEL')]
     model = getmodel(pm, data)
     model['axisratio'] = model['b'] / model['a']
     ok = (model['fluxerr'] > 0)
     model['s/n'] = np.zeros(len(ok))
     model['s/n'][ok] = model['flux'][ok] / model['fluxerr'][ok]
-    model['b/d'] = bulge['flux'] / disk['flux']
+    model['R50'] = model['R50'] * 0.263
+    #model['b/d'] = bulge['flux'] / disk['flux']
     
-    return truth, model, bulge, disk
+    #return truth, model, bulge, disk
+    return truth, model, bulge
 
 
 def single_covariance(m1, m2, t1, t2):
     num = len(m1)
     f1 = m1 - t1
     f2 = m2 - t2
+    
+    '''
     #s = np.sum(f1*f2)
     s = np.sum(f1/t1 * f2/t2)
     cov = s / num
+    '''
+    q = f1/t1 * f2/t2
+    
+    sigma = 3.0
+    outlier = 33
+    qa = np.abs(q)
+    qs = np.std(q)
+    cval = np.percentile(qa, 100-outlier)
+    ccut = (qa < cval)
+    #ccut = (qa < sigma*qs)
+   
+    #cov = np.average(q)
+    cov = np.average(q[ccut])
+    print cov
+    #cov = np.median(q)
+
     return cov
 
 
@@ -115,6 +138,7 @@ def compute_covariance( models_truth, sn, cut=None, sn_low=30, sn_high=40 ):
     reg = np.zeros( (size,size) )
     labels = []
     for i in range(size):
+        print models_truth[i][2]
         for j in range(i,size):
             m1 = models_truth[i][0][cuts]
             m2 = models_truth[j][0][cuts]
@@ -137,61 +161,81 @@ def CovPlot(*args, **kwargs):
     
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-
-    if kwargs['hist']!=None:
-        plt.figure(kwargs['fig']+1)
-        bins = np.arange(0,8.5, 0.15)
-        plt.hist(kwargs['type']['sersicindex'][kwargs['cut']], bins=bins)
     
-    fig = plt.figure(kwargs['fig'], figsize=(10,8))
-    fig = plt.gcf()
-    fig.suptitle(kwargs['title'])
+    fig = plt.figure(kwargs['fig'], figsize=(16,6))
+    #fig = plt.gcf()
+    #fig.suptitle(kwargs['title'])
 
-    plt.subplot(221)
-    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='halflightradius', ylabel='R^e', xcat=kwargs['truth'], x='halflightradius', xlabel='R^e', fig=kwargs['fig'], err=True, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.05, meas=kwargs['meas'], xunit='arcsec', yunit='', ylarger=True)
+    plt.subplot(241)
+    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='halflightradius', ylabel='R^e', xcat=kwargs['truth'], x='halflightradius', xlabel='R^e', fig=kwargs['fig'], err=False, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.00,  meas=kwargs['meas'], xunit='arcsec', yunit='arcsec', ylarger=False)
 
-    plt.subplot(222)
-    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='mag', ylabel='M^i', xcat=kwargs['truth'], x='mag', xlabel='M^i', fig=kwargs['fig'], err=True, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.05, meas=kwargs['meas'], xunit='mag', yunit='', ylarger=True)
+    plt.subplot(242)
+    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='mag', ylabel='M^i', xcat=kwargs['truth'], x='mag', xlabel='M^i', fig=kwargs['fig'], err=False, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.00,  meas=kwargs['meas'], xunit='mag', yunit='mag', ylarger=False)
 
-    plt.subplot(223)
-    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='surfacebrightness', ylabel='\\mu', xcat=kwargs['truth'], x='surfacebrightness', xlabel='\\mu', fig=kwargs['fig'], err=True, logx=True, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.05, meas=kwargs['meas'], xunit='\\frac{mag}{arcsec^2}',yunit='', ylarger=True )
-    #MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='sersicindex', ylabel='n', xcat=kwargs['truth'], x='sersicindex', xlabel='n', fig=kwargs['fig'], err=True, logx=False, logy=False, color=sn, clabel='S/N', size=5, xlim=[3.8, 4.2], meas=kwargs['meas'], xunit='',yunit='', ylarger=True )
+    plt.subplot(243)
+    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='surfacebrightness', ylabel='\\mu', xcat=kwargs['truth'], x='surfacebrightness', xlabel='\\mu', fig=kwargs['fig'], err=False, logx=True, logy=True, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.00,  meas=kwargs['meas'], xunit='\\frac{mag}{arcsec^2}',yunit='\\frac{mag}{arcsec^2}', ylarger=False )
 
-    plt.subplot(224)
-    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='axisratio', ylabel='(b/a)', xcat=kwargs['truth'], x='axisratio', xlabel='(b/a)', fig=kwargs['fig'], err=False, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, xlim=[0.33,1],ylim=[0.33,1], meas=kwargs['meas'], xunit='',yunit='', ylarger=False )
-    '''
+    plt.subplot(245)
+    #bins = np.arange(0,10, 0.10)
+    #plt.hist(kwargs['type']['sersicindex'][kwargs['cut']], bins=bins)
+    #plt.xlabel(r"$n_{meas}$")
+    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='sersicindex', ylabel='n', xcat=kwargs['type'], x='s/n', xlabel='S/N', fig=kwargs['fig'], err=False, logx=True, logy=False, size=5, low=0.00,  color=kwargs['color'], clabel=kwargs['clabel'], meas=kwargs['meas'], xunit='',yunit='', ylarger=False )
+
+    plt.subplot(246)
+    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='axisratio', ylabel='(b/a)', xcat=kwargs['truth'], x='axisratio', xlabel='(b/a)', fig=kwargs['fig'], err=False, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.00, ylim=[0.0,1], xlim=[0.0,1], meas=kwargs['meas'], xunit='',yunit='', ylarger=False )
+
+    plt.subplot(247)
+    MakePlot(cut=kwargs['cut'], tcat=kwargs['truth'], mcat=kwargs['type'], y='beta', ylabel='\\beta', xcat=kwargs['truth'], x='beta', xlabel='\\beta', fig=kwargs['fig'], err=False, logx=False, logy=False, color=kwargs['color'], clabel=kwargs['clabel'], size=5, low=0.00, ylim=[-90,90], xlim=[-90,90], meas=kwargs['meas'], xunit='',yunit='', ylarger=False )
+
+    plt.subplot(248)
     plt.xticks( np.arange(0.5,len(kwargs['labels'])+0.5,1) )
     plt.yticks( np.arange(0.5,len(kwargs['labels'])+0.5,1) )
     plt.gca().set_xticklabels(kwargs['labels'], fontsize=16)
     plt.gca().set_yticklabels(kwargs['labels'], fontsize=16)
-    max = np.amax(np.abs(kwargs['cov'].flatten()))
-    #cov[-reg] = 0
+  
+    '''
+    cov = kwargs['cov']
+    newc = np.copy(cov)
+    cut = (newc < 0)
+    newc[cut] = -newc[cut]
+    newc = np.log10(newc)
+    newc[cut] = -newc[cut]
+    max = np.amax(np.abs(newc.flatten()))
+    plt.pcolor(newc, cmap=plt.get_cmap('RdBu'), vmin=-max, vmax=max)
+    '''
+    
+    b = kwargs['cov'].flatten()[-1]
+    sorted = np.sort( np.abs(kwargs['cov'][:-2, :-2].flatten()) )
+    max = sorted[-1]
+
     plt.pcolor(kwargs['cov'], cmap=plt.get_cmap('RdBu'), vmin=-max, vmax=max)
+    #plt.pcolor(kwargs['cov'], cmap=plt.get_cmap('RdBu'))
     pc = plt.colorbar()
     pc.set_label('Covariance')
-    '''
+    #plt.text(2, 10, kwargs['title'])
+
+    plt.subplot(244)
+    bins = np.arange(-5, 5, step=0.1)
+    plt.hist(kwargs['type']['sersicindex'][kwargs['cut']]-kwargs['truth']['sersicindex'][kwargs['cut']], bins=bins)
+    #plt.xlabel(r"$n_{meas}$")
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.85)
+    #plt.subplots_adjust(top=0.85)
     plt.show()
-    #plt.savefig('n1_example.png')
+    #plt.savefig('n4_covariance.png')
 
 
 if __name__ == "__main__":
 
-    lowsn = 700
-    highsn = 1500
-    rcut = 0.3
-    mcut = 26
-
     cat = sys.argv[1]
     image = sys.argv[2]
     zp = pyfits.open(image)[0].header['AVG_ZP']
-    truth, model, bulge, disk = GetTruthModelBulgeDisk(cat, zp=zp)
-    flagcut = (model['flags']==0) & (model['wflags']==0) & (model['dflags']==0) & (model['R50']*0.263 > rcut)
+    #truth, model, bulge, disk = GetTruthModelBulgeDisk(cat, zp=zp)
+    truth, model, bulge = GetTruthModelBulgeDisk(cat, zp=zp)
+    flagcut = (model['flags']==0) & (model['wflags']==0) & (model['dflags']==0)
  
 
-    t = 'disk'
+    t = 'bulge'
     if t=='disk':
         type = disk
         nt = 1
@@ -201,25 +245,41 @@ if __name__ == "__main__":
         nt = 4
         histo = nt
 
-    typecut = (truth['sersicindex']==nt)
-    sizecut = (type['halflightradius'] > 0*rcut)
+    lowsn = 15
+    highsn = 1e8
+
+    rcut = 0.0
+    #sizecut = (type['halflightradius'] > rcut)
+    sizecut = (model['R50'] > rcut)
+
+    mcut = 30
     magcut = (type['mag'] < mcut )
+
+    typecut = (truth['sersicindex']==nt)
     datacuts = flagcut & sizecut & magcut
     typecuts = datacuts & typecut
-    sn = model['s/n']
-    typesn = type['s/n']
 
-    models_truth = [(model['mag'],truth['mag'], r'$M^i_{disk+bulge}$'),
-                    (type['mag'],truth['mag'], '$M^i_{%s}$'%(t)),
-                    (type['halflightradius'],truth['halflightradius'], '$R^e_{%s}$'%(t)),
-                    (type['surfacebrightness'],truth['surfacebrightness'], '$\mu_{%s}$'%(t))]
+    #sn = model['s/n']
+    sn = type['s/n']
+
+    models_truth = [(type['halflightradius'],truth['halflightradius'], r'$R^e$'),
+                    (type['mag'],truth['mag'], r'$M^i$'),
+                    (type['sersicindex'],truth['sersicindex'], r'$n$'),
+                    (type['surfacebrightness'],truth['surfacebrightness'], r'$\mu$'),
+                    (type['axisratio'],truth['axisratio'], r'$b/a$'),
+                    (type['beta'],truth['beta'], r'$\beta$')]
     #cov, labels, sncuts, reg = compute_covariance( models_truth, sn, sn_low=lowsn, sn_high=highsn, cut=typecuts )
-    cov, labels, sncuts, reg = compute_covariance( models_truth, typesn, sn_low=lowsn, sn_high=highsn, cut=typecuts )
+    cov, labels, sncuts, reg = compute_covariance( models_truth, sn, sn_low=lowsn, sn_high=highsn, cut=datacuts )
     allcuts = typecuts&sncuts
 
-    title = r'$n_{truth}=%i$'%(nt) + '\n' + r'$R^e_{%s} > %.1f~arcsec$'%(t,rcut) + '\n' + r'$M^i_{%s} < %.1f$'%(t,mcut) + '\n' + r'$FLAGS==0$' + '\n' + r'$%i < S/N < %i$'%(lowsn,highsn)
-    CovPlot(title=title, cut=allcuts, truth=truth, type=type, cov=cov, labels=labels, fig=1, hist=histo, color=typesn, clabel='S/N', meas=t)
+    #title = r'$n_{truth}=%i$'%(nt) + '\n' + r'$R^e_{%s} > %.1f~arcsec$'%(t,rcut) + '\n' + r'$M^i_{%s} < %.1f$'%(t,mcut) + '\n' + r'$FLAGS==0$' + '\n' + r'$%i < S/N < %i$'%(lowsn,highsn)
+    #CovPlot(title=title, cut=allcuts, truth=truth, type=type, cov=cov, labels=labels, fig=1, hist=histo, color=np.log10(sn), clabel=r'$log_{10} \left( S/N \right)$', meas='meas')
     #CovPlot(title=title, cut=allcuts, truth=truth, type=type, cov=cov, labels=labels, fig=1, hist=histo, color=np.log10(bulge['flux']/disk['flux']), clabel='B/D', meas=t)
+
+    print float(len(truth['flux'][allcuts]) ) / len(truth['flux'][flagcut])
+    title = r'$n_{truth}=%i$'%(nt) + '\n' + r'$FLAGS==0$'     
+    CovPlot(title=title, cut=allcuts, truth=truth, type=type, cov=cov, labels=labels, fig=1, hist=histo, color=np.log10(sn), clabel=r'$log_{10} \left( S/N \right)$', meas='meas')
+    #CovPlot(title=title, cut=allcuts, truth=truth, type=type, cov=cov, labels=labels, fig=1, hist=histo, color=model['chi2'] , clabel=r'$log_{10} \left( S/N \right)$', meas='meas')
 
 
 

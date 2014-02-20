@@ -12,13 +12,13 @@ from esutil import htm
 
 if __name__ == "__main__":
 
-    infile = 'concatenated_results/rxj_i.44_n5000.fits'
-    supfile = infile.replace('.fits', '_sup.fits')
-    start = 5000
-    end = 30000
-    outfile = 'concatenated_results/rxj_i.44_n3000.fits'
-    outsupfile = supfile.replace('.fits', '_sup.fits')
-    topdir = 'balrog_output/sextractor/rxj/i/'
+    infile = None
+    supfile = None
+    start = 0
+    end = 299
+    outfile = 'catalogs/rxj_i.44_index=0-299.fits'
+    outsupfile = outfile.replace('.fits', '_sup.fits')
+    topdir = '../../output/magnification_sextractor/rxj/i/'
 
 
     h = htm.HTM()
@@ -91,6 +91,7 @@ if __name__ == "__main__":
                     break
                 newkeys[key] = dh[key]
                 j += 1
+            started = True
         else:
             data = np.concatenate( (data,d) )
 

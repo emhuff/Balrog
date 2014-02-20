@@ -167,17 +167,9 @@ def GetOpts():
 
 if __name__ == "__main__":
 
-    s = time.time()
     opts = GetOpts()
 
-    print 'subsampling original image'
     SubsampleImages(opts)
-
-    print 'running balrog'
     RunBalrog(opts)
-
-    print 'running sextractor over subsample'
     balrog.RunSextractor(opts, [], nosim=True)
 
-    e = time.time()
-    print 'total time: %f minutes' %((e-s)/60.0)
