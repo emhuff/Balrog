@@ -32,7 +32,8 @@ def CustomParseArgs(args):
 
     if args.catalogsample==None:
         #args.catalogsample = os.path.join(thisdir, 'cosmos_n=1.fits')
-        args.catalogsample = os.path.join(thisdir, 'cosmos_n=4.fits')
+        #args.catalogsample = os.path.join(thisdir, 'cosmos_n=4.fits')
+        args.catalogsample = os.path.join(thisdir, 'cosmos.fits')
 
     if args.mag==None:
         args.mag = '%sMAG' %(args.band.upper())
