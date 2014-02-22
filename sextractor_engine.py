@@ -159,8 +159,10 @@ class SextractorEngine():
             args.append( str(self.config[key]) )
 
         if logfile==None:
-            logfile = self._strip('CATALOG_NAME',['cat.fits','.fits']) + '_log.txt'
+            #logfile = self._strip('CATALOG_NAME',['cat.fits','.fits']) + '_log.txt'
+            #logfile = self._strip('CATALOG_NAME',['.fits']) + '.log.txt'
             #logfile = self.config['CATALOG_NAME'].replace('.fits,','.fits_').replace('.cat.fits','.fits').replace('.fits','') + '_log.txt' 
+            logfile = self.config['CATALOG_NAME'].replace('.fits','.log.txt')
     
         log = open(logfile,'w')
         subprocess.call( args, stdout=log, stderr=log )

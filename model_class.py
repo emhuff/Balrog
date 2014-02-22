@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-import pyfits
+import astropy.io.fits as pyfits
 import galsim
 
 
@@ -29,7 +29,7 @@ class BaseSampler():
             print ''
 
 
-    def SampleComponent(self, opts):
+    def SampleComponent(self, cmdline_opts):
         value = []
         gaussian = []
         uniform = []
@@ -79,7 +79,7 @@ class BaseSampler():
             self.component[index][key][:] = arr[:]
 
         if len(single)>0 or len(joint)>0:
-            self.FromCatalog(single,joint, opts.ext)
+            self.FromCatalog(single,joint, cmdline_opts.ext)
 
         for i in range(len(component)):
             index, key, param = self.index_key(component[i])
@@ -90,7 +90,7 @@ class BaseSampler():
                 exec 'self.component[%i]["%s"] = self.%s["%s"]' %(index,key, comp,key)
 
 
-    def SampleGalaxy(self, opts, redo=None):
+    def SampleGalaxy(self, cmdline_opts, redo=None):
         # redo = ('x', [1,8,11])
         value = []
         gaussian = []
@@ -146,10 +146,10 @@ class BaseSampler():
             self.galaxy[key][okindecies] = arr[okindecies]
 
         if len(single)>0 or len(joint)>0:
-            self.FromCatalogGalaxy(single,joint, okindecies, opts.ext)
+            self.FromCatalogGalaxy(single,joint, okindecies, cmdline_opts.ext)
 
 
-    def OutsidePostageStamp(self, psizes, opts, index=None):
+    def OutsidePostageStamp(self, psizes, cmdline_opts, index=None):
         if index==None:
             index = np.arange(len(psizes))
 
@@ -161,13 +161,13 @@ class BaseSampler():
             x = int(self.galaxy['x'][i])
             y = int(self.galaxy['y'][i])
         
-            if (x - (psize/2+opts.frame)) < opts.xmin:
+            if (x - (psize/2+cmdline_opts.frame)) < cmdline_opts.xmin:
                 bad = True
-            if (x + (psize/2+opts.frame)) > opts.xmax:
+            if (x + (psize/2+cmdline_opts.frame)) > cmdline_opts.xmax:
                 bad = True
-            if (y - (psize/2+opts.frame)) < opts.ymin:
+            if (y - (psize/2+cmdline_opts.frame)) < cmdline_opts.ymin:
                 bad = True
-            if (y + (psize/2+opts.frame)) > opts.ymax:
+            if (y + (psize/2+cmdline_opts.frame)) > cmdline_opts.ymax:
                 bad = True
 
             if bad:
@@ -471,31 +471,31 @@ class BaseSampler():
         self.DoComponent(component)
 
     
-    def Sample(self, opts, psfmodel):
+    def Sample(self, cmdline_opts, derived_opts, psfmodel):
         """
-        self.SampleComponent(opts)
-        self.SampleGalaxy(opts)
+        self.SampleComponent(cmdline_opts)
+        self.SampleGalaxy(cmdline_opts)
         """
         self.BetterSample()
 
         for i in range(len(self.component)):
-            self.component[i]['flux'] = np.power(10.0, (opts.zeropoint - self.component[i]['flux']) / 2.5)
+            self.component[i]['flux'] = np.power(10.0, (cmdline_opts.zeropoint - self.component[i]['flux']) / 2.5)
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
-        psizes = self.GetPostageStampSizes(opts, psfmodel, stamp=True)
+        psizes = self.GetPostageStampSizes(cmdline_opts, derived_opts, psfmodel, stamp=True)
         
         """
-        outside = self.OutsidePostageStamp(psizes,opts)
+        outside = self.OutsidePostageStamp(psizes,cmdline_opts)
         while len(outside) > 0:
-            self.SampleGalaxy(opts, redo=('x',outside))
-            self.SampleGalaxy(opts, redo=('y',outside))
-            ps = self.GetPostageStampSizes(opts, psfmodel, index=outside, stamp=True )
+            self.SampleGalaxy(cmdline_opts, redo=('x',outside))
+            self.SampleGalaxy(cmdline_opts, redo=('y',outside))
+            ps = self.GetPostageStampSizes(cmdline_opts, psfmodel, index=outside, stamp=True )
             psizes[outside] = ps
-            outside = self.OutsidePostageStamp(ps,opts, index=outside
+            outside = self.OutsidePostageStamp(ps,cmdline_opts, index=outside
         """
            
         '''
         for i in range(len(self.component)):
-            self.component[i]['flux'] = np.power(10.0, (opts.zeropoint - self.component[i]['flux']) / 2.5)
+            self.component[i]['flux'] = np.power(10.0, (cmdline_opts.zeropoint - self.component[i]['flux']) / 2.5)
         '''
 
         return psizes
@@ -503,7 +503,7 @@ class BaseSampler():
 
 
 
-    def GetPSFConvolved(self, opts, psfmodel, i, stamp=False):
+    def GetPSFConvolved(self, derived_opts, psfmodel, i, stamp=False):
         for j in range(len(self.component)):
             n = float(self.component[j]['sersicindex'][i])
             reff = float(self.component[j]['halflightradius'][i])
@@ -532,30 +532,40 @@ class BaseSampler():
 
         x = float(self.galaxy['x'][i])
         y = float(self.galaxy['y'][i])
-        ix = int(np.floor(x)) 
-        iy = int(np.floor(y))
+        ix = int(x) 
+        iy = int(y)
         dx = x-ix
         dy = y-iy
         pos = galsim.PositionD(x,y)
-        combinedObj.applyShift(dx*opts.pixscale,dy*opts.pixscale)
+
+        local = derived_opts.galsimwcs.local(image_pos=pos)
+        combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
         
-        psf = psfmodel.getPSF(pos,opts.pixscale)
+        psf = psfmodel.getPSF(pos)
         psf.setFlux(1.)
         combinedObj = galsim.Convolve([psf,combinedObj])
+
+        pix = galsim.Box(width=local.dudx, height=local.dvdy)
+        combinedObjConv = galsim.Convolve([pix,combinedObj])
 
         return combinedObj
 
 
-    def GetPostageStampSizes(self,opts, psfmodel, index=None, stamp=True):
+    def GetPostageStampSizes(self,cmdline_opts,derived_opts, psfmodel, index=None, stamp=True):
         if index==None:
             index = np.arange( self.ngal )
         psizes = []
 
         for i in index:
-            combinedObj = self.GetPSFConvolved(opts, psfmodel, i, stamp=stamp)
-            size = opts.minsize
-            while (combinedObj.xValue(galsim.PositionD(-size*opts.pixscale/2,0))>opts.fluxthresh) or (combinedObj.xValue(galsim.PositionD(size*opts.pixscale/2,0))>opts.fluxthresh):
-                size += opts.inc
+            combinedObj = self.GetPSFConvolved(derived_opts, psfmodel, i, stamp=stamp)
+            size = cmdline_opts.minsize
+            #print combinedObj.xValue(galsim.PositionD(-size*cmdline_opts.pixscale/2,0)), combinedObj.xValue(galsim.PositionD(size*cmdline_opts.pixscale/2,0))
+            #print combinedObj.xValue(galsim.PositionD(0,0)), combinedObj.xValue(galsim.PositionD(size*cmdline_opts.pixscale/2,0)), combinedObj.getFlux(), combinedObj.isAnalyticX(), combinedObj.isAnalyticK(), combinedObj.maxK()
+
+            '''
+            while (combinedObj.xValue(galsim.PositionD(-size*cmdline_opts.pixscale/2,0))>cmdline_opts.fluxthresh) or (combinedObj.xValue(galsim.PositionD(size*cmdline_opts.pixscale/2,0))>cmdline_opts.fluxthresh):
+                size += cmdline_opts.inc
+            '''
             if size%2==0:
                 size += 1
             psizes.append(size)

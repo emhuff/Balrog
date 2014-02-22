@@ -10,7 +10,7 @@ from model_class import *
 
 ### Your own command line arguments
 ### Google python argparse for help
-def CustomArguments(parser):
+def CustomArgs(parser):
     # Catlog to sample simulation parameters from
     parser.add_argument( "-cs", "--catalogsample", help="Catalog used to sample simulated galaxy parameter distriubtions from", type=str, default=None)
     parser.add_argument( "-ext", "--ext", help="Index of the data extension for sampling catalog", type=int, default=1)
@@ -18,6 +18,12 @@ def CustomArguments(parser):
     parser.add_argument( "-nsersic", "--sersicindex", help="Column name when drawing sersic index catalog", type=str, default="SERSIC_INDEX")
     parser.add_argument( "-mag", "--mag", help="Column name when drawing magnitude from catalog", type=str, default=None)
     parser.add_argument( "-b", "--band", help="Which filter band to choose from COSMOS catalog. Only relevant if --mag is not given and using COSMOS catlalog.", type=str, default='i', choices=['g','r','i','z'])
+
+
+### Throughout the remainder of the file, you also have local access to the default Balrog command line arguments. 
+### However, to avoid accidentally breaking Balrog, any changes you make to these default args do not propagate outside this file.
+###         e.g. You could change args.xmin for convenience if you wanted, but this would have no effect on the minimum x for your simulation area
+### Any default arguments you didn't specficy from the command line have their default values.
 
 
 ### How you want to parse your command line arguments
@@ -51,8 +57,8 @@ def SimulationRules(args, rules):
     rules.axisratio = [Random(0.01, 1)]
     rules.beta = [Random(-90, 90) ]
     rules.halflightradius = [Catalog(cat,ext,args.reff)]
-    rules.magnitude = [Catalog(cat,ext,args.mag)]
-    #rules.magnitude = [Value(18)]
+    #rules.magnitude = [Catalog(cat,ext,args.mag)]
+    rules.magnitude = [Value(14)]
     rules.sersicindex = [Catalog(cat,ext,args.sersicindex)]
 
     '''
