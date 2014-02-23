@@ -29,7 +29,7 @@ class BaseSampler():
             print ''
 
 
-    def SampleComponent(self, cmdline_opts):
+    def SampleComponent(self, BalrogSetup):
         value = []
         gaussian = []
         uniform = []
@@ -79,7 +79,7 @@ class BaseSampler():
             self.component[index][key][:] = arr[:]
 
         if len(single)>0 or len(joint)>0:
-            self.FromCatalog(single,joint, cmdline_opts.ext)
+            self.FromCatalog(single,joint, BalrogSetup.ext)
 
         for i in range(len(component)):
             index, key, param = self.index_key(component[i])
@@ -90,7 +90,7 @@ class BaseSampler():
                 exec 'self.component[%i]["%s"] = self.%s["%s"]' %(index,key, comp,key)
 
 
-    def SampleGalaxy(self, cmdline_opts, redo=None):
+    def SampleGalaxy(self, BalrogSetup, redo=None):
         # redo = ('x', [1,8,11])
         value = []
         gaussian = []
@@ -146,10 +146,10 @@ class BaseSampler():
             self.galaxy[key][okindecies] = arr[okindecies]
 
         if len(single)>0 or len(joint)>0:
-            self.FromCatalogGalaxy(single,joint, okindecies, cmdline_opts.ext)
+            self.FromCatalogGalaxy(single,joint, okindecies, BalrogSetup.ext)
 
 
-    def OutsidePostageStamp(self, psizes, cmdline_opts, index=None):
+    def OutsidePostageStamp(self, psizes, BalrogSetup, index=None):
         if index==None:
             index = np.arange(len(psizes))
 
@@ -161,13 +161,13 @@ class BaseSampler():
             x = int(self.galaxy['x'][i])
             y = int(self.galaxy['y'][i])
         
-            if (x - (psize/2+cmdline_opts.frame)) < cmdline_opts.xmin:
+            if (x - (psize/2+BalrogSetup.frame)) < BalrogSetup.xmin:
                 bad = True
-            if (x + (psize/2+cmdline_opts.frame)) > cmdline_opts.xmax:
+            if (x + (psize/2+BalrogSetup.frame)) > BalrogSetup.xmax:
                 bad = True
-            if (y - (psize/2+cmdline_opts.frame)) < cmdline_opts.ymin:
+            if (y - (psize/2+BalrogSetup.frame)) < BalrogSetup.ymin:
                 bad = True
-            if (y + (psize/2+cmdline_opts.frame)) > cmdline_opts.ymax:
+            if (y + (psize/2+BalrogSetup.frame)) > BalrogSetup.ymax:
                 bad = True
 
             if bad:
@@ -340,8 +340,8 @@ class BaseSampler():
 
     
 
-    def DoGaussian(self, gaussian):
-        np.random.seed()
+    def DoGaussian(self, gaussian, seed):
+        np.random.seed(seed)
         for i in range(len(gaussian)):
             index, key, avg, std = gaussian[i]
             if index > -1:
@@ -350,8 +350,8 @@ class BaseSampler():
                 self.galaxy[key][:] = np.random.normal( avg,std, len(self.galaxy[key]) )
 
 
-    def DoUniform(self, uniform):
-        np.random.seed()
+    def DoUniform(self, uniform, seed):
+        np.random.seed(seed)
         for i in range(len(uniform)):
             index, key, min, max = uniform[i]
             if index > -1:
@@ -378,8 +378,8 @@ class BaseSampler():
                 self.galaxy[key][:] = arr[:]
 
 
-    def DoCatalog(self, catalogs):
-        np.random.seed()
+    def DoCatalog(self, catalogs, seed):
+        np.random.seed(seed)
         for catalog in catalogs:
             file = catalog[0][0]
             ext = catalog[0][1]
@@ -445,7 +445,7 @@ class BaseSampler():
             component.append( (i, key, param[0], param[1]) )
 
 
-    def BetterSample(self):
+    def BetterSample(self, BalrogSetup):
         gaussian = []
         uniform = []
         value = []
@@ -463,39 +463,39 @@ class BaseSampler():
             self.ChoicesSample(rtype, param, -1, key, gaussian,uniform,value,array,catalog,component)
         cat = self.SortCatalog(catalog)
        
-        self.DoGaussian(gaussian)
-        self.DoUniform(uniform)
+        self.DoGaussian(gaussian, BalrogSetup.seed)
+        self.DoUniform(uniform, BalrogSetup.seed)
         self.DoValue(value)
         self.DoArray(array)
-        self.DoCatalog(cat)
+        self.DoCatalog(cat, BalrogSetup.seed)
         self.DoComponent(component)
 
     
-    def Sample(self, cmdline_opts, derived_opts, psfmodel):
+    def Sample(self, BalrogSetup, psfmodel, wcs):
         """
-        self.SampleComponent(cmdline_opts)
-        self.SampleGalaxy(cmdline_opts)
+        self.SampleComponent(BalrogSetup)
+        self.SampleGalaxy(BalrogSetup)
         """
-        self.BetterSample()
+        self.BetterSample(BalrogSetup)
 
         for i in range(len(self.component)):
-            self.component[i]['flux'] = np.power(10.0, (cmdline_opts.zeropoint - self.component[i]['flux']) / 2.5)
+            self.component[i]['flux'] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i]['flux']) / 2.5)
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
-        psizes = self.GetPostageStampSizes(cmdline_opts, derived_opts, psfmodel, stamp=True)
+        psizes = self.GetPostageStampSizes(BalrogSetup, psfmodel, wcs, stamp=True)
         
         """
-        outside = self.OutsidePostageStamp(psizes,cmdline_opts)
+        outside = self.OutsidePostageStamp(psizes,BalrogSetup)
         while len(outside) > 0:
-            self.SampleGalaxy(cmdline_opts, redo=('x',outside))
-            self.SampleGalaxy(cmdline_opts, redo=('y',outside))
-            ps = self.GetPostageStampSizes(cmdline_opts, psfmodel, index=outside, stamp=True )
+            self.SampleGalaxy(BalrogSetup, redo=('x',outside))
+            self.SampleGalaxy(BalrogSetup, redo=('y',outside))
+            ps = self.GetPostageStampSizes(BalrogSetup, psfmodel, index=outside, stamp=True )
             psizes[outside] = ps
-            outside = self.OutsidePostageStamp(ps,cmdline_opts, index=outside
+            outside = self.OutsidePostageStamp(ps,BalrogSetup, index=outside
         """
            
         '''
         for i in range(len(self.component)):
-            self.component[i]['flux'] = np.power(10.0, (cmdline_opts.zeropoint - self.component[i]['flux']) / 2.5)
+            self.component[i]['flux'] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i]['flux']) / 2.5)
         '''
 
         return psizes
@@ -503,7 +503,7 @@ class BaseSampler():
 
 
 
-    def GetPSFConvolved(self, derived_opts, psfmodel, i, stamp=False):
+    def GetPSFConvolved(self, psfmodel, i, wcs, stamp=False):
         for j in range(len(self.component)):
             n = float(self.component[j]['sersicindex'][i])
             reff = float(self.component[j]['halflightradius'][i])
@@ -538,7 +538,7 @@ class BaseSampler():
         dy = y-iy
         pos = galsim.PositionD(x,y)
 
-        local = derived_opts.galsimwcs.local(image_pos=pos)
+        local = wcs.local(image_pos=pos)
         combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
         
         psf = psfmodel.getPSF(pos)
@@ -551,20 +551,20 @@ class BaseSampler():
         return combinedObj
 
 
-    def GetPostageStampSizes(self,cmdline_opts,derived_opts, psfmodel, index=None, stamp=True):
+    def GetPostageStampSizes(self,BalrogSetup, psfmodel, wcs, index=None, stamp=True):
         if index==None:
             index = np.arange( self.ngal )
         psizes = []
 
         for i in index:
-            combinedObj = self.GetPSFConvolved(derived_opts, psfmodel, i, stamp=stamp)
-            size = cmdline_opts.minsize
-            #print combinedObj.xValue(galsim.PositionD(-size*cmdline_opts.pixscale/2,0)), combinedObj.xValue(galsim.PositionD(size*cmdline_opts.pixscale/2,0))
-            #print combinedObj.xValue(galsim.PositionD(0,0)), combinedObj.xValue(galsim.PositionD(size*cmdline_opts.pixscale/2,0)), combinedObj.getFlux(), combinedObj.isAnalyticX(), combinedObj.isAnalyticK(), combinedObj.maxK()
+            combinedObj = self.GetPSFConvolved(psfmodel, i, wcs, stamp=stamp)
+            size = BalrogSetup.minsize
+            #print combinedObj.xValue(galsim.PositionD(-size*BalrogSetup.pixscale/2,0)), combinedObj.xValue(galsim.PositionD(size*BalrogSetup.pixscale/2,0))
+            #print combinedObj.xValue(galsim.PositionD(0,0)), combinedObj.xValue(galsim.PositionD(size*BalrogSetup.pixscale/2,0)), combinedObj.getFlux(), combinedObj.isAnalyticX(), combinedObj.isAnalyticK(), combinedObj.maxK()
 
             '''
-            while (combinedObj.xValue(galsim.PositionD(-size*cmdline_opts.pixscale/2,0))>cmdline_opts.fluxthresh) or (combinedObj.xValue(galsim.PositionD(size*cmdline_opts.pixscale/2,0))>cmdline_opts.fluxthresh):
-                size += cmdline_opts.inc
+            while (combinedObj.xValue(galsim.PositionD(-size*BalrogSetup.pixscale/2,0))>BalrogSetup.fluxthresh) or (combinedObj.xValue(galsim.PositionD(size*BalrogSetup.pixscale/2,0))>BalrogSetup.fluxthresh):
+                size += BalrogSetup.inc
             '''
             if size%2==0:
                 size += 1
@@ -703,6 +703,7 @@ def Same( comp ):
 
 def DefineRules(args, x=None, y=None, g1=None, g2=None, magnification=None, nProfiles=1, axisratio=None, beta=None, halflightradius=None, magnitude=None, sersicindex=None ):
     simulatedgals = nComponentSersic(ngal=args.ngal, catalog=None, ncomp=nProfiles)
+    out = open(args.simruleslog, 'w')
 
     galrules = [x, y, g1, g2, magnification]
     keys = ['x', 'y', 'g1', 'g2', 'magnification']
@@ -714,7 +715,9 @@ def DefineRules(args, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                 elif type(g.param)==str:
                     g.param = (-1,k)
             simulatedgals.GalaxyRule(key=k, rule=g)
-    
+        out.write('%s %s %s\n' %(k, g.type, str(g.param)) )
+   
+    out.write('\n')
     keys = ['axisratio', 'beta', 'halflightradius', 'flux', 'sersicindex']
     comprules = [axisratio, beta, halflightradius, magnitude, sersicindex]
     for j in range(len(comprules)):
@@ -731,5 +734,7 @@ def DefineRules(args, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                     elif type(comp.param)==str:
                         comp.param = (-1,key)
                 simulatedgals.ComponentRule(component=i, key=key, rule=comp)
+            out.write('%s %s %s %s\n' %(str(i), key, comp.type, str(comp.param)) )
 
+    out.close()
     return simulatedgals

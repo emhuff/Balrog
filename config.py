@@ -5,11 +5,9 @@ import numpy as np
 from model_class import *
 
 
-###In lieu of having time for proper documentation, for now I'll give you some commented examples, which you can extrapolate from.
 
-
-### Your own command line arguments
-### Google python argparse for help
+### In this function you can define, your own command line arguments.
+### Google python argparse for help if the syntax is unclear.
 def CustomArgs(parser):
     # Catlog to sample simulation parameters from
     parser.add_argument( "-cs", "--catalogsample", help="Catalog used to sample simulated galaxy parameter distriubtions from", type=str, default=None)
@@ -20,10 +18,15 @@ def CustomArgs(parser):
     parser.add_argument( "-b", "--band", help="Which filter band to choose from COSMOS catalog. Only relevant if --mag is not given and using COSMOS catlalog.", type=str, default='i', choices=['g','r','i','z'])
 
 
-### Throughout the remainder of the file, you also have local access to the default Balrog command line arguments. 
-### However, to avoid accidentally breaking Balrog, any changes you make to these default args do not propagate outside this file.
-###         e.g. You could change args.xmin for convenience if you wanted, but this would have no effect on the minimum x for your simulation area
-### Any default arguments you didn't specficy from the command line have their default values.
+
+### Throughout the remainder of the file, you have access to your custom command line arguments in the attributes of args.
+### The three functions below execute in the order they appear. Attributes changed in ealier functions will propogate downstream.
+### Your custom command line arguments will be logged as they exist at the end of this file.
+
+### You also have local access to the native Balrog command line arguments. 
+### However, to avoid accidentally breaking Balrog, any changes you make to these native args do not propagate outside this file.
+###         e.g. You could change args.xmin for convenience if you wanted, but this would have no effect on the minimum x for your simulation area.
+### Any default arguments you didn't specficy from the command line have already assumed their default values when these functions are called.
 
 
 ### How you want to parse your command line arguments
