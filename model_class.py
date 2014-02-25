@@ -266,17 +266,20 @@ class BaseSampler():
 
     def GetPSizes(self, BalrogSetup, wcs):
         psizes = np.zeros(self.ngal)
+        athresh = np.zeros(self.ngal)
         for i in range(self.ngal):
-            psizes[i] = self.GetPSize(i, BalrogSetup, wcs)
-        return psizes
+            psizes[i], athresh[i] = self.GetPSize(i, BalrogSetup, wcs)
+        return psizes, athresh
 
 
     def GetPSize(self, i, BalrogSetup, wcs):
-        fid_seeing = 0.8
+        fid_seeing = 1.0
 
         ncomp = len(self.component)
         flux_thresh = BalrogSetup.fluxthresh / float(ncomp)
         test_size = np.zeros(ncomp)
+        test_flux = np.zeros(ncomp)
+        total_flux = 0
         for j in range(ncomp):
             n = float(self.component[j]['sersicindex'][i])
             reff = float(self.component[j]['halflightradius'][i])
@@ -286,14 +289,10 @@ class BaseSampler():
             gq = (1-g) / (1+g)
             k =  self.galaxy['magnification'][i]
 
-            beta = 0 * galsim.degrees 
-            intrinsic_shear = galsim.Shear(q=q, beta=beta)
             sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux)
-            sersicObj.applyShear(intrinsic_shear)
-
             re = reff / np.sqrt(q)
             re = re / np.sqrt(gq)
-            fe = sersicObj.xValue(galsim.PositionD(re,0))
+            fe = sersicObj.xValue(galsim.PositionD(reff,0))
             f0 = sersicObj.xValue(galsim.PositionD(0,0))
             b = b_n_estimate(n)
 
@@ -301,55 +300,49 @@ class BaseSampler():
             intrinsic = k * re * re_frac
             seeing = fid_seeing * np.sqrt(2 * np.log(f0/flux_thresh) )
             total = intrinsic + seeing
+
             test_size[j] = 2 * total
+            total_flux += flux
+            test_flux[j] = f0
+
         x = self.galaxy['x'][i]
         y = self.galaxy['y'][i]
         pos = galsim.PositionD(x,y)
         local = wcs.local(image_pos=pos)
         step = min([local.dudx, local.dvdy])
-        
+       
+        f = max(test_flux)
         psize = max(test_size)
         psize = np.ceil( psize / step )
         if psize%2==0:
             psize += 1
-        return psize
+
+        alias_thresh = BalrogSetup.fluxthresh / total_flux
+        return psize, alias_thresh
           
 
 
-    def GetPSFConvolved(self, psfmodel, i, wcs, stamp=False):
+    def GetPSFConvolved(self, psfmodel, i, wcs, athresh):
+        #gsparams = galsim.GSParams(alias_threshold=athresh[i])#, kvalue_accuracy=athresh[i])
+        
         for j in range(len(self.component)):
             n = float(self.component[j]['sersicindex'][i])
             reff = float(self.component[j]['halflightradius'][i])
             flux = float(self.component[j]['flux'][i])
             q = float(self.component[j]['axisratio'][i])
-            if stamp==True:
-                beta = 0 * galsim.degrees
-            else:
-                beta = self.component[j]['beta'][i]*galsim.degrees 
+            beta = self.component[j]['beta'][i]*galsim.degrees 
             intrinsic_shear = galsim.Shear(q=q, beta=beta )
-            
+
+            #sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux, gsparams=gsparams)
             sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux)
             sersicObj.applyShear(intrinsic_shear)
-
-            re = reff / np.sqrt(q)
-            fe = sersicObj.xValue(galsim.PositionD(re,0))
-            f0 = sersicObj.xValue(galsim.PositionD(0,0))
-            b = b_n_estimate(n)
-            re_frac =  np.power( 1.0 - (1.0 / b) * np.log(0.01/fe), n )
-            intrinsic = re * re_frac
-            seeing = 0.8 * np.sqrt(2 * np.log(f0/0.01) )
-            total = intrinsic + seeing
 
             if j==0:
                 combinedObj = sersicObj
             else:
                 combinedObj = combinedObj + sersicObj
-        
-        if stamp==True:
-            gmag = np.sqrt( self.galaxy['g1'][i]*self.galaxy['g1'][i] + self.galaxy['g2'][i]*self.galaxy['g2'][i] )
-            lensing_shear = galsim.Shear(g1=float(gmag), g2=0)
-        else:
-            lensing_shear = galsim.Shear(g1=self.galaxy['g1'][i], g2=self.galaxy['g2'][i])
+       
+        lensing_shear = galsim.Shear(g1=self.galaxy['g1'][i], g2=self.galaxy['g2'][i])
         combinedObj.applyShear(lensing_shear)
         combinedObj.applyMagnification(self.galaxy['magnification'][i])
 
@@ -360,21 +353,21 @@ class BaseSampler():
         dx = x-ix
         dy = y-iy
         pos = galsim.PositionD(x,y)
-
         local = wcs.local(image_pos=pos)
         combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
 
+        #psf = psfmodel.getPSF(pos, gsparams=gsparams)
         psf = psfmodel.getPSF(pos)
         psf.setFlux(1.)
         psf_centroid = psf.centroid()
         psf.applyShift(-psf_centroid.x, -psf_centroid.y)
-
         combinedObj = galsim.Convolve([psf,combinedObj])
+
+        #pix = galsim.Box(width=local.dudx, height=local.dvdy, gsparams=gsparams)
         pix = galsim.Box(width=local.dudx, height=local.dvdy)
-        combinedObjConv = galsim.Convolve([pix,combinedObj])
+        combinedObj = galsim.Convolve([pix,combinedObj])
         
-        #return combinedObjConv
-        return combinedObjConv
+        return combinedObj
 
 
 def b_n_estimate(n):

@@ -58,7 +58,7 @@ def SimulationRules(args, rules):
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
     rules.nProfiles = 1
-    rules.axisratio = [Random(0.01, 1)]
+    rules.axisratio = [Random(0.01, 1.0)]
     rules.beta = [Random(-90, 90) ]
     rules.halflightradius = [Catalog(cat,ext,args.reff)]
     rules.magnitude = [Catalog(cat,ext,args.mag)]
