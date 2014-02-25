@@ -61,8 +61,8 @@ def SimulationRules(args, rules):
     rules.axisratio = [Random(0.01, 1)]
     rules.beta = [Random(-90, 90) ]
     rules.halflightradius = [Catalog(cat,ext,args.reff)]
-    #rules.magnitude = [Catalog(cat,ext,args.mag)]
-    rules.magnitude = [Value(14)]
+    rules.magnitude = [Catalog(cat,ext,args.mag)]
+    #rules.magnitude = [Value(14)]
     rules.sersicindex = [Catalog(cat,ext,args.sersicindex)]
 
     '''

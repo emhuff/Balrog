@@ -54,17 +54,15 @@ def WriteCatalog(sample, outfile, BalrogSetup):
             d.append( data[name] )
         d = tuple(d)
         np.savetxt(BalrogSetup.assoc, np.dstack(d)[0], fmt='%.5f')
-        return data.columns.names
-
-    else:
-        return None
+        BalrogSetup.assocnames = data.columns.names
 
 
-def CopyAssoc(BalrogSetup, assocnames):
+
+def CopyAssoc(BalrogSetup):
     mhdus = pyfits.open(BalrogSetup.catalogmeasured, mode='update')
     mhead = mhdus[2].header
-    for i in range(len(assocnames)):
-        mhead[ 'V%i'%i ] = assocnames[i]
+    for i in range(len(BalrogSetup.assocnames)):
+        mhead[ 'V%i'%i ] = BalrogSetup.assocnames[i]
     mhdus.close() 
 
 
@@ -117,7 +115,9 @@ def WritePsf(BalrogSetup, psfin, psfout):
 
 
 
-def InsertSimulatedGalaxies(bigImage, simulatedgals, psizes, psfmodel, BalrogSetup, wcs):
+def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs):
+    psizes = simulatedgals.GetPSizes(BalrogSetup, wcs)
+
     t0 = datetime.datetime.now()
     rt = long( t0.microsecond )
     for i in range(BalrogSetup.ngal):
@@ -179,7 +179,7 @@ def WriteParamFile(BalrogSetup, catalogmeasured, nosim):
     pfile = DefaultName(catalogmeasured, '.fits', '.sex.params', BalrogSetup.sexdir)
     txt = ParamTxtWithoutAssoc(param_file)
     if BalrogSetup.assoc!=None:
-        start = 'VECTOR_ASSOC(%i)' %(len(assocnames))
+        start = 'VECTOR_ASSOC(%i)' %(len(BalrogSetup.assocnames))
         txt = '%s\n%s' %(start,txt)
     stream = open(pfile, 'w')
     stream.write(txt)
@@ -209,7 +209,7 @@ def WriteConfigFile(BalrogSetup, config_file, catalogmeasured):
     return cfile
 
 
-def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, assocnames, eng):
+def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, eng):
     out = open(autologfile, 'w')
     eng.Path(BalrogSetup.sexpath)
 
@@ -233,13 +233,13 @@ def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, c
     out.write('PSF_NAME %s,%s\n' %(BalrogSetup.psfout,BalrogSetup.psfout) )
 
     if BalrogSetup.assoc!=None:
-        ind = range(1, len(assocnames)+1)
+        ind = range(1, len(BalrogSetup.assocnames)+1)
         inds = []
         for i in ind:
             inds.append(str(i))
-            if assocnames[i-1] == 'x':
+            if BalrogSetup.assocnames[i-1] == 'x':
                 x = i
-            if assocnames[i-1] == 'y':
+            if BalrogSetup.assocnames[i-1] == 'y':
                 y = i
         eng.config['ASSOC_NAME'] = BalrogSetup.assoc
         out.write('ASSOC_NAME %s\n' %(BalrogSetup.assoc) )
@@ -257,7 +257,7 @@ def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, c
     out.close()
 
 
-def RunSextractor(BalrogSetup, assocnames, ExtraSexConfig, nosim=False):
+def RunSextractor(BalrogSetup, ExtraSexConfig, nosim=False):
     if nosim:
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
@@ -280,11 +280,11 @@ def RunSextractor(BalrogSetup, assocnames, ExtraSexConfig, nosim=False):
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
-    AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, assocnames, eng)
+    AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, eng)
     eng.run(logfile=logfile)
 
 
-def NosimRunSextractor(BalrogSetup, bigImage, subweight, assocnames, ExtraSexConfig):
+def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig):
     if BalrogSetup.subsample:
         WriteImages(BalrogSetup, bigImage, subWeight, nosim=True)
     else:
@@ -301,7 +301,7 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, assocnames, ExtraSexCon
         if BalrogSetup.nosim_weightout!=BalrogSetup.nosim_imageout:
             subprocess.call( ['ln', '-s', BalrogSetup.weightin, BalrogSetup.nosim_weightout] )
 
-    RunSextractor(BalrogSetup, assocnames, ExtraSexConfig, nosim=True)
+    RunSextractor(BalrogSetup, ExtraSexConfig, nosim=True)
 
 
 def Cleanup(BalrogSetup):
@@ -311,7 +311,7 @@ def Cleanup(BalrogSetup):
             subprocess.call(['rm',file])
 
 
-def UserDefinitions(cmdline_args):
+def UserDefinitions(cmdline_args, BalrogSetup):
     rules = SimRules()
     ExtraSexConfig = {}
     cmdline_args_copy = copy.copy(cmdline_args)
@@ -320,17 +320,16 @@ def UserDefinitions(cmdline_args):
     SimulationRules(cmdline_args_copy,rules)
     SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
-    return cmdline_args_copy, rules, ExtraSexConfig
+    LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.cmdlinelog)
+    LogExtraSexConfig(ExtraSexConfig, BalrogSetup.extrasexlog)
+    rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
+    return rules, ExtraSexConfig
 
 
-def GetSimulatedGalaxies(BalrogSetup, psfmodel, rules, wcs):
-    simulatedgals = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
-    return DoSampling(BalrogSetup, simulatedgals,psfmodel, wcs)
-
-
-def DoSampling(BalrogSetup, simulatedgals, psfmodel, wcs):
-    psizes = simulatedgals.Sample(BalrogSetup, psfmodel, wcs)
-    return (simulatedgals,psizes)
+def GetSimulatedGalaxies(BalrogSetup, simgals):
+    simgals.Sample(BalrogSetup)
+    LogSimRules(simgals, BalrogSetup)
+    return simgals
 
 
 
@@ -422,12 +421,22 @@ def GetOpts():
 
     cmdline_args = parser.parse_args()
     ParseDefaultArgs(cmdline_args)
-    derived_args = DerivedArgs(cmdline_args)
+    return cmdline_args
 
+
+def ConfigureBalrog(cmdline_opts):
+    cmdline_opts, derived_opts = GetMoreOpts(cmdline_opts)
+    BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
+    simulation_rules, ExtraSexConfig = UserDefinitions(cmdline_opts, BalrogSetup)
+    return BalrogSetup, simulation_rules, ExtraSexConfig
+
+
+def GetMoreOpts(cmdline_args):
+    derived_args = DerivedArgs(cmdline_args)
     return [cmdline_args, derived_args]
 
 
-def WriteSimRules(catalog, BalrogSetup):
+def LogSimRules(catalog, BalrogSetup):
     out = open(BalrogSetup.catruleslog, 'w')
     for key in catalog.galaxyrule.keys():
         out.write('%s %s %s\n' %(key, catalog.galaxyrule[key].type, str(catalog.galaxyrule[key].param)) )
@@ -438,7 +447,7 @@ def WriteSimRules(catalog, BalrogSetup):
             out.write('%s %s %s %s\n' %(str(i), key, catalog.rule[i][key].type, str(catalog.rule[i][key].param)) )
 
 
-def WriteDerivedOpts(BalrogSetup, cmdline_args):
+def LogDerivedOpts(BalrogSetup, cmdline_args):
     out = open(BalrogSetup.derivedlog, 'w')
     ArgsDict = vars(BalrogSetup)
     VetoDict = vars(cmdline_args)
@@ -448,7 +457,7 @@ def WriteDerivedOpts(BalrogSetup, cmdline_args):
     out.close()
 
 
-def WriteExtraSexConfig(ExtraSexConfig, extrasexlog):
+def LogExtraSexConfig(ExtraSexConfig, extrasexlog):
     out = open(extrasexlog, 'w')
     veto = NoOverride()
     for key in ExtraSexConfig:
@@ -477,7 +486,7 @@ def NoOverride():
 
 
 
-def WriteCmdlineOpts(cmdline_args, cmdline_args_copy, outfile):
+def LogCmdlineOpts(cmdline_args, cmdline_args_copy, outfile):
     out = open(outfile, 'w')
 
     ArgsDict = vars(cmdline_args)
@@ -495,11 +504,8 @@ def WriteCmdlineOpts(cmdline_args, cmdline_args_copy, outfile):
 
    
 def CmdlineListOrdered():
-    args = ["imagein", "imageext", "weightin", "weightext", "psfin",
-            "outdir", "clean",
-            "xmin", "xmax", "ymin", "ymax",
-            "ngal", "seed", "gain", "zeropoint",
-            "fluxthresh", "inc", "minsize",
+    args = ["imagein", "imageext", "weightin", "weightext", "psfin","outdir", "clean",
+            "xmin", "xmax", "ymin", "ymax","ngal", "seed", "gain", "zeropoint","fluxthresh", 
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noempty", "sexemptyparam", "noassoc"]
     return args
 
@@ -599,13 +605,10 @@ def ParseDefaultArgs(args):
 def DefaultArgs(parser):
     # Input and (temporary) output Images
     parser.add_argument( "-od", "--outdir", help="Directory where to put output. By default, output files will be named automatically based on the input file name. Each default filename can overridden with the appropriate command line option.", default=None)
-
     parser.add_argument( "-ii", "--imagein", help="Input image to draw simulated galaxies into", type=str, default=None)
     parser.add_argument( "-ie", "--imageext", help="FITS extension where the image lives in the input file", type=int, default=0)
-
     parser.add_argument( "-wi", "--weightin", help="Weight map of input image", type=str, default=None)
     parser.add_argument( "-we", "--weightext", help="FITS extension where the weight map lives in the input weight file", type=int, default=None)
-    
     parser.add_argument( "-pi", "--psfin", help="PSF of thin input image, to be convolved with simulated galaxies", type=str, default=None)
     parser.add_argument( "-c", "--clean", help="Delete output image, weight, and PSF files", action="store_true")
 
@@ -615,17 +618,10 @@ def DefaultArgs(parser):
     parser.add_argument( "-ymin", "--ymin", help="Minimum row of extracted subimage, indexing ranges from (1,NumPixelsY)", type=int, default=1)
     parser.add_argument( "-ymax", "--ymax", help="Maximum row of extracted subimage, indexing ranges from (1,NumPixelsY)", type=int, default=-1)
     parser.add_argument( "-ngal", "--ngal", help="Number of simulated galaxies", type=int, default=50)
-
     parser.add_argument( "-gain", "--gain", help="Gain, needed for adding noise. Can be a float or a keyword from the image header. (Default reads image header keyword 'GAIN'. If that fails, default is set to 1)", default='GAIN')
     parser.add_argument( "-zp", "--zeropoint", help="Zeropoint used to convert simulated magnitude to flux. Sextractor runs with this zeropoint. Can be a float or a keyword from the image header. (Default looks for keyword 'SEXMGZPT'. If given keyword is not found, zeropoint defaults to 30.)", default='SEXMGZPT')
     parser.add_argument( "-s", "--seed", help="Seed for random number generation when simulating galaxies. This does not apply to noise realizations, which are always random.", type=int, default=None)
-
-    ##### Parameters when placing simulated galaxies into the images.
     parser.add_argument( "-ft", "--fluxthresh", help="Flux value where to cutoff the postage stamp", type=float, default=0.01)
-    parser.add_argument( "-inc", "--inc", help="Increment if postage stamp size needs to be increased", type=int, default=50)
-    parser.add_argument( "-ms", "--minsize", help="Minimum postage stamp size", type=int, default=100)
-    #parser.add_argument( "-inc", "--inc", help="Increment if postage stamp size needs to be increased", type=int, default=50)
-    #parser.add_argument( "-ms", "--minsize", help="Minimum postage stamp size", type=int, default=80)
 
     # How to run sextractor
     parser.add_argument( "-spp", "--sexpath", help='Path for sextractor binary', type=str, default='sex')
@@ -633,10 +629,8 @@ def DefaultArgs(parser):
     parser.add_argument( "-sp", "--sexparam", help='Sextractor param file', type=str, default=None)
     parser.add_argument( "-sn", "--sexnnw", help='Sextractor neural network S/G file', type=str, default=None)
     parser.add_argument( "-sv", "--sexconv", help='Sextractor filter convolution file', type=str, default=None)
-
     parser.add_argument( "-ne", "--noempty", help="Don't do sextractor run that doesn't have simulated galaxies.", action="store_true")
     parser.add_argument( "-sep", "--sexemptyparam", help='Sextractor param file used when image without simulated galaxies is extracted. Which parameters to extract is basically irrelevant, since all the run is inteded to do check for things in image before simulating. Not doing model fitting is faster, so the default is to use one that does not do model fitting.', type=str, default=None)
-
     parser.add_argument( "-na", "--noassoc", help="Don't do association mode matching in sextractor", action="store_true")
 
 
@@ -644,43 +638,41 @@ def DefaultArgs(parser):
 
 if __name__ == "__main__":
 
-    # Parse command line options and user configurations
-    cmdline_opts, derived_opts = GetOpts()
-    user_opts, simulation_rules, ExtraSexConfig = UserDefinitions(cmdline_opts)
-    WriteCmdlineOpts(cmdline_opts, user_opts, derived_opts.cmdlinelog)
-    WriteExtraSexConfig(ExtraSexConfig, derived_opts.extrasexlog)
-    BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
+    # Parse command line options and user configurations to setup Balrog.
+    cmdline_opts = GetOpts()
+    BalrogSetup, simulation_rules, extra_sex_config = ConfigureBalrog(cmdline_opts)
+
+
+    # Take the the user's configurations and build the simulated truth catalog out of them.
+    catalog = GetSimulatedGalaxies(BalrogSetup, simulation_rules)
+    WriteCatalog(catalog, BalrogSetup.catalogtruth, BalrogSetup)
    
 
-    # Get the subsampled flux and weightmap images, along with the PSF model and WCS
+    # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
 
 
-    # Get simulated galaxy sample. Write it to a truth catalog. If associating, get a list keeping track of what quantity is which index in the output vector.
-    catalog, psizes = GetSimulatedGalaxies(BalrogSetup, psfmodel, simulation_rules, wcs)
-    assocnames = WriteCatalog(catalog, BalrogSetup.catalogtruth, BalrogSetup)
-    WriteSimRules(catalog, BalrogSetup)
-
-
     # Run sextractor over the image without any simulated galaxies. This is to make sure no simulated galaxies "found" are actually brigter, larger galaxies in the data image prior to simulation.
-    # All sextractor configurations and runtime outputs are logged.
     if not BalrogSetup.noempty:
-        NosimRunSextractor(BalrogSetup, bigImage, subWeight, assocnames, ExtraSexConfig)
+        NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config)
 
 
-    # Insert simulated galaxies. Write out the flux and weight images with simulated galaxies in them.
-    bigImage = InsertSimulatedGalaxies(bigImage, catalog, psizes, psfmodel, BalrogSetup, wcs)
+    # Insert simulated galaxies.
+    bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs)
     WriteImages(BalrogSetup, bigImage, subWeight)
 
 
-    # Run sextractor over the simulated image. Write association parameter labels to measured catalog if necessary
-    RunSextractor(BalrogSetup, assocnames, ExtraSexConfig)
+    # Run sextractor over the simulated image.
+    RunSextractor(BalrogSetup, extra_sex_config)
     if BalrogSetup.assoc!=None:
-        CopyAssoc(BalrogSetup, assocnames)
+        CopyAssoc(BalrogSetup)
 
 
     # If chosen, clean up image files you don't need anymore
     if BalrogSetup.clean:
         Cleanup(BalrogSetup)
-    WriteDerivedOpts(BalrogSetup, cmdline_opts)
+
+
+    # Log some  extra stuff Balrog used along the way
+    LogDerivedOpts(BalrogSetup, cmdline_opts)
 
