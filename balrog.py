@@ -415,7 +415,7 @@ class DerivedArgs():
             self.outweightext = self.outimageext + 1
 
         self.subsample = True
-        if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[0].header['NAXIS1'] and args.ymax == pyfits.open(args.imagein)[0].header['NAXIS2']:
+        if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
             self.subsample = False
 
 
@@ -594,9 +594,9 @@ def ParseDefaultArgs(args):
 
 
     if args.xmax==-1:
-        args.xmax = pyfits.open(args.imagein)[0].header['NAXIS1']
+        args.xmax = pyfits.open(args.imagein)[args.imageext].header['NAXIS1']
     if args.ymax==-1:
-        args.ymax = pyfits.open(args.imagein)[0].header['NAXIS2']
+        args.ymax = pyfits.open(args.imagein)[args.imageext].header['NAXIS2']
 
     try:
         args.gain = float(args.gain)

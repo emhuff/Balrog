@@ -16,6 +16,16 @@ def mkdir(dir):
     subprocess.call(['mkdir', dir])
 
 
+def funpack(ifile):
+    cimage = file
+    ofile = ifile.replace('.fits.fz', '.fits')
+    if os.path.exists(ofile):
+        subprocess.call( ['rm', ofile] )
+    #print ifile
+    #print ofile
+    subprocess.call( ['funpack', '-O', ofile, ifile] )
+
+
 def GetArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument( "-b", "--band", help="Filter band", type=str, default='i')
@@ -34,8 +44,8 @@ if __name__ == "__main__":
 
     filepath = os.path.join( utils.db_specs.file_archive, path)
     catpath = filepath.replace('.fits.fz', '_cat.fits')
-    psfcatpath = filepath.replace('.fits.fz', '_psfcat.fits.fz')
-    psfpath = psfcatpath.replace('.fits.fz', '.psf')
+    psfcatpath = filepath.replace('.fits.fz', '_psfcat.fits')
+    psfpath = psfcatpath.replace('.fits', '.psf')
     remotepaths = [filepath,catpath,psfcatpath,psfpath]
 
     topdir = os.path.join(args.directory, tile)
@@ -51,8 +61,11 @@ if __name__ == "__main__":
         checkdir(subdir)
         name = remotepath.split('/')[-1]
         outpaths.append( os.path.join(subdir,name) )
-   
+    
     wgetcommon = 'wget --no-check-certificate -q'
     for remotepath, outpath in zip(remotepaths,outpaths):
         os.system('%s %s -O %s' %(wgetcommon,remotepath,outpath) )
 
+    cimage = outpaths[0]
+    funpack(cimage)
+    
