@@ -25,7 +25,7 @@ def Run(args):
              '--outdir', outdir,
              '--imagein', imagein,
              '--psfin', psfin,
-             '--ngal', opts.ngal]
+             '--ngal', str(opts.ngal)]
 
     #print ' '.join(bargs); sys.stdout.flush()
     subprocess.call( bargs )
@@ -42,11 +42,9 @@ def RunBalrog(opts):
         arg = (index, opts)
         args.append(arg)
         index += 1
-    '''
     pool = Pool(opts.nthreads)
-    result = pool.map(Run, args)
-    '''
-    Run(args[0])
+    pool.map(Run, args)
+    #Run(args[0])
 
 
 def GetOpts():

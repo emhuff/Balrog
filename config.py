@@ -48,8 +48,8 @@ def SimulationRules(args, rules):
     ext = args.ext
 
     # Simulated galaxies only have one of each of these
-    rules.x = Random(args.xmin, args.ymax)
-    rules.y = Random(args.xmin, args.ymax)
+    rules.x = Random(args.xmin, args.xmax)
+    rules.y = Random(args.ymin, args.ymax)
     rules.g1 = Value(0)
     rules.g2 = Same('g1')
     rules.magnification = Array( np.ones(args.ngal) )
@@ -62,7 +62,6 @@ def SimulationRules(args, rules):
     rules.beta = [Random(-90, 90) ]
     rules.halflightradius = [Catalog(cat,ext,args.reff)]
     rules.magnitude = [Catalog(cat,ext,args.mag)]
-    #rules.magnitude = [Value(14)]
     rules.sersicindex = [Catalog(cat,ext,args.sersicindex)]
 
     '''

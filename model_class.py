@@ -273,7 +273,7 @@ class BaseSampler():
 
 
     def GetPSize(self, i, BalrogSetup, wcs):
-        fid_seeing = 1.0
+        fid_seeing = 1.5
 
         ncomp = len(self.component)
         flux_thresh = BalrogSetup.fluxthresh / float(ncomp)
