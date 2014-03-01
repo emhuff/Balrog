@@ -50,9 +50,11 @@ def SimulationRules(args, rules):
     # Simulated galaxies only have one of each of these
     rules.x = Random(args.xmin, args.xmax)
     rules.y = Random(min=args.ymin, max=args.ymax)
-    rules.g1 = Value(0)
+    rules.g1 = 0
+    #rules.g1 = Value(0)  # Ths line does exactly the same thing as the one above
     rules.g2 = Same('g1')
-    rules.magnification = Array( np.ones(args.ngal) )
+    rules.magnification = np.ones(args.ngal)
+    #rules.magnification = Array( np.ones(args.ngal) ) # Ths line does exactly the same thing as the one above
     
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
@@ -66,10 +68,10 @@ def SimulationRules(args, rules):
     '''
 
     rules.nProfiles = 2
-    rules.beta = [Same(1), Value(0)]
-    rules.halflightradius = [Gaussian(1.0, 0.1), Gaussian(0.5, 0.05)]
-    rules.magnitude = [Value(20), Same((0,'magnitude'))]
-    rules.sersicindex = [Value(1), Value(4)]
+    rules.beta = [Same(1), 0]
+    rules.halflightradius = [Gaussian(1.0, 0.1), Gaussian(avg=0.5, std=0.05)]
+    rules.magnitude = [20, Same((0,'magnitude'))]
+    rules.sersicindex = [1, 4]
     axisratio = Function(function=SampleFunction, args=(Same('x'), Same('y'), args.xmax, args.ymax))
     rules.axisratio = [axisratio, Same(0)]
 

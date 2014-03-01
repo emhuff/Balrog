@@ -545,20 +545,56 @@ def MagFlux(g):
     return g
 
 
-def DefineRules(args, x=None, y=None, g1=None, g2=None, magnification=None, nProfiles=1, axisratio=None, beta=None, halflightradius=None, magnitude=None, sersicindex=None ):
-    simulatedgals = nComponentSersic(ngal=args.ngal, catalog=None, ncomp=nProfiles)
-    out = open(args.simruleslog, 'w')
+def CompExcept(name, i):
+    raise Exception('The rule you gave for component %i of %s was not understood' %(i,name))
+
+def GalExcept(name):
+    raise Exception('The rule you gave for %s was not understood' %(name))
+
+def CheckRules(rules, names, ngal, kind):
+    for i in range(len(rules)):
+        if kind=='galaxy':
+            CheckRule(rules, names[i], ngal, kind, i)
+        else:
+            CheckRule(rules, names, ngal, kind, i)
+
+def CheckRule(rules, name, ngal, kind, i):
+        if type(rules[i]).__name__!='Rule':
+            if type(rules[i])==float or type(rules[i])==int:
+                rules[i] = Value(float(rules[i]))
+            else:
+                try:
+                    arr = np.array(rules[i])
+                    if arr.ndim==1 and arr.size==ngal:
+                        rules[i] = Array(arr)
+                    else:
+                        if kind=='galaxy':
+                            GalExcept(name, i)
+                        else:
+                            CompExcept(name)
+                except:
+                    if kind=='galaxy':
+                        GalExcept(name, i)
+                    else:
+                        CompExcept(name)
+
+
+
+def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nProfiles=1, axisratio=None, beta=None, halflightradius=None, magnitude=None, sersicindex=None ):
+    simulatedgals = nComponentSersic(ngal=opts.ngal, catalog=None, ncomp=nProfiles)
+    out = open(opts.simruleslog, 'w')
 
     galrules = [x, y, g1, g2, magnification]
     keys = ['x', 'y', 'g1', 'g2', 'magnification']
+    CheckRules(galrules, keys, opts.ngal, 'galaxy')
     for g,k in zip(galrules,keys):
         if g!=None:
             if g.type=='component':
                 g = Tuplify(g,k)
                 g = MagFlux(g)
             if g.type=='function':
-                args = g.param[1]
-                for arg in args:
+                arguments = g.param[1]
+                for arg in arguments:
                     if type(arg).__name__=='Rule' and arg.type=='component':
                         arg = Tuplify(arg,k)
                 g = MagFlux(g)
@@ -573,6 +609,7 @@ def DefineRules(args, x=None, y=None, g1=None, g2=None, magnification=None, nPro
         size = len(comprules[j])
         if size!=nProfiles:
             raise Exception('%s has %i elements. Must match nProfiles = %i' %(key,size,nProfiles))
+        CheckRules(comprules[j], key, opts.ngal, 'component')
         for i in range(nProfiles):
             comp = comprules[j][i]
             if comp!=None:
@@ -580,8 +617,8 @@ def DefineRules(args, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                     comp = Tuplify(comp, key)
                     comp = MagFlux(comp)
                 if comp.type=='function':
-                    args = comp.param[1]
-                    for arg in args:
+                    arguments = comp.param[1]
+                    for arg in arguments:
                         if type(arg).__name__=='Rule' and arg.type=='component':
                             arg = Tuplify(arg, key)
                             arg = MagFlux(arg)

@@ -366,6 +366,14 @@ class SimRules():
         self.sersicindex = [None]
 
 
+'''
+class Results(SimRules):
+    
+    def __getattr__(self, pos):
+'''
+        
+
+
 class DerivedArgs():
     def __init__(self,args):
         self.imgdir = os.path.join(args.outdir, 'balrog_image')
