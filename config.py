@@ -49,33 +49,36 @@ def SimulationRules(args, rules):
 
     # Simulated galaxies only have one of each of these
     rules.x = Random(args.xmin, args.xmax)
-    rules.y = Random(args.ymin, args.ymax)
+    rules.y = Random(min=args.ymin, max=args.ymax)
     rules.g1 = Value(0)
     rules.g2 = Same('g1')
     rules.magnification = Array( np.ones(args.ngal) )
-    #rules.magnification = Gaussian( 1, 0.05 )
     
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
+    '''
     rules.nProfiles = 1
-    rules.axisratio = [Random(0.01, 1.0)]
     rules.beta = [Random(-90, 90) ]
     rules.halflightradius = [Catalog(cat,ext,args.reff)]
     rules.magnitude = [Catalog(cat,ext,args.mag)]
     rules.sersicindex = [Catalog(cat,ext,args.sersicindex)]
+    rules.axisratio = [Random(0.01, 1.0)]
+    '''
 
-    '''
-    cat = 'SomethingYouMade.fits'
-    ext = 0
     rules.nProfiles = 2
-    rules.axisratio = [Random(0.33, 1), Same(0)]
-    #rules.axisratio = [Random(0.33, 1), Same( (0,'axisratio') )]
-    rules.beta = [Random(-90, 90), Same(0)]
-    rules.halflightradius = [Catalog(cat,ext,'DISKSIZE'), Catalog(cat,ext,'BULGESIZE')]
-    rules.halflightradius = [Same(1), Catalog(cat,ext,'BULGESIZE')]
-    rules.magnitude = [Catalog(cat,ext,'DISKMAG'), Catalog(cat,ext,'BULGEMAG')]
+    rules.beta = [Same(1), Value(0)]
+    rules.halflightradius = [Gaussian(1.0, 0.1), Gaussian(0.5, 0.05)]
+    rules.magnitude = [Value(20), Same((0,'magnitude'))]
     rules.sersicindex = [Value(1), Value(4)]
-    '''
+    axisratio = Function(function=SampleFunction, args=(Same('x'), Same('y'), args.xmax, args.ymax))
+    rules.axisratio = [axisratio, Same(0)]
+
+
+def SampleFunction(x,y, xmax,ymax):
+    dist = np.sqrt(x*x + y*y)
+    max = np.sqrt(xmax*xmax + ymax*ymax)
+    return dist/max
+
 
 # These are extra configurations to give to sextractor which will override the ones in the config file
 def SextractorConfigs(args, config):
