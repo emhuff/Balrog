@@ -74,7 +74,7 @@ def SimulationRules(args, rules, sampled):
     rules.magnitude = [20, sampled.magnitude[0]]
     #rules.magnitude = [20, Same(0)] # This line does exactly the same thing as the one above
     rules.sersicindex = [1, 4]
-    axisratio = Function(function=SampleFunction, args=(Same('x'), Same('y'), args.xmax, args.ymax))
+    axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
     rules.axisratio = [axisratio, sampled.axisratio[0]]
     #rules.axisratio = [axisratio, Same(0,'axisratio')]
 
