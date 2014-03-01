@@ -334,7 +334,8 @@ def UserDefinitions(cmdline_args, BalrogSetup):
     cmdline_args_copy = copy.copy(cmdline_args)
 
     CustomParseArgs(cmdline_args_copy)
-    SimulationRules(cmdline_args_copy,rules)
+    results = Results()
+    SimulationRules(cmdline_args_copy,rules,results)
     SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup)
@@ -366,12 +367,47 @@ class SimRules():
         self.sersicindex = [None]
 
 
-'''
-class Results(SimRules):
+class CompResult(object):
+    def __init__(self, name):
+        super(CompResult, self).__setattr__('name', name)
+
+    def __getitem__(self,index):
+        if self.name=='magnitude':
+            return Same( (index,'flux') )
+        else:
+            return Same( (index,self.name) )
+
+    def __setitem__(self, index, value):
+        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+
+    def __setattr__(self, name, value):
+        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+
+
+class Results(object):
+    def __init__(self):
+        comps = ['axisratio', 'beta', 'halflightradius', 'magnitude', 'sersicindex']
+        for comp in comps:
+            obj = CompResult(comp)
+            super(Results, self).__setattr__(comp, obj)
+
+
+
+    def __getattr__(self, name):
+        galaxy = ['x','y','g1','g2','magnification']
+        if name not in galaxy:
+            raise Exception('asked for an undefined result')
+        else:
+            return Same(name)
     
-    def __getattr__(self, pos):
-'''
+    def __setitem__(self, index, value):
+        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+
+    def __setattr__(self, name, value):
+        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
         
+    
+
 
 
 class DerivedArgs():
