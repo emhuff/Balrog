@@ -1,0 +1,28 @@
+\newcommand*{\balrogtitlepage}{
+\begingroup % Create the command for including the title page in the document
+\newlength{\drop} % Command for generating a specific amount of whitespace
+\drop=0.1\textheight % Define the command as 10% of the total text height
+
+\rule{\textwidth}{1pt}\par % Thick horizontal line
+\vspace{2pt}\vspace{-\baselineskip} % Whitespace between lines
+\rule{\textwidth}{0.4pt}\par % Thin horizontal line
+
+\vspace{\drop} % Whitespace between the top lines and title
+\centering % Center all text
+\Huge Balorog\\[0.5\baselineskip] % Title line 1
+\Large For those who dig too deeply and greedily into their data...\\[0.75\baselineskip] % 
+\vspace{\drop} % Whitespace between the title and short horizontal line
+
+\rule{0.5\textwidth}{0.4pt}\par % Short horizontal line under the title
+\vspace{2.0\drop} % Whitespace between the thin horizontal line and the author name
+
+{\Large Eric Suchyta and Eric Huff}\par % Author name
+
+\vfill % Whitespace between the author name and publisher text
+\vspace*{\drop} % Whitespace under the publisher text
+
+\rule{\textwidth}{0.4pt}\par % Thin horizontal line
+\vspace{2pt}\vspace{-\baselineskip} % Whitespace between lines
+\rule{\textwidth}{1pt}\par % Thick horizontal line
+
+\endgroup}
