@@ -592,7 +592,7 @@ def CreateDir(dir):
         dir = dir[1:]
         full = True
     while dir[-1]=='/':
-        dir = dir[-1]
+        dir = dir[:-1]
     dirs = dir.strip().split('/')
     if full:
         subdir = '/'
