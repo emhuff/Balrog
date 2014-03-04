@@ -14,6 +14,9 @@
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
 
+\newcommand{\balrog}{Balrog}
+\newcommand{\opt}[1]{\texttt{--#1}}
+
 
 
 \begin{document}
@@ -25,11 +28,29 @@
 \newpage
 \section{Introduction}
 \label{sec:intro}
-Introduction
+\balrog{} is ...
 %\autoref{sec:intro}
 
 \section{Usage}
 Usage
 
+\section{Command Line Arguments}
+To get a list of
+
+\section{Output}
+Each \balrog{} run generates a number of output files. 
+These are organized into a fixed directory structure.
+Users indicate the \opt{outdir} command line option, and
+the remainder of the naming scheme occurs automatically,
+placing files in subdirectories under \opt{outdir}.
+Four subdirectories are written, labelled accoring to what
+type of files they contain. 
+
+\begin{itemize}
+	\item \texttt{balrog\_cat}: Contains catalog files.
+	\item \texttt{balorg\_image}: Contains image files.
+	\item \texttt{balrog\_log}: Contains log files.
+	\item \texttt{balrog\_sexconfig}: Contains files for configuring sextractor.
+\end{itemize}
 
 \end{document}
