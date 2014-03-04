@@ -44,7 +44,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
     if fits:
         phdu = pyfits.PrimaryHDU()
         hdus = pyfits.HDUList([phdu,tbhdu])
-        if os.path.exists(BalrogSetup.catalogtruth):
+        if os.path.lexists(BalrogSetup.catalogtruth):
             subprocess.call(['rm',BalrogSetup.catalogtruth])
         hdus.writeto(BalrogSetup.catalogtruth)
 
@@ -110,7 +110,7 @@ def WritePsf(BalrogSetup, psfin, psfout):
     psfhdus = pyfits.open(psfin)
     psfhdus[1].header['POLZERO1'] = psfhdus[1].header['POLZERO1'] - (BalrogSetup.xmin - 1)
     psfhdus[1].header['POLZERO2'] = psfhdus[1].header['POLZERO2'] - (BalrogSetup.ymin - 1)
-    if os.path.exists(psfout):
+    if os.path.lexists(psfout):
         subprocess.call(['rm', psfout])
     psfhdus.writeto(psfout)
 
@@ -324,7 +324,7 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
 def Cleanup(BalrogSetup):
     files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout, BalrogSetup.nosim_weightout]
     for file in files:
-        if os.path.exists(file):
+        if os.path.lexists(file):
             subprocess.call(['rm',file])
 
 
@@ -582,7 +582,7 @@ def DefaultName(startfile, lookfor, replacewith, outdir):
 
 
 def CreateSubDir(subdir):
-    if not os.path.exists(subdir):
+    if not os.path.lexists(subdir):
         subprocess.call(['mkdir', subdir])
 
 
@@ -601,7 +601,7 @@ def CreateDir(dir):
 
     for dir in dirs:
         subdir = os.path.join(subdir,dir)
-        if not os.path.exists(subdir):
+        if not os.path.lexists(subdir):
             subprocess.call( ['mkdir', subdir] )
 
 
