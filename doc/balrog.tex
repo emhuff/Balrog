@@ -16,6 +16,7 @@
 
 \newcommand{\balrog}{Balrog}
 \newcommand{\opt}[1]{\texttt{--#1}}
+\newcommand{\bcmd}[1]{\texttt{\% ./balrog.py #1}}
 
 
 
@@ -34,8 +35,47 @@
 \section{Usage}
 Usage
 
-\section{Command Line Arguments}
-To get a list of
+\section{Command Line Options}
+\balrog{} runs can be configured via command line options.
+Two types of options exist. First are the built-in
+ones, native to \balrog{}. In addition, \balrog{}
+supports a mechanism for users to define their
+own command line options.
+To print a list of all \balrog{}'s command line,
+both native and user-defined, along with
+brief help strings, run:
+
+\bcmd{\opt{help}}
+
+
+\subsection{Built-in Options}
+\begin{tabular}{ l p{10cm}}
+\opt{outdir} & \\
+\opt{imagein} & \\
+\opt{imageext} & \\
+\opt{weightin} & \\
+\opt{weightext} & \\
+\opt{psfin} &  \\
+\opt{xmin} &  \\
+\opt{xmax} &  \\
+\opt{ymin} &  \\
+\opt{ymax} &  \\
+\opt{ngal} &  \\
+\opt{gain} &  \\
+\opt{zeropoint} &  \\
+\opt{seed} &  \\
+\opt{fluxthres} &  \\
+\opt{clean} &  \\
+\opt{sexpath} &  \\
+\opt{sexconfig} &  \\
+\opt{sexparam} &  \\
+\opt{sexnnw} &  \\
+\opt{sexconv} &  \\
+\opt{noassoc} &  \\
+\opt{noempty} &  \\
+\opt{sexemptyparam} &
+\end{tabular}
+
 
 \section{Output}
 Each \balrog{} run generates a number of output files. 
