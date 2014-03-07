@@ -3,18 +3,22 @@
 \usepackage{amsfonts,amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{color}
-\usepackage[svgnames]{xcolor}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta}]{hyperref}
 \usepackage[margin=1.0in]{geometry}
+\usepackage{longtable}
+\usepackage{tabu}
 \usepackage{title}
+\usepackage{optstable}
+\usepackage{array}
 
 
-\renewcommand{\thesection}{\arabic{section}}
+%\renewcommand{\thesection}{\arabic{section}}
 \renewcommand*\sectionautorefname{Section}
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
 
 \newcommand{\balrog}{Balrog}
+\newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\opt}[1]{\texttt{--#1}}
 \newcommand{\bcmd}[1]{\texttt{\% ./balrog.py #1}}
 
@@ -49,32 +53,8 @@ brief help strings, run:
 
 
 \subsection{Built-in Options}
-\begin{tabular}{ l p{10cm}}
-\opt{outdir} & \\
-\opt{imagein} & \\
-\opt{imageext} & \\
-\opt{weightin} & \\
-\opt{weightext} & \\
-\opt{psfin} &  \\
-\opt{xmin} &  \\
-\opt{xmax} &  \\
-\opt{ymin} &  \\
-\opt{ymax} &  \\
-\opt{ngal} &  \\
-\opt{gain} &  \\
-\opt{zeropoint} &  \\
-\opt{seed} &  \\
-\opt{fluxthres} &  \\
-\opt{clean} &  \\
-\opt{sexpath} &  \\
-\opt{sexconfig} &  \\
-\opt{sexparam} &  \\
-\opt{sexnnw} &  \\
-\opt{sexconv} &  \\
-\opt{noassoc} &  \\
-\opt{noempty} &  \\
-\opt{sexemptyparam} &
-\end{tabular}
+
+\optstab{}
 
 
 \section{Output}
