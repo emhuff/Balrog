@@ -71,7 +71,8 @@ def SimulationRules(args, rules, sampled):
     rules.nProfiles = 2
     rules.beta = [sampled.beta[1], 0]
     rules.halflightradius = [Gaussian(1.0, 0.1), Gaussian(avg=0.5, std=0.05)]
-    rules.magnitude = [17, sampled.magnitude[0]]
+    rules.magnitude = [Catalog(cat,ext,args.mag), sampled.magnitude[0]]
+    #rules.magnitude = [13, sampled.magnitude[0]]
     #rules.magnitude = [20, Same(0)] # This line does exactly the same thing as the one above
     rules.sersicindex = [1, 4]
     axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
