@@ -27,7 +27,7 @@
 \optrow{ymin}{$y$-coordinate pixel for the lower bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{1} \vsp
 \optrow{ymax}{$y$-coordinate pixel for the upper bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{$N_{\text{rows}}$} \vsp
 \optrow{ngal}{Number of galaxies to simulate.}{40} \vsp
-\optrow{gain}{Gain [e$^{-}/\text{ADU}$] for adding CCD noise to the simulated galaxies. Refer to \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1\_c\_c\_d\_noise.html}{galsim.CCDNoise documentation} for further details. \opt{gain} can take two types values: a float explicitly defining the gain, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the defaults.}{\vspsmall &
+\optrow{gain}{Gain [e$^{-}/\text{ADU}$] for adding CCD noise to the simulated galaxies. Refer to \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1\_c\_c\_d\_noise.html}{galsim.CCDNoise documentation} for further details. \opt{gain} can take two types of values: a float explicitly defining the gain, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the defaults.}{\vspsmall &
 \begin{tabular}[t]{l}
 \hspsmall try: \vspsmall
 \hsp \opt{gain} = \opt{imagein[--imageext].header[`GAIN']} \vspsmall

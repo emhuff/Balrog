@@ -20,7 +20,7 @@
 \newcommand{\balrog}{Balrog}
 \newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\opt}[1]{\texttt{--#1}}
-\newcommand{\bcmd}[1]{\texttt{\% ./balrog.py #1}}
+\newcommand{\bcmd}[1]{\vspace{6pt} \noindent \texttt{\% ./balrog.py #1} \vspace{6pt}}
 
 
 
@@ -45,17 +45,70 @@ Two types of options exist. First are the built-in
 ones, native to \balrog{}. In addition, \balrog{}
 supports a mechanism for users to define their
 own command line options.
-To print a list of all \balrog{}'s command line,
+To print a list of all \balrog{}'s command line options,
 both native and user-defined, along with
 brief help strings, run:
 
 \bcmd{\opt{help}}
 
+\noindent \autoref{sec:builtin} further details each
+of the native options and \autoref{sec:user}
+explains how to create custom options.
 
 \subsection{Built-in Options}
+\label{sec:builtin}
 
 \optstab{}
 
+\subsection{User-defined Options}
+\label{sec:user}
+
+Within the \texttt{config.py} file, user's are able to
+define their own command line options. This occurs
+within the function \texttt{CustomArgs}. Passed
+to \texttt{CustomArgs} as an argument is \texttt{parser},
+an object made by \texttt{python}'s
+\texttt{argparse.ArgumentParser()}. Arguments
+can be added to parser according to the usual
+\texttt{argparse} syntax.
+For those unfamilar with \texttt{argparse},
+\href{http://docs.python.org/2/howto/argparse.html}{this tutorial}
+contains many useful examples. A simple example of
+\texttt{CustomArgs} is copied below.
+
+\setlength{\tabcolsep}{0pt}
+\begin{longtabu} to \linewidth {l X}
+\multicolumn{2}{l}{\texttt{def CustomArgs(parser):}}\\
+\hspace{20pt} \texttt{parser.add\_argument} & \texttt{( "-cs", "--catalogsample", help="Catalog used to
+sample simulated galaxy parameter distriubtions from", type=str, default=None)}
+\end{longtabu}
+\setlength{\tabcolsep}{6pt}
+
+
+User-defined options are parsed within the function \texttt{CustomParseArgs},
+also part of \texttt{config.py}.
+Passed as an argument to \texttt{CustomParseArgs} is \texttt{args}, equivalent
+to an object returned by \texttt{parser.parse\_args()}. Each one of the user's 
+command line options becomes an attribute of \texttt{args}. 
+A simple version of \texttt{CustomParseArgs} has been included below.
+
+\setlength{\tabcolsep}{0pt}
+\begin{longtabu} to \linewidth {X}
+\texttt{def CustomParseArgs(args):}\\
+\hspace{20pt} \texttt{thisdir = os.path.dirname( os.path.realpath(\_\_file\_\_) )} \\
+\hspace{20pt} \texttt{if args.catalogsample==None:} \\
+\hspace{40pt} \texttt{args.catalogsample = os.path.join(thisdir, 'cosmos.fits')}
+\end{longtabu}
+\setlength{\tabcolsep}{6pt}
+
+\noindent The ability to define and parse one's own command line arguments is intended to make
+\balrog{} flexible to conveniently running a wide variety of different
+simulation scenarios. 
+
+\section{Defining the Simulation}
+\label{sec:simrules}
+
+Something
 
 \section{Output}
 Each \balrog{} run generates a number of output files. 
