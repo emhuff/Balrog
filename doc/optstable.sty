@@ -7,8 +7,11 @@
 \newcommand{\vspsmall}{\\[-\extra]}
 \newcommand{\optrow}[3]{\opt{#1} & #2\\ &\MakeUppercase{\textbf{default}}: #3}
 
+\LTcapwidth=\textwidth
 \newcommand{\optstab}{
+\vspace{10pt}
 \begin{longtabu} to \linewidth {l X}
+\caption{Command line arguments natively built-in to \balrog{}.} \label{tab:opts}\\
 \underline{\textbf{Option Name}} & \underline{\textbf{Description}} \vsp
 \optrow{outdir}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} {\texttt{\$INSTALLDIR/default\_example/output/}} \vsp
 \optrow{imagein}{Image to insert simulated galaxies into. Must be in FITS format.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \vsp
@@ -21,7 +24,7 @@
 \hspsmall else: \vspsmall
 \hsp \opt{weightext} = \opt{imageext} + 1 \vspsmall
 \end{tabular} \vsp} \vspsmall
-\optrow{psfin}{File containing the PSFEx PSF model for \opt{imagein}. This is a FITS file, but the convention uses \texttt{.psf} as the extension.}{\texttt{\$INSTALLDIR/default\_example/input/example.psf}} \vsp
+\optrow{psfin}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \texttt{.psf} as the extension.}{\texttt{\$INSTALLDIR/default\_example/input/example.psf}} \vsp
 \optrow{xmin}{$x$-coordinate pixel for the lower bound of the subimage (if subsampling). $x \in \left[1, N_{\text{cols}} \right]$.}{1} \vsp
 \optrow{xmax}{$x$-coordinate pixel for the upper bound of the subimage (if subsampling). $x \in \left[1, N_{\text{cols}} \right]$.}{$N_{\text{cols}}$} \vsp
 \optrow{ymin}{$y$-coordinate pixel for the lower bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{1} \vsp
