@@ -264,7 +264,19 @@ placing files in subdirectories under \opt{outdir}.
 Four subdirectories are written, labelled accoring to what
 type of files they contain. \autoref{tab:out}
 lists the contents of each of these subdirectories,
-giving a brief desription of each file.
+giving a brief desription of each file. Depending on how
+\balrog{} was configured, not necessarily every file
+in \autoref{tab:out} will be present in every run.
+The \texttt{*} symbol in \autoref{tab:out} will be replaced with
+the base name of the input image file. For example,
+if the input image is named \texttt{example.fits},
+\texttt{*} will be replaced with \texttt{example}.
+If the input file name does not end with the \texttt{.fits}
+extension, the file name itself is used as the base name.
+This does not include any diretories preceeding the file name.
+For example, if the input image was given as
+\texttt{/Users/somebody/home/image.f}, the
+base name would be \texttt{image}.
 
 \outtab{}
 

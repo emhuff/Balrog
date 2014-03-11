@@ -6,7 +6,7 @@
 \newcommand{\outtab}{
 \vspace{10pt}
 \begin{longtabu} to \linewidth {|X X|}
-\caption{File structure of the output written by \balrog{}.} \label{tab:out}\\ \thickh
+\caption{File structure of the output written by \balrog{}. * is replaced with the base name of the input image} \label{tab:out}\\ \thickh
 \textbf{Path} & \textbf{Contents} \\ \thickh
 
 \texttt{--outdir/balrog\_cat/} & Output catalog files \\  
@@ -28,10 +28,10 @@
 
 \texttt{--outdir/balrog\_sexconfig/} & Files used to configure \sex{}\\
 \thinh
-\orow{.assoc.nosim.txt}{}\\
-\orow{.assoc.sim.txt}{}\\
-\orow{.measuredcat.nosim.sex.params}{}\\
-\orow{.measuredcat.sim.sex.params}{} \\
+\orow{.assoc.nosim.txt}{\sex{}'s association mode matching list for run without simulated galaxies.}\\
+\orow{.assoc.sim.txt}{\sex{}'s association mode matching list for run with simulated galaxies.}\\
+\orow{.measuredcat.nosim.sex.params}{Copy of input \sex{} parameter file used for run without simulated galaxies, which properly factors in association mode.}\\
+\orow{.measuredcat.sim.sex.params}{Copy of input \sex{} parameter file used for run with simulated galaxies, which properly factors in association mode.} \\
 \thickh
 
 \end{longtabu}
