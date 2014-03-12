@@ -71,7 +71,10 @@ def SimulationRules(args, rules, sampled):
     rules.halflightradius = [Catalog(cat,ext,args.reff), sampled.halflightradius[0]]
     rules.magnitude = [Catalog(cat,ext,args.mag), sampled.magnitude[0]]
     ns = Function(function=f, args=(np.ones(args.ngal)))
-    n = Function(function=g, args=(4, 0.05, args.ngal, ns))
+    nc = Catalog('cosmos_n=1.fits',1,'SERSIC_INDEX')
+    # Both of these work
+    #n = Function(function=g, args=(4, 0.05, args.ngal, ns))
+    n = Function(function=g, args=(4, 0.05, args.ngal, nc))
     rules.sersicindex = [1, n]
     axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
     rules.axisratio = [axisratio, sampled.axisratio[0]]
