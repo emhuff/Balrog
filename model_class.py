@@ -3,88 +3,50 @@
 import numpy as np
 import astropy.io.fits as pyfits
 import galsim
+import copy
+import sys
+import os
 
 
-class BaseSampler():
+class nComponentSersic(object):
 
-    def __init__(self, ngal, ncomp, label, catalog):
-        self.init(ngal,ncomp,label,catalog)
-
-
-    def initrules(self):
-        self.ComponentRule(0, 'beta', Rule(type='uniform', minimum=-90, maximum=90) )
-        self.ComponentRule(0, 'axisratio', Rule(type='uniform', minimum=0, maximum=1) )
-        for i in range(len(self.component)-1):
-            self.ComponentRule(i+1, 'beta', Rule(type='component', component=0) )
-            self.ComponentRule(i+1, 'axisratio', Rule(type='component', component=0) )
-        for i in range(len(self.component)):
-            self.ComponentRule(i, 'flux', Rule(type='uniform', minimum=25, maximum=30) )
-            self.ComponentRule(i, 'halflightradius', Rule(type='uniform', minimum=0.3, maximum=1.0) )
-            self.ComponentRule(i, 'sersicindex', Rule(type='value', value=i+1) )
-
-        self.GalaxyRule('g1', Rule(type='value', value=0) )
-        self.GalaxyRule('g2', Rule(type='value', value=0) )
-        self.GalaxyRule('magnification', Rule(type='value', value=1) )
-
-
-    def init(self, ngal, ncomp, label, catalog):
+    def __init__(self, ngal=100, ncomp=2):
         self.ngal = ngal
         self.component = [None]*ncomp
-        self.rule = [None]*ncomp
-        self.catalog = catalog
+        self.componentrule = [None]*ncomp
 
-        self.galaxy = self._DefaultGalaxy(ngal)
-        self.galaxyrule = self._DefaultRule(self.galaxy)
+        self.galaxy = self._InitGalaxy(ngal)
+        self.galaxyrule = self._InitRule(self.galaxy)
 
         for i in range(ncomp):
-            self.component[i] = self._DefaultSersicComponent(ngal)
-            self.rule[i] = self._DefaultRule(self.component[i])
-
-        if label!=None:
-            if len(label)!=len(self.component):
-                raise Exception('labels for for components must have same length = ncomp')
-            self.ruledict = {}
-            for i in range(len(label)):
-                exec 'self.%s = self.component[%i]' %(label[i],i)
-                exec 'self.ruledict["%s"] = self.rule[%i]' %(label[i],i)
-
-        self.initrules()
+            self.component[i] = self._InitSersicComponent(ngal)
+            self.componentrule[i] = self._InitRule(self.component[i])
 
 
-    def _DefaultSersicComponent(self,ngal):
+    def _InitSersicComponent(self,ngal):
         dict = {}
-        dict['flux'] = np.zeros(ngal)
-        dict['halflightradius'] = np.zeros(ngal)
-        dict['sersicindex'] = np.zeros(ngal)
-        dict['axisratio'] = np.zeros(ngal)
-        dict['beta'] = np.zeros(ngal)
+        dict['flux'] = None
+        dict['halflightradius'] = None
+        dict['sersicindex'] = None
+        dict['axisratio'] = None
+        dict['beta'] = None
         return dict
 
-    def _DefaultGalaxy(self,ngal):
+    def _InitGalaxy(self,ngal):
         dict = {}
-        dict['x'] = np.zeros(ngal)
-        dict['y'] = np.zeros(ngal)
-        dict['g1'] = np.zeros(ngal)
-        dict['g2'] = np.zeros(ngal)
-        dict['magnification'] = np.zeros(ngal)
+        dict['x'] = None
+        dict['y'] = None
+        dict['g1'] = None
+        dict['g2'] = None
+        dict['magnification'] = None
         return dict
 
 
-    def _DefaultRule(self,comp):
+    def _InitRule(self,comp):
         dict = {}
         for key in comp.keys():
             dict[key] = Rule()
         return dict
-
-    
-    def ComponentRules(self, component, rules):
-        if type(component)==str:
-            ruleset = self.ruledict[component]
-        elif type(component)==int:
-            ruleset = self.rule[component]
-
-        for key in rules:
-            ruleset[key] = rules[key]
 
 
     def ComponentRule(self, component=0, key=None, rule=None):
@@ -97,12 +59,9 @@ class BaseSampler():
         if rule==None:
             raise Exception('must give a rule')
 
-        if type(component)==str:
-            ruleset = self.ruledict[component]
-        elif type(component)==int:
-            ruleset = self.rule[component]
-
+        ruleset = self.componentrule[component]
         ruleset[key] = rule
+
 
     def GalaxyRule(self, key=None, rule=None):
 
@@ -114,57 +73,26 @@ class BaseSampler():
         self.galaxyrule[key] = rule
 
    
-    def ReturnGaussian(self, avg, std):
-        return np.random.normal( avg, std, self.ngal )
-
-
-    def DoGaussian(self, gaussian):
-        for i in range(len(gaussian)):
-            index, key, avg, std = gaussian[i]
-            if index > -1:
-                self.component[index][key][:] = self.ReturnGaussian( avg,std )
-            else:
-                self.galaxy[key][:] = self.ReturnGaussian( avg,std )
-
-
-    def ReturnUniform(self, min, max):
-        return np.random.uniform( min, max, self.ngal )
-
-
-    def DoUniform(self, uniform):
-        for i in range(len(uniform)):
-            index, key, min, max = uniform[i]
-            if index > -1:
-                self.component[index][key][:] = self.ReturnUniform( min,max )
-            else:
-                self.galaxy[key][:] = self.ReturnUniform( min,max )
-
 
     def ReturnValue(self, val):
-        return val
-
+        return np.array( [val]*self.ngal )
 
     def DoValue(self, value):
         for i in range(len(value)):
             index, key, val = value[i]
             if index > -1:
-                self.component[index][key][:] = self.ReturnValue(val)
+                self.component[index][key] = self.ReturnValue(val)
             else:
-                self.galaxy[key][:] = self.ReturnValue(val)
-
-    
-    def ReturnArray(self, array):
-        return array[:]
+                self.galaxy[key] = self.ReturnValue(val)
 
 
     def DoArray(self,array):
         for i in range(len(array)):
             index, key, arr = array[i]
             if index > -1:
-                self.component[index][key][:] = self.ReturnArray(arr)
+                self.component[index][key] = np.array( arr )
             else:
-                self.galaxy[key][:] = self.ReturnArray(arr)
-
+                self.galaxy[key] = np.array( arr )
     
 
     def DoCatalog(self, catalogs):
@@ -195,47 +123,79 @@ class BaseSampler():
             return self.galaxy[mkey]
 
 
-    def DoComponent(self, component):
+    def DoComponent(self, component, comp=[]):
+        completed = copy.copy(comp)
         for i in range(len(component)):
             index, key, mindex, mkey = component[i]
+            c = self.ReturnComponent(mkey, mindex=mindex)
+            if c==None:
+                continue
+
             if index > -1:
-                self.component[index][key] = self.ReturnComponent(mkey, mindex=mindex)
+                self.component[index][key] = c
             else:
-                self.galaxy[key] = self.ReturnComponent(mkey, mindex=mindex)
+                self.galaxy[key] = c
+            completed.append(i)
+        return completed
+       
+
+    def OneFunction(self, func, args, used):
+        arguments = []
+        notready = False
+        for arg in args:
+            if type(arg).__name__=='Rule':
+                if arg.type=='value':
+                    a = self.ReturnValue(arg.param[0])
+                elif arg.type=='array':
+                    a = np.array( arg.param[0] )
+                elif arg.type=='catalog':
+                    a = self.FunctionCatalog(used, arg.param)
+
+                elif arg.type=='component':
+                    a = self.ReturnComponent(arg.param[1],mindex=arg.param[0])
+                    if a==None:
+                        notready = True
+
+                elif arg.type=='function':
+                    aa, notready = self.OneFunction(arg.param[0], arg.param[1], used)
+                    if notready==False:
+                        a = arg.param[0](aa)
+
+                if notready:
+                    break
+
+            else:
+                a = arg
+
+            arguments.append(a)
+        return [arguments, notready]
 
 
-    def DoFunction(self, function, used):
+    def DoFunction(self, function, used, comp=[]):
+        completed = copy.copy(comp)
         for i in range(len(function)):
+            if i in completed:
+                continue
+
             index = function[i][0]
             key = function[i][1]
             func = function[i][2]
             args = function[i][3]
-            arguments = []
-            for arg in args:
-                if type(arg).__name__=='Rule':
-                    if arg.type=='gaussian':
-                        a = self.ReturnGaussian(arg.param[0],arg.param[1])
-                    elif arg.type=='uniform':
-                        a = self.ReturnUniform(arg.param[0],arg.param[1])
-                    elif arg.type=='value':
-                        a = self.ReturnValue(arg.param[0])
-                    elif arg.type=='array':
-                        a = self.ReturnValue(arg.param[0])
-                    elif arg.type=='catalog':
-                        a = self.FunctionCatalog(used, arg.param)
-                    elif arg.type=='component':
-                        a = self.ReturnComponent(arg.param[1],mindex=arg.param[0])
-                else:
-                    a = arg
+            arguments, notready = self.OneFunction(func, args, used)
 
-                arguments.append(a)
+            if notready:
+                continue
+
             if index > -1:
                 self.component[index][key] = func(*arguments)
             else:
                 self.galaxy[key] = func(*arguments)
 
+            completed.append(i)
+        return completed
 
-    def FunctionCatalog(used, params):
+
+    def FunctionCatalog(self, used, params):
         get_cat = params[0]
         get_ext = params[1]
         get_col = params[2]
@@ -253,6 +213,7 @@ class BaseSampler():
         size = len(cat)
         if get_rows==None:
             get_rows = np.random.randint(0,high=size, size=self.ngal)
+            used.append((get_cat, get_ext,get_rows))
         return cat[get_col][get_rows]
 
         
@@ -275,12 +236,8 @@ class BaseSampler():
         return tables
 
 
-    def ChoicesSample(self,rtype, param, i, key, gaussian,uniform,value,array,catalog,component,function):
-        if rtype=='gaussian':
-            gaussian.append( (i, key, param[0], param[1]) )
-        elif rtype=='uniform':
-            uniform.append( (i, key, param[0], param[1]) )
-        elif rtype=='value':
+    def ChoicesSample(self,rtype, param, i, key, value,array,catalog,component,function):
+        if rtype=='value':
             value.append( (i, key, param) )
         elif rtype=='array':
             array.append( (i, key, param) )
@@ -292,39 +249,93 @@ class BaseSampler():
             function.append( (i, key, param[0], param[1]) )
 
 
-    def BetterSample(self, BalrogSetup):
-        gaussian = []
-        uniform = []
+    def TryFunctionComponent(self, function, component, used):
+        all_f = np.arange(len(function)) 
+        last_completed_f = None
+        completed_f = []
+
+        all_c = np.arange(len(component))
+        last_completed_c = None
+        completed_c = []
+
+        while (last_completed_f!=completed_f) and (last_completed_c!=completed_c):
+            last_completed_f = completed_f
+            last_completed_c = completed_c
+
+            completed_f = self.DoFunction(function, used, last_completed_f)
+            completed_c = self.DoComponent(component, last_completed_c)
+            
+
+    def GetCompDefault(self, key, BalrogSetup, used, i):
+        thisdir = os.path.dirname( os.path.realpath(__file__) )
+        file = os.path.join(thisdir, 'cosmos.fits')
+
+        if key == 'beta':
+            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of 0.' %(i, key)
+            return np.zeros(self.ngal)
+        if key=='axisratio':
+            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of 1.' %(i, key)
+            return np.ones(self.ngal)
+        if key=='halflightradius':
+            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key)
+            return self.FunctionCatalog(used, [file,1,'HALF_LIGHT_RADIUS'])
+        if key=='sersicindex':
+            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key)
+            return self.FunctionCatalog(used, [file,1,'SERSIC_INDEX'])
+        if key=='magnitude' or key=='flux':
+            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key)
+            return self.FunctionCatalog(used, [file,1,'IMAG'])
+
+    def GetGalaxyDefault(self, key, used, BalrogSetup):
+        thisdir = os.path.dirname( os.path.realpath(__file__) )
+        file = os.path.join(thisdir, 'cosmos.fits')
+
+        if key in ['g1', 'g2']:
+            print 'A user-defined rule was not found for %s. Balrog will use the default of 0.' %(key)
+            return np.zeros(self.ngal)
+        if key == ['magnification']:
+            print 'A user-defined rule was not found for %s. Balrog will use the default of 1.' %(key)
+            return np.ones(self.ngal)
+        if key=='x':
+            print 'A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key)
+            return np.random.uniform( BalrgoSetup.xmin, BalrogSetup.xmax, self.ngal )
+        if key=='y':
+            print 'A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key)
+            return np.random.uniform( BalrgoSetup.ymin, BalrogSetup.ymax, self.ngal )
+        
+
+    def Sample(self, BalrogSetup):
         value = []
         array = []
         catalog = []
         component = []
         function = []
-        for i in range(len(self.rule)):
-            for key in self.rule[i].keys():
-                rtype = self.rule[i][key].type
-                param = self.rule[i][key].param
-                self.ChoicesSample(rtype, param, i, key, gaussian,uniform,value,array,catalog,component,function)
+        for i in range(len(self.componentrule)):
+            for key in self.componentrule[i].keys():
+                rtype = self.componentrule[i][key].type
+                param = self.componentrule[i][key].param
+                self.ChoicesSample(rtype, param, i, key, value,array,catalog,component,function)
         for key in self.galaxyrule.keys():
             rtype = self.galaxyrule[key].type
             param = self.galaxyrule[key].param
-            self.ChoicesSample(rtype, param, -1, key, gaussian,uniform,value,array,catalog,component,function)
+            self.ChoicesSample(rtype, param, -1, key, value,array,catalog,component,function)
         cat = self.SortCatalog(catalog)
        
         np.random.seed(BalrogSetup.seed)
-        self.DoGaussian(gaussian)
-        self.DoUniform(uniform)
         self.DoValue(value)
         self.DoArray(array)
         used = self.DoCatalog(cat)
-        self.DoFunction(function, used)
-        self.DoComponent(component)
-         
-    
-        
-    def Sample(self, BalrogSetup):
-        self.BetterSample(BalrogSetup)
+        self.TryFunctionComponent(function, component, used)
 
+        for i in range(len(self.component)):
+            for key in self.component[i].keys():
+                if self.component[i][key]==None:
+                    self.component[i][key] = self.GetCompDefault(key, BalrogSetup, used, i)
+                    
+        for key in self.galaxy.keys():
+            if self.galaxy[key]==None:
+                self.galaxy[key] = self.GetGalaxyDefault(key, used, BalrogSetup)
+         
         for i in range(len(self.component)):
             self.component[i]['flux'] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i]['flux']) / 2.5)
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
@@ -436,12 +447,6 @@ class BaseSampler():
         return combinedObj
 
 
-class nComponentSersic(BaseSampler):
-    def __init__(self, ngal=100, ncomp=2, label=None, catalog=None):
-        self.init(ngal, ncomp, label, catalog)
-
-
-
 def b_n_estimate(n):
     order0 = 2*n - 1.0/3.0
     order1 = 4.0 / (405.0 * n)
@@ -456,21 +461,8 @@ class Rule(object):
 
     def __init__(self, type=None, average=None, sigma=None, joint=False, value=None, array=None, component=None, minimum=None, maximum=None, function=None, args=None, catalog=None, ext=None, column=None, ):
 
-        if type=='gaussian':
-            if average==None:
-                raise Exception('must specifiy an average with sample type gaussian')
-            if sigma==None:
-                raise Exception('must specify a standard deviation with sample type gaussian')
-            self.param = [average,sigma]
 
-        elif type=='uniform':
-            if minimum==None:
-                raise Exception('must specify a minimum with random sampling')
-            if maximum==None:
-                raise Exception('must sepcify a maximum with random sampling')
-            self.param = [minimum, maximum]
-
-        elif type=='catalog':
+        if type=='catalog':
             if catalog==None:
                 raise Exception('must specify a catalog file when sampling from catalog')
             if ext==None:
@@ -500,8 +492,8 @@ class Rule(object):
             self.param = [function, args]
 
         elif type==None:
-            self.param = 0
-            type = 'value'
+            self.param = None
+            type = None
 
         else:
             raise Exception('unknown type')
@@ -509,14 +501,8 @@ class Rule(object):
         self.type = type
 
 
-def Random( min=None, max=None ):
-    return Rule(type='uniform', minimum=min, maximum=max)
-
 def Value( val=None ):
     return Rule(type='value', value=val)
-
-def Gaussian( avg=None, std=None ):
-    return Rule(type='gaussian', average=avg, sigma=std)
 
 def Array( arr=None ):
     return Rule(type='array', array=arr)
@@ -552,15 +538,20 @@ def GalExcept(name):
     raise Exception('The rule you gave for %s was not understood' %(name))
 
 def CheckRules(rules, names, ngal, kind):
+    if rules==None:
+        return
     for i in range(len(rules)):
         if kind=='galaxy':
             CheckRule(rules, names[i], ngal, kind, i)
         else:
             CheckRule(rules, names, ngal, kind, i)
 
+
 def CheckRule(rules, name, ngal, kind, i):
         if type(rules[i]).__name__!='Rule':
-            if type(rules[i])==float or type(rules[i])==int:
+            if rules[i]==None:
+                pass
+            elif type(rules[i])==float or type(rules[i])==int:
                 rules[i] = Value(float(rules[i]))
             else:
                 try:
@@ -569,19 +560,29 @@ def CheckRule(rules, name, ngal, kind, i):
                         rules[i] = Array(arr)
                     else:
                         if kind=='galaxy':
-                            GalExcept(name, i)
+                            GalExcept(name)
                         else:
-                            CompExcept(name)
+                            CompExcept(name, i)
                 except:
                     if kind=='galaxy':
-                        GalExcept(name, i)
+                        GalExcept(name)
                     else:
-                        CompExcept(name)
+                        CompExcept(name, i)
 
+
+def HandleFunction(g, k):
+    arguments = g.param[1]
+    for arg in arguments:
+        if type(arg).__name__=='Rule' and arg.type=='component':
+            arg = Tuplify(arg,k)
+        if type(arg).__name__=='Rule' and arg.type=='function':
+            HandleFunction(arg, k)
+    g = MagFlux(g)
+    return g
 
 
 def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nProfiles=1, axisratio=None, beta=None, halflightradius=None, magnitude=None, sersicindex=None ):
-    simulatedgals = nComponentSersic(ngal=opts.ngal, catalog=None, ncomp=nProfiles)
+    simulatedgals = nComponentSersic(ngal=opts.ngal, ncomp=nProfiles)
     out = open(opts.simruleslog, 'w')
 
     galrules = [x, y, g1, g2, magnification]
@@ -593,37 +594,56 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                 g = Tuplify(g,k)
                 g = MagFlux(g)
             if g.type=='function':
+                '''
                 arguments = g.param[1]
                 for arg in arguments:
                     if type(arg).__name__=='Rule' and arg.type=='component':
                         arg = Tuplify(arg,k)
                 g = MagFlux(g)
+                '''
+                g = HandleFunction(g,k)
             simulatedgals.GalaxyRule(key=k, rule=g)
-        out.write('%s %s %s\n' %(k, g.type, str(g.param)) )
+
+        if g!=None:
+            out.write('%s %s %s\n' %(k, g.type, str(g.param)) )
+        else:
+            out.write('%s None\n' %(k))
    
     out.write('\n')
     keys = ['axisratio', 'beta', 'halflightradius', 'flux', 'sersicindex']
     comprules = [axisratio, beta, halflightradius, magnitude, sersicindex]
     for j in range(len(comprules)):
         key = keys[j]
-        size = len(comprules[j])
-        if size!=nProfiles:
-            raise Exception('%s has %i elements. Must match nProfiles = %i' %(key,size,nProfiles))
+        if comprules[j]!=None:
+            size = len(comprules[j])
+            if size!=nProfiles:
+                raise Exception('%s has %i elements. Must match nProfiles = %i' %(key,size,nProfiles))
         CheckRules(comprules[j], key, opts.ngal, 'component')
         for i in range(nProfiles):
-            comp = comprules[j][i]
+            if comprules[j]!=None:
+                comp = comprules[j][i]
+            else:
+                comp = None
+
             if comp!=None:
                 if comp.type=='component':
                     comp = Tuplify(comp, key)
                     comp = MagFlux(comp)
                 if comp.type=='function':
+                    '''
                     arguments = comp.param[1]
                     for arg in arguments:
                         if type(arg).__name__=='Rule' and arg.type=='component':
                             arg = Tuplify(arg, key)
                             arg = MagFlux(arg)
+                    '''
+                    arg = HandleFunction(comp, key)
                 simulatedgals.ComponentRule(component=i, key=key, rule=comp)
-            out.write('%s %s %s %s\n' %(str(i), key, comp.type, str(comp.param)) )
+                      
+            if comp!=None:
+                out.write('%s %s %s %s\n' %(str(i), key, comp.type, str(comp.param)) )
+            else:
+                out.write('%s %s None\n' %(str(i), key))
 
     out.close()
     return simulatedgals

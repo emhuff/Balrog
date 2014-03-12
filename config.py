@@ -48,14 +48,12 @@ def SimulationRules(args, rules, sampled):
     ext = args.ext
 
     # Simulated galaxies only have one of each of these
-    rules.x = Random(args.xmin, args.xmax)
-    rules.y = Random(min=args.ymin, max=args.ymax)
-    rules.g1 = 0
-    #rules.g1 = Value(0)  # This line does exactly the same thing as the one above
+    #rules.x = randpos(args.xmin, args.xmax, args.ngal)
+    rules.x = Function(function=randpos, args=(args.xmin, args.xmax, args.ngal))
+    rules.y = randpos(args.ymin, args.ymax, args.ngal)
+    #rules.g1 = 0
     rules.g2 = sampled.g1
-    #rules.g2 = Same('g1')# This line does exactly the same thing as the one above
     rules.magnification = np.ones(args.ngal)
-    #rules.magnification = Array( np.ones(args.ngal) ) # This line does exactly the same thing as the one above
     
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
@@ -70,15 +68,27 @@ def SimulationRules(args, rules, sampled):
 
     rules.nProfiles = 2
     rules.beta = [sampled.beta[1], 0]
-    rules.halflightradius = [Gaussian(1.0, 0.1), Gaussian(avg=0.5, std=0.05)]
+    rules.halflightradius = [Catalog(cat,ext,args.reff), sampled.halflightradius[0]]
     rules.magnitude = [Catalog(cat,ext,args.mag), sampled.magnitude[0]]
-    #rules.magnitude = [13, sampled.magnitude[0]]
-    #rules.magnitude = [20, Same(0)] # This line does exactly the same thing as the one above
-    rules.sersicindex = [1, 4]
+    ns = Function(function=f, args=(np.ones(args.ngal)))
+    n = Function(function=g, args=(4, 0.05, args.ngal, ns))
+    rules.sersicindex = [1, n]
     axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
     rules.axisratio = [axisratio, sampled.axisratio[0]]
-    #rules.axisratio = [axisratio, Same(0,'axisratio')]
 
+
+def f(item):
+    return item
+
+def g(avg, std, ngal, other):
+    gg = gaussian(avg, std, ngal)
+    return gg-other
+
+def randpos(minimum, maximum, ngal):
+    return np.random.uniform( minimum, maximum, ngal )
+
+def gaussian(avg, std, ngal):
+    return np.random.normal( avg, std, ngal )
 
 def SampleFunction(x,y, xmax,ymax):
     dist = np.sqrt(x*x + y*y)

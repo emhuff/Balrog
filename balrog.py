@@ -360,11 +360,11 @@ class SimRules():
         self.magnification = None
 
         self.nProfiles = 1
-        self.axisratio = [None]
-        self.beta = [None]
-        self.halflightradius = [None]
-        self.magnitude = [None]
-        self.sersicindex = [None]
+        self.axisratio = None
+        self.beta = None
+        self.halflightradius = None
+        self.magnitude = None
+        self.sersicindex = None
 
 
 class CompResult(object):
@@ -502,9 +502,9 @@ def LogSimRules(catalog, BalrogSetup):
         out.write('%s %s %s\n' %(key, catalog.galaxyrule[key].type, str(catalog.galaxyrule[key].param)) )
 
     out.write('\n')
-    for i in range(len(catalog.rule)):
-        for key in catalog.rule[i].keys():
-            out.write('%s %s %s %s\n' %(str(i), key, catalog.rule[i][key].type, str(catalog.rule[i][key].param)) )
+    for i in range(len(catalog.componentrule)):
+        for key in catalog.componentrule[i].keys():
+            out.write('%s %s %s %s\n' %(str(i), key, catalog.componentrule[i][key].type, str(catalog.componentrule[i][key].param)) )
 
 
 def LogDerivedOpts(cmdline_args, BalrogSetup):
