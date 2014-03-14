@@ -6,6 +6,8 @@ import galsim
 import copy
 import sys
 import os
+import logging
+import traceback
 
 
 class nComponentSersic(object):
@@ -271,19 +273,19 @@ class nComponentSersic(object):
         file = os.path.join(thisdir, 'cosmos.fits')
 
         if key == 'beta':
-            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of 0.' %(i, key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of 0.' %(i, key))
             return np.zeros(self.ngal)
         if key=='axisratio':
-            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of 1.' %(i, key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of 1.' %(i, key))
             return np.ones(self.ngal)
         if key=='halflightradius':
-            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
             return self.FunctionCatalog(used, [file,1,'HALF_LIGHT_RADIUS'])
         if key=='sersicindex':
-            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
             return self.FunctionCatalog(used, [file,1,'SERSIC_INDEX'])
         if key=='magnitude' or key=='flux':
-            print 'A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
             return self.FunctionCatalog(used, [file,1,'IMAG'])
 
     def GetGalaxyDefault(self, key, used, BalrogSetup):
@@ -291,16 +293,16 @@ class nComponentSersic(object):
         file = os.path.join(thisdir, 'cosmos.fits')
 
         if key in ['g1', 'g2']:
-            print 'A user-defined rule was not found for %s. Balrog will use the default of 0.' %(key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of 0.' %(key))
             return np.zeros(self.ngal)
         if key == ['magnification']:
-            print 'A user-defined rule was not found for %s. Balrog will use the default of 1.' %(key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of 1.' %(key))
             return np.ones(self.ngal)
         if key=='x':
-            print 'A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
             return np.random.uniform( BalrgoSetup.xmin, BalrogSetup.xmax, self.ngal )
         if key=='y':
-            print 'A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key)
+            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
             return np.random.uniform( BalrgoSetup.ymin, BalrogSetup.ymax, self.ngal )
         
 
@@ -489,6 +491,8 @@ class Rule(object):
         elif type=='function':
             if function==None:
                 raise Exception('must specify a function with sample type function')
+            if args==None:
+                raise Exception('must specify args with sample type function')
             self.param = [function, args]
 
         elif type==None:
@@ -496,7 +500,7 @@ class Rule(object):
             type = None
 
         else:
-            raise Exception('unknown type')
+            raise Exception('unknown smpling type')
 
         self.type = type
 
@@ -594,13 +598,6 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                 g = Tuplify(g,k)
                 g = MagFlux(g)
             if g.type=='function':
-                '''
-                arguments = g.param[1]
-                for arg in arguments:
-                    if type(arg).__name__=='Rule' and arg.type=='component':
-                        arg = Tuplify(arg,k)
-                g = MagFlux(g)
-                '''
                 g = HandleFunction(g,k)
             simulatedgals.GalaxyRule(key=k, rule=g)
 
@@ -617,7 +614,16 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
         if comprules[j]!=None:
             size = len(comprules[j])
             if size!=nProfiles:
-                raise Exception('%s has %i elements. Must match nProfiles = %i' %(key,size,nProfiles))
+                #opts.logger.exception('%s has %i elements. Must match nProfiles = %i' %(key,size,nProfiles))
+                et, ex, tb = sys.exc_info()
+                #opts.logger.exception(traceback.print_tb(tb))
+                if key=='flux':
+                    k = 'magnitude'
+                else:
+                    k = key
+                #opts.logger.error('rules.%s has %i array element(s). Must match rules.nProfiles = %i.' %(k,size,nProfiles))
+                raise Exception('rules.%s has %i array element(s). Must match rules.nProfiles = %i.' %(k,size,nProfiles))
+                #sys.exit(1)
         CheckRules(comprules[j], key, opts.ngal, 'component')
         for i in range(nProfiles):
             if comprules[j]!=None:
@@ -630,13 +636,6 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                     comp = Tuplify(comp, key)
                     comp = MagFlux(comp)
                 if comp.type=='function':
-                    '''
-                    arguments = comp.param[1]
-                    for arg in arguments:
-                        if type(arg).__name__=='Rule' and arg.type=='component':
-                            arg = Tuplify(arg, key)
-                            arg = MagFlux(arg)
-                    '''
                     arg = HandleFunction(comp, key)
                 simulatedgals.ComponentRule(component=i, key=key, rule=comp)
                       

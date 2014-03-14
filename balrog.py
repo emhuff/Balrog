@@ -3,8 +3,10 @@
 import copy
 import datetime
 import os
+import sys
 import subprocess
 import argparse
+import logging
 import numpy as np
 import astropy.io.fits as pyfits
 import galsim
@@ -12,6 +14,7 @@ import galsim.des
 import sextractor_engine
 from model_class import *
 from config import *
+from balrogexcept import *
 
 
 
@@ -408,10 +411,8 @@ class Results(object):
         
     
 
-
-
 class DerivedArgs():
-    def __init__(self,args):
+    def __init__(self,args,log):
         self.imgdir = os.path.join(args.outdir, 'balrog_image')
         self.catdir = os.path.join(args.outdir, 'balrog_cat')
         self.logdir = os.path.join(args.outdir, 'balrog_log')
@@ -445,13 +446,22 @@ class DerivedArgs():
         self.nosim_sexlog = DefaultName(self.nosim_catalogmeasured, '.fits', '.log.txt', self.logdir)
         self.simruleslog = DefaultName(args.imagein, '.fits', '.simulation_rules.log.txt', self.logdir)
         self.catruleslog = DefaultName(args.imagein, '.fits', '.simulationcat_rules.log.txt', self.logdir)
+        self.balroglog = DefaultName(args.imagein, '.fits', '.balrog.log.txt', self.logdir)
 
-        CreateDir(args.outdir)
+        #CreateDir(args.outdir)
+        #CreateSubDir(self.logdir)
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
-        CreateSubDir(self.logdir)
         CreateSubDir(self.sexdir)
 
+        thisdir = os.path.dirname( os.path.realpath(__file__) )
+        config = os.path.join(thisdir, 'config.py')
+        self.CopyFile(args.sexconfig, self.sexdir)
+        self.CopyFile(args.sexparam, self.sexdir)
+        self.CopyFile(args.sexnnw, self.sexdir)
+        self.CopyFile(args.sexconv, self.sexdir)
+        self.CopyFile(args.sexemptyparam, self.sexdir)
+        self.CopyFile(config, self.logdir)
 
         self.outimageext = 0
         self.outweightext = 0
@@ -461,8 +471,32 @@ class DerivedArgs():
         self.subsample = True
         if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
             self.subsample = False
+         
+        #self.logger = logging.getLogger()
+        #formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        self.logger = log
+        
+        '''
+        ph = logging.StreamHandler(sys.stderr)
+        ph.setLevel(logging.WARNING)
+        ph.setFormatter(formatter)
+        self.logger.addHandler(ph)
+
+        fh = logging.FileHandler(self.balroglog, mode='w')
+        fh.setLevel(logging.WARNING)
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
+        '''
 
 
+    def CopyFile(self, file, dir):
+        basename = os.path.basename(file)
+        outname = os.path.join(dir,basename)
+        if os.path.exists(outname):
+            subprocess.call(['rm', outname])
+        subprocess.call(['cp', file, outname])
+
+        
 class BalrogConfig():
     def __init__(self, cargs, dargs):
         cdict = vars(cargs)
@@ -474,25 +508,67 @@ class BalrogConfig():
             exec "self.%s = ddict['%s']" %(key, key)
 
 
+def SetLevel(h, choice):
+    if choice=='q':
+        h.setLevel(logging.ERROR)
+    elif choice=='n':
+        h.setLevel(logging.WARNING)
+    elif choice=='v':
+        h.setLevel(logging.INFO)
+    elif choice=='vv':
+        h.setLevel(logging.DEBUG)
+    return h
+
+
+def SetupLogger(cmdline_args):
+    thisdir = os.path.dirname( os.path.realpath(__file__) )
+    defdir = os.path.join(thisdir, 'default_example')
+    outdir = os.path.join(defdir, 'output')
+    if cmdline_args.outdir==None:
+        cmdline_args.outdir = outdir
+
+    CreateDir(cmdline_args.outdir)
+    logdir = os.path.join(cmdline_args.outdir, 'balrog_log')
+    CreateSubDir(logdir)
+    
+    log = logging.getLogger()
+    log.setLevel(logging.NOTSET)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    file = os.path.join(logdir, 'run.log.txt')
+    fh = logging.FileHandler(file, mode='w')
+    fh.setFormatter(formatter)
+    SetLevel(fh, cmdline_args.logverbosity)
+    log.addHandler(fh)
+
+    ph = logging.StreamHandler(stream=sys.stderr)
+    ph.setFormatter(formatter)
+    ph = SetLevel(ph, cmdline_args.stdverbosity)
+    log.addHandler(ph)
+    return log
+
+
 def GetOpts():
     parser = argparse.ArgumentParser()
     DefaultArgs(parser)
     CustomArgs(parser) 
-
     cmdline_args = parser.parse_args()
-    ParseDefaultArgs(cmdline_args)
-    return cmdline_args
+    
+    log = SetupLogger(cmdline_args)
+
+    ParseDefaultArgs(cmdline_args,log)
+    return cmdline_args, log
 
 
-def ConfigureBalrog(cmdline_opts):
-    cmdline_opts, derived_opts = GetMoreOpts(cmdline_opts)
+def ConfigureBalrog(cmdline_opts, log):
+    cmdline_opts, derived_opts = GetMoreOpts(cmdline_opts, log)
     BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
     simulation_rules, ExtraSexConfig = UserDefinitions(cmdline_opts, BalrogSetup)
     return BalrogSetup, simulation_rules, ExtraSexConfig
 
 
-def GetMoreOpts(cmdline_args):
-    derived_args = DerivedArgs(cmdline_args)
+def GetMoreOpts(cmdline_args, log):
+    derived_args = DerivedArgs(cmdline_args, log)
     return [cmdline_args, derived_args]
 
 
@@ -582,11 +658,15 @@ def DefaultName(startfile, lookfor, replacewith, outdir):
 
 
 def CreateSubDir(subdir):
+    err = 0
     if not os.path.lexists(subdir):
-        subprocess.call(['mkdir', subdir])
+        err = subprocess.call(['mkdir', subdir], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if err!=0:
+        raise SubdirWriteError(202, subdir)
 
 
 def CreateDir(dir):
+    gdir = copy.copy(dir)
     full = False
     while dir[0]=='/':
         dir = dir[1:]
@@ -599,64 +679,194 @@ def CreateDir(dir):
     else:
         subdir = './'
 
+    err = 0
     for dir in dirs:
         subdir = os.path.join(subdir,dir)
         if not os.path.lexists(subdir):
-            subprocess.call( ['mkdir', subdir] )
+            err = subprocess.call( ['mkdir', subdir], stderr=subprocess.PIPE, stdout=subprocess.PIPE )
+            if err!=0:
+                raise OutdirWriteError(201, gdir, subdir)
 
 
-def ParseDefaultArgs(args):
-    thisdir = os.path.dirname( os.path.realpath(__file__) )
-    defdir = os.path.join(thisdir, 'default_example')
-    indir = os.path.join(defdir, 'input')
-    outdir = os.path.join(defdir, 'output')
-    configdir = os.path.join(thisdir, 'astro_config')
+def ImagesExistenceCheck(args, log):
+    if not os.path.lexists(args.imagein):
+        raise ImageInputError(101, 'image', 'imagein', args.imagein)
+    if not os.path.lexists(args.weightin):
+        raise ImageInputError(102, 'weight', 'weightin', args.weightin)
+    if not os.path.lexists(args.psfin):
+        raise ImageInputError(103, 'PSF', 'psfin', args.psfin)
 
-    if args.sexconfig==None:
-        args.sexconfig = os.path.join(configdir, 'sex.config')
-    if args.sexparam==None:
-        args.sexparam = os.path.join(configdir, 'bulge.param')
-    if args.sexemptyparam==None:
-        args.sexemptyparam = os.path.join(configdir, 'sex.param')
-    if args.sexnnw==None:
-        args.sexnnw = os.path.join(configdir, 'sex.nnw')
-    if args.sexconv==None:
-        args.sexconv = os.path.join(configdir, 'sex.conv')
 
+def ImagesAreFITS(args, log):
+    try:
+        pyfits.open(args.imagein)
+    except:
+        raise FitsFileError(111, 'image', 'imagein', args.imagein) 
+    try:
+        pyfits.open(args.weightin)
+    except:
+        raise FitsFileError(112, 'weight', 'weightin', args.weightin)
+    try:
+        pyfits.open(args.psfin)
+    except:
+        raise FitsFileError(113, 'PSF', 'psfin', args.psfin)
+
+
+def ExtsExist(args, log):
+    try: 
+        hdu = pyfits.open(args.imagein)[args.imageext]
+    except:
+        raise FitsExtError(121, 'image', 'imageext', args.imageext, 'imagein', args.imagein)
+    try:
+        hdu = pyfits.open(args.weightin)[args.weightext]
+    except:
+        raise FitsExtError(122, 'weight', 'weightext', args.weightext, 'weightin', args.weightin)
+
+
+def SizesOK(args, log):
+    try:
+        ix = pyfits.open(args.imagein)[args.imageext].header['NAXIS1']
+    except:
+        raise FitsHeaderError(131,'image','NAXIS1', 'imagein',args.imagein, 'imageext',args.imageext)
+    try:
+        iy = pyfits.open(args.imagein)[args.imageext].header['NAXIS2']
+    except:
+        raise FitsHeaderError(132,'image','NAXIS2', 'imagein',args.imagein, 'imageext',args.imageext)
+    try:
+        wx = pyfits.open(args.weightin)[args.weightext].header['NAXIS1']
+    except:
+        raise FitsHeaderError(133,'weight','NAXIS1', 'weightin',args.weightin, 'weightext',args.weightext)
+    try:
+        wy = pyfits.open(args.weightin)[args.weightext].header['NAXIS2']
+    except:
+        raise FitsHeaderError(134,'weight','NAXIS2', 'weightin',args.weightin, 'weightext',args.weightext)
+
+    if ix!=wx or iy!=wy:
+        raise SizeMismatchError(135, ix,iy,wx,wy)
+
+    if args.xmax==-1:
+        args.xmax = ix
+    if args.ymax==-1:
+        args.ymax = iy
+
+    if args.xmin > args.xmax:
+        raise SizeError(136, 'x', args.xmin, args.xmax)
+    if args.ymin > args.ymax:
+        raise SizeError(137, 'y', args.ymin, args.ymax)
+
+    if args.xmin < 1:
+        log.warning('Given --xmin = %i is less than 1. Setting --xmin = 1' %(args.xmin))
+        args.xmin = 1
+    if args.ymin < 1:
+        log.warning('Given --ymin = %i is less than 1. Setting --ymin = 1' %(args.ymin))
+        args.ymin = 1
+
+    if args.xmax > ix:
+        log.warning('Given --xmax = %i exceeds the image bounds. Setting --xmax to the right edge of image: --xmax = %i' %(args.xmax,ix))
+        args.xmax = ix
+    if args.ymax > iy:
+        log.warning('Given --ymax = %i exceeds the image bounds. Setting --ymax to the upper edge of image: --ymax = %i' %(args.ymax,iy))
+        args.ymax = iy
+
+
+
+def FindImages(args, log, indir):
+    '''
     if args.outdir==None:
         args.outdir = outdir
+    '''
+    default = os.path.join(indir, 'example.fits')
+    if args.imagein!=None and os.path.abspath(args.imagein)!=default and args.psfin==None:
+        raise PsfInputError(104, args.imagein)
+
     if args.imagein==None:
-        args.imagein = os.path.join(indir, 'example.fits')
+        args.imagein = default
+        log.info('No --imagein explicitly given. Will use the default. Setting --imagein = %s' %args.imagein)
     if args.weightin==None:
+        log.info('No --weightin explicitly given. Assuming it lives in same file as the image. Setting --weightin = %s' %args.imagein)
         args.weightin = args.imagein
-        if args.weightext == None:
-            args.weightext = args.imageext + 1
+    if args.weightext==None and os.path.abspath(args.weightin)==args.imagein:
+        args.weightin = os.path.abspath(args.weightin)
+        log.info('No --weightext explicitly given. Assuming it lives in the extension after the image. Setting --weightext = %s' %(args.imageext+1))
+        args.weightext = args.imageext + 1
     if args.weightext==None:
+        log.info('No --weightext explicitly given. Assuming it lives in the 0th extension. Setting --weightext = 0')
         args.weightext = 0
     if args.psfin==None:
         args.psfin = os.path.join(indir, 'example.psf')
+        log.info('No --psfin explicitly given. Will use the default. Setting --psfin = %s' %args.psfin)
+    
+
+def ParseImages(args, log, indir):
+    FindImages(args, log, indir)
+    ImagesExistenceCheck(args, log)
+    ImagesAreFITS(args, log)
+    ExtsExist(args, log)
+    SizesOK(args, log)
 
 
-    if args.xmax==-1:
-        args.xmax = pyfits.open(args.imagein)[args.imageext].header['NAXIS1']
-    if args.ymax==-1:
-        args.ymax = pyfits.open(args.imagein)[args.imageext].header['NAXIS2']
-
+def ParseFloatKeyword(args, log):
     try:
         args.gain = float(args.gain)
+        log.debug('--gain given as a float value: %f' %(args.gain))
     except:
         try:
+            g = args.gain
             args.gain = pyfits.open(args.imagein)[args.imageext].header[args.gain]
+            log.debug('--gain given as image header keyword: %s = %f' %(g,args.gain))
         except:
+            if args.gain=='GAIN':
+                log.info('Did not find keyword GAIN in image header. Setting --gain = 1.0')
+            else:
+                log.warning('Did not find keyword %s in image header. Setting --gain = 1.0' %(args.gain))
             args.gain = 1.0
 
     try:
         args.zeropoint = float(args.zeropoint)
+        log.debug('--zeropoint given as a float value: %f' %(args.zeropoint))
     except:
         try:
+            z = args.zeropoint
             args.zeropoint = pyfits.open(args.imagein)[args.imageext].header[args.zeropoint]
+            log.debug('--zeropoint given as image header keyword: %s = %f' %(s,args.zeropoint))
         except:
+            if args.zeropoint=='SEXMGZPT':
+                log.info('Did not find keyword SEXMGZPT in image header. Setting --zeropoint = 30.0')
+            else:
+                log.warning('Did not find keyword %s in image header. Setting --zeropoint = 30.0' %(args.zeropoint))
             args.zeropoint = 30.0
+
+
+def FindSexFile(arg, log, configdir, default, label):
+    default = os.path.join(configdir, default)
+    if arg==None:
+        arg = default
+        log.info('No --%s explicitly given. Will use the default. Setting --%s = %s' %(label,label,arg))
+    if not os.path.lexists(arg):
+        log.warning('--%s %s does not exist. Assuming a default file. Setting --%s = %s' %(label, arg, label, default))
+        arg = default
+    return arg
+
+
+def ParseSex(args, log, configdir):
+    args.sexconfig = FindSexFile(args.sexconfig, log, configdir, 'sex.config', 'sexconfig')
+    args.sexparam = FindSexFile(args.sexparam, log, configdir, 'bulge.param', 'sexparam')
+    args.sexemptyparam = FindSexFile(args.sexemptyparam, log, configdir, 'sex.param', 'sexemptyparam')
+    args.sexnnw = FindSexFile(args.sexnnw, log, configdir, 'sex.nnw', 'sexnnw')
+    args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
+
+
+
+def ParseDefaultArgs(args,log):
+    thisdir = os.path.dirname( os.path.realpath(__file__) )
+    defdir = os.path.join(thisdir, 'default_example')
+    indir = os.path.join(defdir, 'input')
+    #outdir = os.path.join(defdir, 'output')
+    configdir = os.path.join(thisdir, 'astro_config')
+    
+    ParseImages(args, log, indir)
+    ParseFloatKeyword(args, log) 
+    ParseSex(args, log, configdir)
 
     return args
 
@@ -681,26 +891,28 @@ def DefaultArgs(parser):
     parser.add_argument( "-zp", "--zeropoint", help="Zeropoint used to convert simulated magnitude to flux. Sextractor runs with this zeropoint. Can be a float or a keyword from the image header. (Default looks for keyword 'SEXMGZPT'. If given keyword is not found, zeropoint defaults to 30.)", default='SEXMGZPT')
     parser.add_argument( "-s", "--seed", help="Seed for random number generation when simulating galaxies. This does not apply to noise realizations, which are always random.", type=int, default=None)
     parser.add_argument( "-ft", "--fluxthresh", help="Flux value where to cutoff the postage stamp", type=float, default=0.01)
+
+    # Other Balrog stuff
     parser.add_argument( "-c", "--clean", help="Delete output image files", action="store_true")
+    parser.add_argument( "-sv", "--stdverbosity", help="Verbosity level of stdout", type=str, default='n', choices=['n','v','vv','q'])
+    parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
 
     # How to run sextractor
     parser.add_argument( "-spp", "--sexpath", help='Path for sextractor binary', type=str, default='sex')
     parser.add_argument( "-sc", "--sexconfig", help='Sextractor config file', type=str, default=None)
     parser.add_argument( "-sp", "--sexparam", help='Sextractor param file', type=str, default=None)
     parser.add_argument( "-sn", "--sexnnw", help='Sextractor neural network S/G file', type=str, default=None)
-    parser.add_argument( "-sv", "--sexconv", help='Sextractor filter convolution file', type=str, default=None)
+    parser.add_argument( "-sf", "--sexconv", help='Sextractor filter convolution file', type=str, default=None)
     parser.add_argument( "-na", "--noassoc", help="Don't do association mode matching in sextractor. Association mode is sextractor lingo for only look for sources at certain positions; in Balrog, the simulated galaxy positions. Using association mode is much faster.", action="store_true")
     parser.add_argument( "-ne", "--noempty", help="Skip sextractor run over original image, prior to any simulation. One usage for such a run is to identify cases where a galaxy is simulated in the same position as something originally there. Depending on how the objects' properties conspire, Sextractor may not know any blending happened, ", action="store_true")
     parser.add_argument( "-sep", "--sexemptyparam", help="Sextractor param file for run over original image, prior to any simulation, If only interested in the run for 'deblending' issues, the file's contents are mostly irrelevant. The default file does not do model fitting to be faster.", type=str, default=None)
 
 
 
-
-if __name__ == "__main__":
-
+def RunBalrog():
     # Parse command line options and user configurations to setup Balrog.
-    cmdline_opts = GetOpts()
-    BalrogSetup, simulation_rules, extra_sex_config = ConfigureBalrog(cmdline_opts)
+    cmdline_opts, log = GetOpts()
+    BalrogSetup, simulation_rules, extra_sex_config = ConfigureBalrog(cmdline_opts, log)
 
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
@@ -733,3 +945,13 @@ if __name__ == "__main__":
 
     # Log some  extra stuff Balrog used along the way
     LogDerivedOpts(cmdline_opts, BalrogSetup)
+   
+
+if __name__ == "__main__":
+    try:
+        RunBalrog()
+    except:
+        s = list(sys.exc_info())
+        logging.error('Run error caused Balrog to exit.', exc_info=(s[0], s[1], None))
+        #logging.error('Run error caused Balrog to exit.', exc_info=s)
+        #sys.exit()
