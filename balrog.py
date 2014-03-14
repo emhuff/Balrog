@@ -334,16 +334,16 @@ def Cleanup(BalrogSetup):
 def UserDefinitions(cmdline_args, BalrogSetup):
     rules = SimRules()
     ExtraSexConfig = {}
+    results = Results()
     cmdline_args_copy = copy.copy(cmdline_args)
 
     CustomParseArgs(cmdline_args_copy)
-    results = Results()
     SimulationRules(cmdline_args_copy,rules,results)
     SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup)
     LogExtraSexConfig(ExtraSexConfig, BalrogSetup)
-    rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
+    #rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
     return rules, ExtraSexConfig
 
 
@@ -448,8 +448,6 @@ class DerivedArgs():
         self.catruleslog = DefaultName(args.imagein, '.fits', '.simulationcat_rules.log.txt', self.logdir)
         self.balroglog = DefaultName(args.imagein, '.fits', '.balrog.log.txt', self.logdir)
 
-        #CreateDir(args.outdir)
-        #CreateSubDir(self.logdir)
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
         CreateSubDir(self.sexdir)
@@ -472,21 +470,7 @@ class DerivedArgs():
         if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
             self.subsample = False
          
-        #self.logger = logging.getLogger()
-        #formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         self.logger = log
-        
-        '''
-        ph = logging.StreamHandler(sys.stderr)
-        ph.setLevel(logging.WARNING)
-        ph.setFormatter(formatter)
-        self.logger.addHandler(ph)
-
-        fh = logging.FileHandler(self.balroglog, mode='w')
-        fh.setLevel(logging.WARNING)
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
-        '''
 
 
     def CopyFile(self, file, dir):
@@ -553,9 +537,7 @@ def GetOpts():
     DefaultArgs(parser)
     CustomArgs(parser) 
     cmdline_args = parser.parse_args()
-    
     log = SetupLogger(cmdline_args)
-
     ParseDefaultArgs(cmdline_args,log)
     return cmdline_args, log
 
@@ -563,8 +545,13 @@ def GetOpts():
 def ConfigureBalrog(cmdline_opts, log):
     cmdline_opts, derived_opts = GetMoreOpts(cmdline_opts, log)
     BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
+    return BalrogSetup
+
+'''
+def Something
     simulation_rules, ExtraSexConfig = UserDefinitions(cmdline_opts, BalrogSetup)
     return BalrogSetup, simulation_rules, ExtraSexConfig
+'''
 
 
 def GetMoreOpts(cmdline_args, log):
@@ -771,10 +758,6 @@ def SizesOK(args, log):
 
 
 def FindImages(args, log, indir):
-    '''
-    if args.outdir==None:
-        args.outdir = outdir
-    '''
     default = os.path.join(indir, 'example.fits')
     if args.imagein!=None and os.path.abspath(args.imagein)!=default and args.psfin==None:
         raise PsfInputError(104, args.imagein)
@@ -861,7 +844,6 @@ def ParseDefaultArgs(args,log):
     thisdir = os.path.dirname( os.path.realpath(__file__) )
     defdir = os.path.join(thisdir, 'default_example')
     indir = os.path.join(defdir, 'input')
-    #outdir = os.path.join(defdir, 'output')
     configdir = os.path.join(thisdir, 'astro_config')
     
     ParseImages(args, log, indir)
@@ -908,50 +890,86 @@ def DefaultArgs(parser):
     parser.add_argument( "-sep", "--sexemptyparam", help="Sextractor param file for run over original image, prior to any simulation, If only interested in the run for 'deblending' issues, the file's contents are mostly irrelevant. The default file does not do model fitting to be faster.", type=str, default=None)
 
 
-
-def RunBalrog():
-    # Parse command line options and user configurations to setup Balrog.
-    cmdline_opts, log = GetOpts()
-    BalrogSetup, simulation_rules, extra_sex_config = ConfigureBalrog(cmdline_opts, log)
-
-
-    # Take the the user's configurations and build the simulated truth catalog out of them.
-    catalog = GetSimulatedGalaxies(BalrogSetup, simulation_rules)
-   
-
-    # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
-    bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
+def RaiseException(traceback=False):
+    s = list(sys.exc_info())
+    if traceback:
+        logging.error('Run error caused Balrog to exit.', exc_info=s)
+    else:
+        logging.error('Run error caused Balrog to exit.', exc_info=(s[0], s[1], None))
+    sys.exit()
 
 
-    # If desired, run sextractor over the image prior to inserting any simulated galaxies.
-    if not BalrogSetup.noempty:
-        NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
+def RunBalrog(cmdline_opts, BalrogSetup, rules):
+    try:
+        # Take the the user's configurations and build the simulated truth catalog out of them.
+        rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
+        catalog = GetSimulatedGalaxies(BalrogSetup, rules)
+       
+        # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
+        bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
+
+        # If desired, run sextractor over the image prior to inserting any simulated galaxies.
+        if not BalrogSetup.noempty:
+            NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
+
+        # Insert simulated galaxies.
+        bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs)
+        WriteImages(BalrogSetup, bigImage, subWeight)
+        WriteCatalog(catalog, BalrogSetup, txt=None, fits=True)
+
+        # Run sextractor over the simulated image.
+        RunSextractor(BalrogSetup, extra_sex_config, catalog)
+
+        # If chosen, clean up image files you don't need anymore
+        if BalrogSetup.clean:
+            Cleanup(BalrogSetup)
+
+        # Log some  extra stuff Balrog used along the way
+        LogDerivedOpts(cmdline_opts, BalrogSetup)
+
+    except:
+        RaiseException(traceback=False)
 
 
-    # Insert simulated galaxies.
-    bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs)
-    WriteImages(BalrogSetup, bigImage, subWeight)
-    WriteCatalog(catalog, BalrogSetup, txt=None, fits=True)
+def GetNativeOptions():
+    try:
+        parser = argparse.ArgumentParser()
+        DefaultArgs(parser)
+    except:
+        RaiseException(traceback=False)
+    return parser
 
 
-    # Run sextractor over the simulated image.
-    RunSextractor(BalrogSetup, extra_sex_config, catalog)
+def AddCustomOptions(parser):
+    try:
+        CustomArgs(parser) 
+    except:
+        RaiseException(traceback=True)
 
 
-    # If chosen, clean up image files you don't need anymore
-    if BalrogSetup.clean:
-        Cleanup(BalrogSetup)
+def NativeParse(parser):
+    try:
+        cmdline_opts = parser.parse_args()
+        log = SetupLogger(cmdline_opts)
+        ParseDefaultArgs(cmdline_opts,log)
+        BalrogSetup = ConfigureBalrog(cmdline_opts, log)
+    except:
+        RaiseException(traceback=False)
+    return cmdline_opts, BalrogSetup
 
 
-    # Log some  extra stuff Balrog used along the way
-    LogDerivedOpts(cmdline_opts, BalrogSetup)
-   
+def CustomParse(cmdline_opts, BalrogSetup):
+    try:
+        rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup)
+    except:
+        RaiseException(traceback=True)
+    return rules, extra_sex_config
+
 
 if __name__ == "__main__":
-    try:
-        RunBalrog()
-    except:
-        s = list(sys.exc_info())
-        logging.error('Run error caused Balrog to exit.', exc_info=(s[0], s[1], None))
-        #logging.error('Run error caused Balrog to exit.', exc_info=s)
-        #sys.exit()
+    parser = GetNativeOptions()
+    AddCustomOptions(parser)
+    cmdline_opts, BalrogSetup = NativeParse(parser)
+    rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup)
+    RunBalrog(cmdline_opts, BalrogSetup, rules)
+
