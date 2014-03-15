@@ -7,6 +7,7 @@ import sys
 import subprocess
 import argparse
 import logging
+import traceback
 import numpy as np
 import astropy.io.fits as pyfits
 import galsim
@@ -343,7 +344,6 @@ def UserDefinitions(cmdline_args, BalrogSetup):
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup)
     LogExtraSexConfig(ExtraSexConfig, BalrogSetup)
-    #rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
     return rules, ExtraSexConfig
 
 
@@ -546,12 +546,6 @@ def ConfigureBalrog(cmdline_opts, log):
     cmdline_opts, derived_opts = GetMoreOpts(cmdline_opts, log)
     BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
     return BalrogSetup
-
-'''
-def Something
-    simulation_rules, ExtraSexConfig = UserDefinitions(cmdline_opts, BalrogSetup)
-    return BalrogSetup, simulation_rules, ExtraSexConfig
-'''
 
 
 def GetMoreOpts(cmdline_args, log):
@@ -839,7 +833,6 @@ def ParseSex(args, log, configdir):
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
 
 
-
 def ParseDefaultArgs(args,log):
     thisdir = os.path.dirname( os.path.realpath(__file__) )
     defdir = os.path.join(thisdir, 'default_example')
@@ -851,7 +844,6 @@ def ParseDefaultArgs(args,log):
     ParseSex(args, log, configdir)
 
     return args
-
 
 
 def DefaultArgs(parser):
@@ -890,86 +882,85 @@ def DefaultArgs(parser):
     parser.add_argument( "-sep", "--sexemptyparam", help="Sextractor param file for run over original image, prior to any simulation, If only interested in the run for 'deblending' issues, the file's contents are mostly irrelevant. The default file does not do model fitting to be faster.", type=str, default=None)
 
 
-def RaiseException(traceback=False):
-    s = list(sys.exc_info())
-    if traceback:
-        logging.error('Run error caused Balrog to exit.', exc_info=s)
-    else:
-        logging.error('Run error caused Balrog to exit.', exc_info=(s[0], s[1], None))
+def RaiseException():
+    exc_info = sys.exc_info()
+    config_errs = []
+    err_list = traceback.extract_tb(exc_info[2])
+    for err in err_list: 
+        file = err[0]
+        if file.find('config.py')!=-1:
+            config_errs.append(err)
+    keep = traceback.format_list(config_errs)
+    keep_tb = ''.join(keep)
+    logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
     sys.exit()
 
 
-def RunBalrog(cmdline_opts, BalrogSetup, rules):
-    try:
-        # Take the the user's configurations and build the simulated truth catalog out of them.
-        rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
-        catalog = GetSimulatedGalaxies(BalrogSetup, rules)
-       
-        # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
-        bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
-
-        # If desired, run sextractor over the image prior to inserting any simulated galaxies.
-        if not BalrogSetup.noempty:
-            NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
-
-        # Insert simulated galaxies.
-        bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs)
-        WriteImages(BalrogSetup, bigImage, subWeight)
-        WriteCatalog(catalog, BalrogSetup, txt=None, fits=True)
-
-        # Run sextractor over the simulated image.
-        RunSextractor(BalrogSetup, extra_sex_config, catalog)
-
-        # If chosen, clean up image files you don't need anymore
-        if BalrogSetup.clean:
-            Cleanup(BalrogSetup)
-
-        # Log some  extra stuff Balrog used along the way
-        LogDerivedOpts(cmdline_opts, BalrogSetup)
-
-    except:
-        RaiseException(traceback=False)
-
-
 def GetNativeOptions():
-    try:
-        parser = argparse.ArgumentParser()
-        DefaultArgs(parser)
-    except:
-        RaiseException(traceback=False)
+    parser = argparse.ArgumentParser()
+    DefaultArgs(parser)
     return parser
 
 
 def AddCustomOptions(parser):
-    try:
-        CustomArgs(parser) 
-    except:
-        RaiseException(traceback=True)
+    CustomArgs(parser) 
 
 
 def NativeParse(parser):
-    try:
-        cmdline_opts = parser.parse_args()
-        log = SetupLogger(cmdline_opts)
-        ParseDefaultArgs(cmdline_opts,log)
-        BalrogSetup = ConfigureBalrog(cmdline_opts, log)
-    except:
-        RaiseException(traceback=False)
+    cmdline_opts = parser.parse_args()
+    log = SetupLogger(cmdline_opts)
+    ParseDefaultArgs(cmdline_opts,log)
+    BalrogSetup = ConfigureBalrog(cmdline_opts, log)
     return cmdline_opts, BalrogSetup
 
 
 def CustomParse(cmdline_opts, BalrogSetup):
-    try:
-        rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup)
-    except:
-        RaiseException(traceback=True)
+    rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup)
+    rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
     return rules, extra_sex_config
 
 
-if __name__ == "__main__":
+def RunBalrog():
+    # Get Native argument parser
     parser = GetNativeOptions()
+
+    # Add the user's command line options
     AddCustomOptions(parser)
+
+    # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser)
     rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup)
-    RunBalrog(cmdline_opts, BalrogSetup, rules)
+
+    # Take the the user's configurations and build the simulated truth catalog out of them.
+    catalog = GetSimulatedGalaxies(BalrogSetup, rules)
+   
+    # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
+    bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
+
+    # If desired, run sextractor over the image prior to inserting any simulated galaxies.
+    if not BalrogSetup.noempty:
+        NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
+
+    # Insert simulated galaxies.
+    bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs)
+    WriteImages(BalrogSetup, bigImage, subWeight)
+    WriteCatalog(catalog, BalrogSetup, txt=None, fits=True)
+
+    # Run sextractor over the simulated image.
+    RunSextractor(BalrogSetup, extra_sex_config, catalog)
+
+    # If chosen, clean up image files you don't need anymore
+    if BalrogSetup.clean:
+        Cleanup(BalrogSetup)
+
+    # Log some  extra stuff Balrog used along the way
+    LogDerivedOpts(cmdline_opts, BalrogSetup)
+
+
+
+if __name__ == "__main__":
+    try:
+        RunBalrog()
+    except:
+        RaiseException()
 
