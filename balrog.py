@@ -941,7 +941,7 @@ def ParseFloatKeyword(args, log):
         try:
             z = args.zeropoint
             args.zeropoint = pyfits.open(args.imagein)[args.imageext].header[args.zeropoint]
-            log.debug('--zeropoint given as image header keyword: %s = %f' %(s,args.zeropoint))
+            log.debug('--zeropoint given as image header keyword: %s = %f' %(z,args.zeropoint))
         except:
             if args.zeropoint=='SEXMGZPT':
                 log.info('Did not find keyword SEXMGZPT in image header. Setting --zeropoint = 30.0')
