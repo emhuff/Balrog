@@ -353,13 +353,18 @@ def GetSimulatedGalaxies(BalrogSetup, simgals):
     return simgals
 
 
-def CompExcept(name, i):
+def CompError(name, i):
     if name=='flux':
         name = 'magnitude'
     raise RulesAssignmentError(303, 'component %i of %s' %(i, name))
 
-def GalExcept(name):
+def GalError(name):
     raise RulesAssignmentError(303, name)
+
+
+def InitializeSersic(rules, sampled, nProfiles=1):
+    rules.InitializeSersic(nProfiles=nProfiles)
+    sampled.InitializeSersic(nProfiles=nProfiles)
 
 
 class CompRules(object):
@@ -367,22 +372,24 @@ class CompRules(object):
         super(CompRules, self).__setattr__('rules', [None]*nProfiles)
         super(CompRules, self).__setattr__('name', name)
         super(CompRules, self).__setattr__('nProfiles', nProfiles)
-        pass
-
 
     def __setattr__(self, name, value):
-        raise ComponentAttributeError(501)
+        raise RulesComponentAttributeError(305)
 
     def __getattr__(self, name):
-        raise ComponentAttributeError(501)
+        raise RulesComponentAttributeError(305)
   
     def __len__(self):
         return self.nProfiles
 
     def __getitem__(self, index):
+        if index >= self.nProfiles:
+            raise RulesIndexOutOfRange(304, self.name, self.nProfiles)
         return self.rules[index]
 
     def __setitem__(self, index, value):
+        if index >= self.nProfiles:
+            raise RulesIndexOutOfRange(304, self.name, self.nProfiles)
         rule = self._CheckRule(value, index)
         self.rules[index] = rule
 
@@ -399,9 +406,9 @@ class CompRules(object):
                     if arr.ndim==1 and arr.size==self.ngal:
                         rule = Array(arr)
                     else:
-                        CompExcept(self.name, i)
+                        CompError(self.name, i)
                 except:
-                    CompExcept(self.name, i)
+                    CompError(self.name, i)
         return rule
 
 
@@ -416,9 +423,6 @@ class SimRules(object):
         super(SimRules, self).__setattr__('nProfiles', nProfiles)
         for c in self._GetComponent():
             super(SimRules, self).__setattr__(c, CompRules(nProfiles,c))
-
-    def _GetNames(self):
-        return ['x','y','g1','g2','magnification','axisratio','beta','halflightradius','magnitude','sersicindex']
 
     def _GetGalaxy(self):
         return ['x','y','g1','g2','magnification']
@@ -450,7 +454,10 @@ class SimRules(object):
             try:
                 size = len(value)
             except:
-                raise Exception('Sersic component rules must be arrays')
+                raise RulesAssignmentNoArrayError(306)
+            if size!=self.nProfiles:
+                raise RulesAssignmentNoArrayError(306)
+
             for i in range(size):
                 value[i] = self._CheckRule(name, value[i], 'component', i=i)
                 exec "self.%s[%i] = value[%i]" %(name, i, i)
@@ -473,22 +480,26 @@ class SimRules(object):
                         rule = Array(arr)
                     else:
                         if kind=='galaxy':
-                            GalExcept(name)
+                            GalError(name)
                         else:
-                            CompExcept(name, i)
+                            CompError(name, i)
                 except:
                     if kind=='galaxy':
-                        GalExcept(name)
+                        GalError(name)
                     else:
-                        CompExcept(name, i)
+                        CompError(name, i)
         return rule
 
 
 class CompResult(object):
-    def __init__(self, name):
+    def __init__(self, nProfiles, name):
         super(CompResult, self).__setattr__('name', name)
+        super(CompResult, self).__setattr__('nProfiles', nProfiles)
 
     def __getitem__(self,index):
+        if index >= self.nProfiles:
+            raise SampledIndexOutOfRange(404, self.name, self.nProfiles)
+
         if self.name=='magnitude':
             return Same( (index,'flux') )
         else:
@@ -500,17 +511,27 @@ class CompResult(object):
     def __setattr__(self, name, value):
         raise SampledAssignmentError(403, '%s.%s'%(self.name,name))
 
+    def __getattr__(self, name):
+        raise SampledComponentAttributeError(405)
+
 
 class Results(object):
     def __init__(self):
-        comps = ['axisratio', 'beta', 'halflightradius', 'magnitude', 'sersicindex']
-        for comp in comps:
-            obj = CompResult(comp)
-            super(Results, self).__setattr__(comp, obj)
+        self.InitializeSersic()
+
+    def InitializeSersic(self, nProfiles=1):
+        super(Results, self).__setattr__('nProfiles', nProfiles)
+        for c in self._GetComponent():
+            super(Results, self).__setattr__(c, CompResult(nProfiles,c))
+
+    def _GetGalaxy(self):
+        return ['x','y','g1','g2','magnification']
+
+    def _GetComponent(self):
+        return ['axisratio','beta','halflightradius','magnitude','sersicindex']
 
     def __getattr__(self, name):
-        galaxy = ['x','y','g1','g2','magnification']
-        if name not in galaxy:
+        if name not in self._GetGalaxy():
             raise SampledAttributeError(401, name)
         else:
             return Same(name)

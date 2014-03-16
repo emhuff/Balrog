@@ -191,10 +191,22 @@ class nComponentSersic(object):
 
             if index > -1:
                 self.component[index][key] = func(*arguments)
+                try:
+                    size = len(self.component[index][key])
+                except:
+                    raise FunctionReturnError(501, func.__name__)
             else:
                 self.galaxy[key] = func(*arguments)
+                try:
+                    size = len(self.galaxy[key])
+                except:
+                    raise FunctionReturnError(501, func.__name__)
+            
+            if size!=self.ngal:
+                raise FunctionReturnError(501, func.__name__)
 
             completed.append(i)
+
         return completed
 
 
@@ -464,14 +476,29 @@ class Rule(object):
 
     def __init__(self, type=None, average=None, sigma=None, joint=False, value=None, array=None, component=None, minimum=None, maximum=None, function=None, args=None, catalog=None, ext=None, column=None, ):
 
-
         if type=='catalog':
             if catalog==None:
-                raise Exception('must specify a catalog file when sampling from catalog')
+                raise CatalogArgError(503, 'a catalog file (file)')
             if ext==None:
-                raise Exception('must specify an extenstion when sampling from catalog')
+                raise CatalogArgError(503, 'a FITS extention index (ext)')
             if column==None:
-                raise Exception('must specify a column when sampling from catalog')
+                raise CatalogArgError(503, 'a column name (col)')
+            
+            try:
+                hdus = pyfits.open(catalog)
+            except:
+                raise CatalogFileError(504, catalog)
+
+            try:
+                data = hdus[ext].data
+            except:
+                raise CatalogExtError(505, catalog, ext)
+
+            try:
+                col = data[column]
+            except:
+                raise CatalogColError(506, catalog, ext, column)
+
             self.param = [catalog,ext,column]
 
         elif type=='value':
@@ -491,9 +518,9 @@ class Rule(object):
 
         elif type=='function':
             if function==None:
-                raise Exception('must specify a function with sample type function')
+                raise FunctionArgError(502, 'a function name (function)')
             if args==None:
-                raise Exception('must specify args with sample type function')
+                raise FunctionArgError(502, 'the arguments to the function (args)')
             self.param = [function, args]
 
         elif type==None:
@@ -518,7 +545,7 @@ def Catalog( file=None, ext=None, col=None ):
 def Same( comp ):
     return Rule(type='component', component=comp)
 
-def Function(function=None, args=()):
+def Function(function=None, args=None):
     return Rule(type='function', function=function, args=args)
 
 

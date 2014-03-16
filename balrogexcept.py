@@ -21,7 +21,12 @@
 # 201 Cannot create --outdir
 # 202 Cannot create output subdirectory
 
-# 501 asked for attribute rules.%s[%i].%s
+
+#### config.py syntax errors
+
+# 305 asked for attribute rules.%s_sersic.%s
+# 405 asked for attribute sampled.%s_sersic.%s
+
 # 401 asked for attribute of sampled that doesn't exist
 # 301 asked for attribute of rules that doesn't exist
 
@@ -31,9 +36,20 @@
 # 403 sampled reassignment
 # 303 rule not understood
 
+# 404 sampled index out of range
+# 304 rules index out of range
+
+# 306 tried to assign one of the sersic components of rules to something other than an array
 
 #  -1 ngal direct change attempt
 #  -2 nProfiles direct change attempt
+
+# 501 Function return something other than array of the right length
+# 502 Funciton arg error
+# 503 Catalog arg error
+# 504 Catalog file doesn't exist
+# 505 Catalog ext doesn't exist
+# 506 Catalog col doesn't exist
 
 
 class BaseException(Exception):
@@ -99,9 +115,13 @@ class RulesAttributeError(BaseException):
     def init(self, name):
         self.msg = 'ERROR code: %i. Asked for an attribute of rules which does not exist: rules.%s. Only rules.{x,y,g1,g2,magnification,sersicindex,halflightradius,magnitude,axisratio,beta} are valid.' %(self.code, name)
 
-class ComponentAttributeError(BaseException):
+class RulesComponentAttributeError(BaseException):
     def init(self):
-        self.msg = 'ERROR code: %i. Sersic component rules do not have any attributes. So you cannot get or set any' %(self.code)
+        self.msg = 'ERROR code: %i. Sersic components of rules do not have any attributes. So you cannot get or set any' %(self.code)
+
+class SampledComponentAttributeError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. Sersic components of sampled do not have any attributes. So you cannot get or set any' %(self.code)
 
 
 class SampledIndexingError(BaseException):
@@ -122,6 +142,20 @@ class RulesAssignmentError(BaseException):
         self.msg = 'ERROR code: %i. The rule you gave for %s was not understood. Rules can be a single value, an array of length ngal, an attribute of sampled, a Catalog() statement or a Function() statement.' %(self.code, label)
 
 
+class SampledIndexOutOfRange(BaseException):
+    def init(self, name, size):
+        self.msg = "ERROR code: %i. Attempted to index sampled.%s beyond it's size of %i." %(self.code, name, size)
+
+class RulesIndexOutOfRange(BaseException):
+    def init(self, name, size):
+        self.msg = "ERROR code: %i. Attempted to index rules.%s beyond it's size of %i." %(self.code, name, size)
+
+
+class RulesAssignmentNoArrayError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. Attempted an illegal reassingment of sersic component rules. These must be arrays of the same length as the number of profiles' %(self.code)
+
+
 class RulesnProfilesError(BaseException):
     def init(self, name):
         self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.nProfiles. However, you're not allowed to change it directly. Use InitializeSersic()" %(self.code)
@@ -132,3 +166,26 @@ class RulesNgalError(BaseException):
         self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.ngal. However, you're not allowed to change it." %(self.code)
 
 
+class FunctionReturnError(BaseException):
+    def init(self, name):
+        self.msg = "ERROR code: %i. Illegal return value for the function %s. All Function rules must return an array of length ngal." %(self.code, name)
+
+class FunctionArgError(BaseException):
+    def init(self, label):
+        self.msg = "ERROR code: %i. Must specify %s with sampling type Function" %(self.code, label)
+
+class CatalogArgError(BaseException):
+    def init(self, label):
+        self.msg = "ERROR code: %i. Must specify %s with sampling type Catalog" %(self.code, label)
+
+class CatalogFileError(BaseException):
+    def init(self, file):
+        self.msg = "ERROR code: %i. Catalog file specified does not exist: %s." %(self.code, file)
+
+class CatalogExtError(BaseException):
+    def init(self, file, ext):
+        self.msg = "ERROR code: %i. Catalog extenstion specified does not exist: %i, %s." %(self.code, ext, file)
+
+class CatalogColError(BaseException):
+    def init(self, file, ext, col):
+        self.msg = "ERROR code: %i. Catalog column specified does not exist: %s, %s[%i]." %(self.code, col, file, ext)

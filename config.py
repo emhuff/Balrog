@@ -3,7 +3,7 @@
 import os
 import numpy as np
 from model_class import *
-
+from balrog import InitializeSersic
 
 
 ### In this function you can define, your own command line arguments.
@@ -65,7 +65,7 @@ def SimulationRules(args, rules, sampled):
     rules.axisratio = [Random(0.01, 1.0)]
     '''
 
-    rules.InitializeSersic(nProfiles=2)
+    InitializeSersic(rules, sampled, nProfiles=2)
     rules.beta[1] = 0
     rules.beta[0] = sampled.beta[1]
     rules.halflightradius = [Catalog(cat,ext,args.reff), sampled.halflightradius[0]]
@@ -79,7 +79,6 @@ def SimulationRules(args, rules, sampled):
     #rules.sersicindex = [1]
     axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
     rules.axisratio = [axisratio, sampled.axisratio[0]]
-    
 
 
 def f(item):
