@@ -8,6 +8,7 @@ import sys
 import os
 import logging
 import traceback
+from balrogexcept import *
 
 
 class nComponentSersic(object):
@@ -295,15 +296,15 @@ class nComponentSersic(object):
         if key in ['g1', 'g2']:
             BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of 0.' %(key))
             return np.zeros(self.ngal)
-        if key == ['magnification']:
+        if key == 'magnification':
             BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of 1.' %(key))
             return np.ones(self.ngal)
         if key=='x':
             BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
-            return np.random.uniform( BalrgoSetup.xmin, BalrogSetup.xmax, self.ngal )
+            return np.random.uniform( BalrogSetup.xmin, BalrogSetup.xmax, self.ngal )
         if key=='y':
             BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
-            return np.random.uniform( BalrgoSetup.ymin, BalrogSetup.ymax, self.ngal )
+            return np.random.uniform( BalrogSetup.ymin, BalrogSetup.ymax, self.ngal )
         
 
     def Sample(self, BalrogSetup):
@@ -535,44 +536,6 @@ def MagFlux(g):
     return g
 
 
-def CompExcept(name, i):
-    raise Exception('The rule you gave for component %i of %s was not understood' %(i,name))
-
-def GalExcept(name):
-    raise Exception('The rule you gave for %s was not understood' %(name))
-
-def CheckRules(rules, names, ngal, kind):
-    if rules==None:
-        return
-    for i in range(len(rules)):
-        if kind=='galaxy':
-            CheckRule(rules, names[i], ngal, kind, i)
-        else:
-            CheckRule(rules, names, ngal, kind, i)
-
-
-def CheckRule(rules, name, ngal, kind, i):
-        if type(rules[i]).__name__!='Rule':
-            if rules[i]==None:
-                pass
-            elif type(rules[i])==float or type(rules[i])==int:
-                rules[i] = Value(float(rules[i]))
-            else:
-                try:
-                    arr = np.array(rules[i])
-                    if arr.ndim==1 and arr.size==ngal:
-                        rules[i] = Array(arr)
-                    else:
-                        if kind=='galaxy':
-                            GalExcept(name)
-                        else:
-                            CompExcept(name, i)
-                except:
-                    if kind=='galaxy':
-                        GalExcept(name)
-                    else:
-                        CompExcept(name, i)
-
 
 def HandleFunction(g, k):
     arguments = g.param[1]
@@ -591,7 +554,6 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
 
     galrules = [x, y, g1, g2, magnification]
     keys = ['x', 'y', 'g1', 'g2', 'magnification']
-    CheckRules(galrules, keys, opts.ngal, 'galaxy')
     for g,k in zip(galrules,keys):
         if g!=None:
             if g.type=='component':
@@ -614,17 +576,11 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
         if comprules[j]!=None:
             size = len(comprules[j])
             if size!=nProfiles:
-                #opts.logger.exception('%s has %i elements. Must match nProfiles = %i' %(key,size,nProfiles))
-                et, ex, tb = sys.exc_info()
-                #opts.logger.exception(traceback.print_tb(tb))
                 if key=='flux':
                     k = 'magnitude'
                 else:
                     k = key
-                #opts.logger.error('rules.%s has %i array element(s). Must match rules.nProfiles = %i.' %(k,size,nProfiles))
                 raise Exception('rules.%s has %i array element(s). Must match rules.nProfiles = %i.' %(k,size,nProfiles))
-                #sys.exit(1)
-        CheckRules(comprules[j], key, opts.ngal, 'component')
         for i in range(nProfiles):
             if comprules[j]!=None:
                 comp = comprules[j][i]

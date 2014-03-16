@@ -48,7 +48,6 @@ def SimulationRules(args, rules, sampled):
     ext = args.ext
 
     # Simulated galaxies only have one of each of these
-    #rules.x = randpos(args.xmin, args.xmax, args.ngal)
     rules.x = Function(function=randpos, args=(args.xmin, args.xmax, args.ngal))
     rules.y = randpos(args.ymin, args.ymax, args.ngal)
     #rules.g1 = 0
@@ -66,8 +65,9 @@ def SimulationRules(args, rules, sampled):
     rules.axisratio = [Random(0.01, 1.0)]
     '''
 
-    rules.nProfiles = 2
-    rules.beta = [sampled.beta[1], 0]
+    rules.InitializeSersic(nProfiles=2)
+    rules.beta[1] = 0
+    rules.beta[0] = sampled.beta[1]
     rules.halflightradius = [Catalog(cat,ext,args.reff), sampled.halflightradius[0]]
     rules.magnitude = [Catalog(cat,ext,args.mag), sampled.magnitude[0]]
     ns = Function(function=f, args=(np.ones(args.ngal)))
@@ -79,6 +79,7 @@ def SimulationRules(args, rules, sampled):
     #rules.sersicindex = [1]
     axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
     rules.axisratio = [axisratio, sampled.axisratio[0]]
+    
 
 
 def f(item):

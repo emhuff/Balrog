@@ -21,93 +21,114 @@
 # 201 Cannot create --outdir
 # 202 Cannot create output subdirectory
 
+# 501 asked for attribute rules.%s[%i].%s
+# 401 asked for attribute of sampled that doesn't exist
+# 301 asked for attribute of rules that doesn't exist
 
-class OutdirWriteError(Exception):
+# 402 sampled itself has no indexing, and even if it did it wouldn't be reassignable
+# 302 rules itself has no indexing
 
-    def __init__(self, code, dir, fdir):
-        self.code = code
+# 403 sampled reassignment
+# 303 rule not understood
+
+
+#  -1 ngal direct change attempt
+#  -2 nProfiles direct change attempt
+
+
+class BaseException(Exception):
+    def __init__(self, *args):
+        self.code = args[0]
+        arguments = args[1:]
+        self.init(*arguments)
+
+    def __str__(self):
+        return repr(self.msg)
+
+
+class OutdirWriteError(BaseException):
+    def init(self, dir, fdir):
         self.msg = "ERROR code: %i. Attempting to create --outdir %s failed. Could not create %s" %(self.code,dir,fdir)
 
-    def __str__(self):
-        return repr(self.msg)
 
-
-class SubdirWriteError(Exception):
-
-    def __init__(self, code, dir):
-        self.code = code
+class SubdirWriteError(BaseException):
+    def init(self, dir):
         self.msg = "ERROR code: %i. Could not create output subdirectory %s" %(self.code,dir)
 
-    def __str__(self):
-        return repr(self.msg)
 
-
-
-class ImageInputError(Exception):
-
-    def __init__(self, code, label, arg, val):
-        self.code = code
+class ImageInputError(BaseException):
+    def init(self, label, arg, val):
         self.msg = "ERROR code: %i. Given input %s file does not exist: --%s %s" %(self.code, label, arg, val)
 
-    def __str__(self):
-        return repr(self.msg)
 
-
-class PsfInputError(Exception):
-
-    def __init__(self, code, image):
-        self.code = code
+class PsfInputError(BaseException):
+    def init(self, image):
         self.msg = "ERROR code: %i. Input image file other than default was given: --imagein %s, but no --psfin was given. No sensible default exists for assuming a --psfin." %(self.code, image)
 
-    def __str__(self):
-        return repr(self.msg)
 
-
-class FitsFileError(Exception):
-    
-    def __init__(self, code, label, arg, val):
-        self.code = code
+class FitsFileError(BaseException):
+    def init(self, label, arg, val):
         self.msg = "ERROR code: %i. Given input %s file was not recognized as a FITS file by pyfits and could not be opened: --%s %s" %(self.code, label, arg, val)
 
-    def __str__(self):
-        return repr(self.msg)
 
-
-class FitsExtError(Exception):
-    
-    def __init__(self, code, label, arg, val, iarg,ival):
-        self.code = code
+class FitsExtError(BaseException):
+    def init(self, label, arg, val, iarg,ival):
         self.msg = "ERROR code: %i. Given input %s extension does not exist: --%s %s, --%s %s" %(self.code, label, arg,val, iarg,ival)
 
-    def __str__(self):
-        return repr(self.msg)
 
-
-class FitsHeaderError(Exception):
-    
-    def __init__(self, code,label,keyword, iarg,ival, earg,eval):
-        self.code = code
+class FitsHeaderError(BaseException):
+    def init(self, label,keyword, iarg,ival, earg,eval):
         self.msg = "ERROR code: %i. Given input %s extension was not recognized as image because it is missing keyword %s: --%s %s, --%s %s" %(self.code,label,keyword, iarg,ival, earg,eval)
 
-    def __str__(self):
-        return repr(self.msg)
+
+class SizeMismatchError(BaseException):
+    def init(self, ix,iy, wx,wy):
+        self.msg = "ERROR code: %i. Input image and input weight have different dimensions (col, row): image = (%i, %i), weight = (%i, %i)" %(self.code, ix,iy,wx,wy)
 
 
-class SizeMismatchError(Exception):
-    
-    def __init__(self, code, ix,iy, wx,wy):
-        self.code = code
-        self.msg = "ERROR code: %i. Input image and input weight have different dimensions (col, row): image = (%i, %i), weight = (%i, %i)" %(code, ix,iy,wx,wy)
-
-    def __str__(self):
-        return repr(self.msg)
+class SizeError(BaseException):
+    def init(self, label, minimum,maximum):
+        self.msg = "ERROR code: %i. --%smin = %i is greater than --%smax = %i" %(self.code, label,minimum, label,maximum)
 
 
-class SizeError(Exception):
-    
-    def __init__(self, code, label, minimum,maximum):
-        self.code = code
-        self.msg = "ERROR code: %i. --%smin = %i is greater than --%smax = %i" %(code, label,minimum, label,maximum)
+class SampledAttributeError(BaseException):
+    def init(self, name):
+        self.msg = 'ERROR code: %i. Asked for an attribute of sampled which does not exist: sampled.%s. Only sampled.{x,y,g1,g2,magnification,sersicindex,halflightradius,magnitude,axisratio,beta} are valid.' %(self.code, name)
 
-    def __str__(self):
-        return repr(self.msg)
+class RulesAttributeError(BaseException):
+    def init(self, name):
+        self.msg = 'ERROR code: %i. Asked for an attribute of rules which does not exist: rules.%s. Only rules.{x,y,g1,g2,magnification,sersicindex,halflightradius,magnitude,axisratio,beta} are valid.' %(self.code, name)
+
+class ComponentAttributeError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. Sersic component rules do not have any attributes. So you cannot get or set any' %(self.code)
+
+
+class SampledIndexingError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. The object sampled itself has no indexing. Only sampled.{sersicindex,halflightradius,magnitude,axisratio,beta} are indexed.' %(self.code)
+
+class RulesIndexingError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. The object rules itself has no indexing. Only rules.{sersicindex,halflightradius,magnitude,axisratio,beta} are indexed.' %(self.code)
+
+
+class SampledAssignmentError(BaseException):
+    def init(self, name):
+        self.msg = 'ERROR code: %i. Attempted to (re)assign sampled.%s. You cannot (re)assign any attributes of the sampling results. This is only to be used to access the results. Assign rules to change results.' %(self.code, name)
+
+class RulesAssignmentError(BaseException):
+    def init(self, label):
+        self.msg = 'ERROR code: %i. The rule you gave for %s was not understood. Rules can be a single value, an array of length ngal, an attribute of sampled, a Catalog() statement or a Function() statement.' %(self.code, label)
+
+
+class RulesnProfilesError(BaseException):
+    def init(self, name):
+        self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.nProfiles. However, you're not allowed to change it directly. Use InitializeSersic()" %(self.code)
+
+
+class RulesNgalError(BaseException):
+    def init(self):
+        self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.ngal. However, you're not allowed to change it." %(self.code)
+
+

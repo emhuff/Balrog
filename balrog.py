@@ -333,7 +333,7 @@ def Cleanup(BalrogSetup):
 
 
 def UserDefinitions(cmdline_args, BalrogSetup):
-    rules = SimRules()
+    rules = SimRules(BalrogSetup.ngal)
     ExtraSexConfig = {}
     results = Results()
     cmdline_args_copy = copy.copy(cmdline_args)
@@ -353,21 +353,135 @@ def GetSimulatedGalaxies(BalrogSetup, simgals):
     return simgals
 
 
+def CompExcept(name, i):
+    if name=='flux':
+        name = 'magnitude'
+    raise RulesAssignmentError(303, 'component %i of %s' %(i, name))
 
-class SimRules():
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.g1 = None
-        self.g2 = None
-        self.magnification = None
+def GalExcept(name):
+    raise RulesAssignmentError(303, name)
 
-        self.nProfiles = 1
-        self.axisratio = None
-        self.beta = None
-        self.halflightradius = None
-        self.magnitude = None
-        self.sersicindex = None
+
+class CompRules(object):
+    def __init__(self, nProfiles, name):
+        super(CompRules, self).__setattr__('rules', [None]*nProfiles)
+        super(CompRules, self).__setattr__('name', name)
+        super(CompRules, self).__setattr__('nProfiles', nProfiles)
+        pass
+
+
+    def __setattr__(self, name, value):
+        raise ComponentAttributeError(501)
+
+    def __getattr__(self, name):
+        raise ComponentAttributeError(501)
+  
+    def __len__(self):
+        return self.nProfiles
+
+    def __getitem__(self, index):
+        return self.rules[index]
+
+    def __setitem__(self, index, value):
+        rule = self._CheckRule(value, index)
+        self.rules[index] = rule
+
+
+    def _CheckRule(self, rule, i):
+        if type(rule).__name__!='Rule':
+            if rule==None:
+                pass
+            elif type(rule)==float or type(rule)==int:
+                rule = Value(float(rule))
+            else:
+                try:
+                    arr = np.array(rule)
+                    if arr.ndim==1 and arr.size==self.ngal:
+                        rule = Array(arr)
+                    else:
+                        CompExcept(self.name, i)
+                except:
+                    CompExcept(self.name, i)
+        return rule
+
+
+class SimRules(object):
+    def __init__(self, ngal):
+        super(SimRules, self).__setattr__('ngal', ngal)
+        for name in self._GetGalaxy():
+            super(SimRules, self).__setattr__(name, None)
+        self.InitializeSersic()
+
+    def InitializeSersic(self, nProfiles=1):
+        super(SimRules, self).__setattr__('nProfiles', nProfiles)
+        for c in self._GetComponent():
+            super(SimRules, self).__setattr__(c, CompRules(nProfiles,c))
+
+    def _GetNames(self):
+        return ['x','y','g1','g2','magnification','axisratio','beta','halflightradius','magnitude','sersicindex']
+
+    def _GetGalaxy(self):
+        return ['x','y','g1','g2','magnification']
+
+    def _GetComponent(self):
+        return ['axisratio','beta','halflightradius','magnitude','sersicindex']
+
+    def __getitem__(self, index):
+        raise RulesIndexingError(302)
+
+    def __setitem__(self, index, value):
+        raise RulesIndexingError(302)
+
+    def __getattr__(self, name):
+        raise RulesAttributeError(301, name)
+
+    def __setattr__(self, name, value):
+        if name=='ngal':
+            raise RulesNgalError(-1)
+
+        elif name=='nProfiles':
+            raise RulesnProfilesError(-2, name)
+
+        elif name in ['x', 'y', 'g1', 'g2', 'magnification']:
+            value = self._CheckRule(name, value, 'galaxy')
+            super(SimRules, self).__setattr__(name, value)
+
+        elif name in ['axisratio', 'beta', 'halflightradius', 'magnitude', 'sersicindex']:
+            try:
+                size = len(value)
+            except:
+                raise Exception('Sersic component rules must be arrays')
+            for i in range(size):
+                value[i] = self._CheckRule(name, value[i], 'component', i=i)
+                exec "self.%s[%i] = value[%i]" %(name, i, i)
+
+        else:
+            raise RulesAttributeError(301,name)
+
+
+
+    def _CheckRule(self, name, rule, kind, i=None):
+        if type(rule).__name__!='Rule':
+            if rule==None:
+                pass
+            elif type(rule)==float or type(rule)==int:
+                rule = Value(float(rule))
+            else:
+                try:
+                    arr = np.array(rule)
+                    if arr.ndim==1 and arr.size==self.ngal:
+                        rule = Array(arr)
+                    else:
+                        if kind=='galaxy':
+                            GalExcept(name)
+                        else:
+                            CompExcept(name, i)
+                except:
+                    if kind=='galaxy':
+                        GalExcept(name)
+                    else:
+                        CompExcept(name, i)
+        return rule
 
 
 class CompResult(object):
@@ -381,10 +495,10 @@ class CompResult(object):
             return Same( (index,self.name) )
 
     def __setitem__(self, index, value):
-        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+        raise SampledAssignmentError(403, '%s[%i]'%(self.name,index))
 
     def __setattr__(self, name, value):
-        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+        raise SampledAssignmentError(403, '%s.%s'%(self.name,name))
 
 
 class Results(object):
@@ -394,20 +508,21 @@ class Results(object):
             obj = CompResult(comp)
             super(Results, self).__setattr__(comp, obj)
 
-
-
     def __getattr__(self, name):
         galaxy = ['x','y','g1','g2','magnification']
         if name not in galaxy:
-            raise Exception('asked for an undefined result')
+            raise SampledAttributeError(401, name)
         else:
             return Same(name)
     
+    def __getitem__(self, index):
+        raise SampledIndexingError(402)
+
     def __setitem__(self, index, value):
-        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+        raise SampledIndexingError(402)
 
     def __setattr__(self, name, value):
-        raise Exception('You cannot reassign any attributes of sampling results. This is only to be used to access the results. Assign rules to change results.')
+        raise SampledAssignmentError(403, name)
         
     
 
@@ -890,6 +1005,10 @@ def RaiseException():
         file = err[0]
         if file.find('config.py')!=-1:
             config_errs.append(err)
+        '''
+        else:
+            config_errs.append(err)
+        '''
     keep = traceback.format_list(config_errs)
     keep_tb = ''.join(keep)
     logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
