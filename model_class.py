@@ -129,6 +129,9 @@ class nComponentSersic(object):
     def DoComponent(self, component, comp=[]):
         completed = copy.copy(comp)
         for i in range(len(component)):
+            if i in completed:
+                continue
+
             index, key, mindex, mkey = component[i]
             c = self.ReturnComponent(mkey, mindex=mindex)
             if c==None:
@@ -273,13 +276,13 @@ class nComponentSersic(object):
         last_completed_c = None
         completed_c = []
 
-        while (last_completed_f!=completed_f) and (last_completed_c!=completed_c):
+        while (last_completed_f!=completed_f) or (last_completed_c!=completed_c):
             last_completed_f = completed_f
             last_completed_c = completed_c
-
+            
             completed_f = self.DoFunction(function, used, last_completed_f)
             completed_c = self.DoComponent(component, last_completed_c)
-            
+
 
     def GetCompDefault(self, key, BalrogSetup, used, i):
         thisdir = os.path.dirname( os.path.realpath(__file__) )

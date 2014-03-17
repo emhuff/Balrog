@@ -48,23 +48,23 @@ def SimulationRules(args, rules, sampled):
     ext = args.ext
 
     # Simulated galaxies only have one of each of these
-    rules.x = Function(function=randpos, args=(args.xmin, args.xmax, args.ngal))
-    rules.y = randpos(args.ymin, args.ymax, args.ngal)
-    #rules.g1 = 0
-    rules.g2 = sampled.g1
-    rules.magnification = np.ones(args.ngal)
+    rules.x = Function(function=rand, args=(args.xmin, args.xmax, args.ngal))
+    rules.y = Function(function=rand, args=(args.ymin, args.ymax, args.ngal))
+    rules.g1 = 0
+    rules.g2 = 0
+    rules.magnification = 1
     
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
-    '''
-    rules.nProfiles = 1
-    rules.beta = [Random(-90, 90) ]
-    rules.halflightradius = [Catalog(cat,ext,args.reff)]
-    rules.magnitude = [Catalog(cat,ext,args.mag)]
-    rules.sersicindex = [Catalog(cat,ext,args.sersicindex)]
-    rules.axisratio = [Random(0.01, 1.0)]
-    '''
+    InitializeSersic(rules, sampled, nProfiles=1)
+    rules.beta[0] = Function(function=rand, args=(-90, 90, args.ngal))
+    rules.halflightradius[0] = Catalog(file=cat,ext=ext,col=args.reff)
+    rules.magnitude[0] = Catalog(cat,ext,args.mag)
+    rules.sersicindex[0] = Catalog(cat,ext,args.sersicindex)
+    #rules.axisratio[0] = Function(function=rand, args=(0.01, 1.0, args.ngal))
+    rules.axisratio[0] = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
 
+    '''
     InitializeSersic(rules, sampled, nProfiles=2)
     rules.beta[1] = 0
     rules.beta[0] = sampled.beta[1]
@@ -79,6 +79,7 @@ def SimulationRules(args, rules, sampled):
     #rules.sersicindex = [1]
     axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
     rules.axisratio = [axisratio, sampled.axisratio[0]]
+    '''
 
 
 def f(item):
@@ -88,7 +89,7 @@ def g(avg, std, ngal, other):
     gg = gaussian(avg, std, ngal)
     return gg-other
 
-def randpos(minimum, maximum, ngal):
+def rand(minimum, maximum, ngal):
     return np.random.uniform( minimum, maximum, ngal )
 
 def gaussian(avg, std, ngal):
