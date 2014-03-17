@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import imp
 import copy
 import datetime
 import os
@@ -13,10 +14,13 @@ import astropy.io.fits as pyfits
 import galsim
 import galsim.des
 import sextractor_engine
-from model_class import *
-from config import *
-from balrogexcept import *
 
+from model_class import *
+#from balrogexcept import *
+
+#import config
+'''
+'''
 
 
 def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
@@ -362,15 +366,28 @@ def Cleanup(BalrogSetup):
             subprocess.call(['rm',file])
 
 
-def UserDefinitions(cmdline_args, BalrogSetup):
+def UserDefinitions(cmdline_args, BalrogSetup, config):
     rules = SimRules(BalrogSetup.ngal)
     ExtraSexConfig = {}
     results = Results()
     cmdline_args_copy = copy.copy(cmdline_args)
 
-    CustomParseArgs(cmdline_args_copy)
-    SimulationRules(cmdline_args_copy,rules,results)
-    SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
+
+    if config!=None:
+        if 'CustomParseArgs' not in dir(config):
+            BalrogSetup.logger.warning('The function CustomParseArgs was not found in your Balrog python config file: %s. Will continue without parsing any custom command line arguments.' %BalrogSetup.config)
+        else:
+            config.CustomParseArgs(cmdline_args_copy)
+
+        if 'SimulationRules' not in dir(config):
+            BalrogSetup.logger.warning('The function SimulationRules was not found in your Balrog python config file: %s. All properties of the simulated galaxies will assume their defaults.' %BalrogSetup.config)
+        else:
+            config.SimulationRules(cmdline_args_copy,rules,results)
+
+        if 'SextractorConfigs' not in dir(config):
+            BalrogSetup.logger.info('The function SextractorConfigs  was not found in your Balrog python config file: %s. Add this function to manually override configurations in the sextractor config file.' %BalrogSetup.config)
+        else:
+            config.SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup)
     LogExtraSexConfig(ExtraSexConfig, BalrogSetup)
@@ -392,9 +409,11 @@ def GalError(name):
     raise RulesAssignmentError(303, name)
 
 
+'''
 def InitializeSersic(rules, sampled, nProfiles=1):
     rules.InitializeSersic(nProfiles=nProfiles)
     sampled.InitializeSersic(nProfiles=nProfiles)
+'''
 
 
 class CompRules(object):
@@ -630,7 +649,8 @@ class DerivedArgs():
         self.CopyFile(args.sexnnw, self.sexdir)
         self.CopyFile(args.sexconv, self.sexdir)
         self.CopyFile(args.sexemptyparam, self.sexdir)
-        self.CopyFile(config, self.logdir)
+        if os.path.lexists(args.config):
+            self.CopyFile(args.config, self.logdir)
 
         self.outimageext = 0
         self.outweightext = 0
@@ -707,6 +727,7 @@ def SetupLogger(cmdline_args):
     return log
 
 
+'''
 def GetOpts():
     parser = argparse.ArgumentParser()
     DefaultArgs(parser)
@@ -715,6 +736,7 @@ def GetOpts():
     log = SetupLogger(cmdline_args)
     ParseDefaultArgs(cmdline_args,log)
     return cmdline_args, log
+'''
 
 
 def ConfigureBalrog(cmdline_opts, log):
@@ -1052,6 +1074,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-sv", "--stdverbosity", help="Verbosity level of stdout", type=str, default='n', choices=['n','v','vv','q'])
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
     parser.add_argument( "-dbg", "--debug", help="Traceback debug mode", action="store_true")
+    parser.add_argument( "-cnfg", "--config", help="Balrog config file", type=str, default=None)
 
     # How to run sextractor
     parser.add_argument( "-spp", "--sexpath", help='Path for sextractor binary', type=str, default='sex')
@@ -1073,10 +1096,6 @@ def RaiseException(debug=False):
         err_list = traceback.extract_tb(exc_info[2])
         for err in err_list: 
             file = err[0]
-            '''
-            if file.find('config.py')!=-1:
-                config_errs.append(err)
-            '''
             if file.find('balrogexcept.py')!=-1:
                 pass
             elif file.find('balrog.py')!=-1:
@@ -1104,34 +1123,63 @@ def GetNativeOptions():
     return parser
 
 
-def AddCustomOptions(parser):
-    CustomArgs(parser) 
+def AddCustomOptions(parser, config, log):
+    if 'CustomArgs' not in dir(config):
+        log.warning('The function CustomArgs was not found in your Balrog python config file. Will continue without adding any custom command line arguments.')
+    else:
+        config.CustomArgs(parser) 
 
 
-def NativeParse(parser):
+def NativeParse(parser, config_file, outdir, log):
     cmdline_opts = parser.parse_args()
-    log = SetupLogger(cmdline_opts)
+    cmdline_opts.config = config_file
+    cmdline_opts.outdir = outdir
+    #cmdline_opts.logdir = logdir
+    #log = SetupLogger(cmdline_opts)
     ParseDefaultArgs(cmdline_opts,log)
     BalrogSetup = ConfigureBalrog(cmdline_opts, log)
     return cmdline_opts, BalrogSetup
 
 
-def CustomParse(cmdline_opts, BalrogSetup):
-    rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup)
+def CustomParse(cmdline_opts, BalrogSetup, config):
+    rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup, config)
     rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
     return rules, extra_sex_config
 
 
+def GetConfig(parser):
+    known, unknown = parser.parse_known_args(sys.argv)
+    log = SetupLogger(known)
+
+    if known.config==None:
+        thisdir = os.path.dirname( os.path.realpath(__file__) )
+        known.config = os.path.join(thisdir, 'config.py')
+
+    if not os.path.lexists(known.config):
+        log.warning('Path to Balrog python config file not found: %s. All properties of the simulated galaxies will assume their defaults.' %known.config)
+        #raise ConfigFileNotFound(150, known.config)
+        config = None
+    else:
+        try:
+            config = imp.load_source('config', known.config)
+        except:
+            raise ConfigImportError(151, known.config)
+
+    return config, known.config, known.outdir, log
+
+
 def RunBalrog():
-    # Get Native argument parser
     parser = GetNativeOptions()
+    config, config_file, outdir, log = GetConfig(parser)
+
 
     # Add the user's command line options
-    AddCustomOptions(parser)
+    AddCustomOptions(parser, config, log)
+
 
     # Parse the command line agruments and interpret the user's settings for the simulation
-    cmdline_opts, BalrogSetup = NativeParse(parser)
-    rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup)
+    cmdline_opts, BalrogSetup = NativeParse(parser, config_file, outdir, log)
+    rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup, config)
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
     catalog = GetSimulatedGalaxies(BalrogSetup, rules)
@@ -1161,6 +1209,7 @@ def RunBalrog():
 
 
 if __name__ == "__main__":
+
     debug = False
     args = ' '.join(sys.argv)
     if args.find('--debug')!=-1:

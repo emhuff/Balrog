@@ -20,6 +20,8 @@
 
 # 140 sextractor path does not exist
 
+# 150 config.py not found
+
 # 201 Cannot create --outdir
 # 202 Cannot create output subdirectory
 
@@ -196,3 +198,12 @@ class CatalogColError(BaseException):
 class SextractorPathError(BaseException):
     def init(self, path):
         self.msg = "ERROR code: %i. Path to sextractor does not exist: %s." %(self.code, path)
+
+
+class ConfigFileNotFound(BaseException):
+    def init(self, path):
+        self.msg = "ERROR code: %i. Path to Balrog python config file not found: %s" %(self.code, path)
+
+class ConfigImportError(BaseException):
+    def init(self, path):
+        self.msg = "ERROR code: %i. Python could not import your Balrog config file: %s" %(self.code, path)

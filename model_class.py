@@ -632,3 +632,8 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
 
     out.close()
     return simulatedgals
+
+
+def InitializeSersic(rules, sampled, nProfiles=1):
+    rules.InitializeSersic(nProfiles=nProfiles)
+    sampled.InitializeSersic(nProfiles=nProfiles)
