@@ -473,15 +473,20 @@ class SimRules(object):
         elif name=='nProfiles':
             raise RulesnProfilesError(-2, name)
 
-        elif name in ['x', 'y', 'g1', 'g2', 'magnification']:
+        elif name in self._GetGalaxy():
             value = self._CheckRule(name, value, 'galaxy')
             super(SimRules, self).__setattr__(name, value)
 
-        elif name in ['axisratio', 'beta', 'halflightradius', 'magnitude', 'sersicindex']:
+        elif name in self._GetComponent():
             try:
                 size = len(value)
             except:
-                raise RulesAssignmentNoArrayError(306)
+                if self.nProfiles!=1:
+                    raise RulesAssignmentNoArrayError(306)
+                else:
+                    size = 1
+                    value = [value]
+
             if size!=self.nProfiles:
                 raise RulesAssignmentNoArrayError(306)
 
