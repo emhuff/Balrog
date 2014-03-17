@@ -79,7 +79,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
 
 def CopyAssoc(BalrogSetup, outfile):
     mhdus = pyfits.open(outfile, mode='update')
-    mhead = mhdus[2].header
+    mhead = mhdus[BalrogSetup.catext].header
     for i in range(len(BalrogSetup.assocnames)):
         mhead[ 'V%i'%i ] = BalrogSetup.assocnames[i]
         if BalrogSetup.assocnames[i] in ['x','y']:
@@ -270,6 +270,9 @@ def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, c
     out.write('MAG_ZEROPOINT %s\n' %(BalrogSetup.zeropoint) )
     eng.config['PSF_NAME'] = '%s,%s' %(BalrogSetup.psfout,BalrogSetup.psfout)
     out.write('PSF_NAME %s,%s\n' %(BalrogSetup.psfout,BalrogSetup.psfout) )
+
+    eng.config['CATALOG_TYPE'] = '%s' %(BalrogSetup.catfitstype)
+    out.write('CATALOG_TYPE %s\n' %(BalrogSetup.catfitstype) )
 
     if not BalrogSetup.noassoc:
         ind = range(1, len(BalrogSetup.assocnames)+1)
@@ -633,6 +636,10 @@ class DerivedArgs():
         self.outweightext = 0
         if self.weightout==self.imageout:
             self.outweightext = self.outimageext + 1
+        if args.catfitstype=='FITS_LDAC':
+            self.catext = 2
+        elif args.catfitstype=='FITS_1.0':
+            self.catext = 1
 
         self.subsample = True
         if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
@@ -999,6 +1006,7 @@ def ParseSex(args, log, configdir):
     args.sexemptyparam = FindSexFile(args.sexemptyparam, log, configdir, 'sex.param', 'sexemptyparam')
     args.sexnnw = FindSexFile(args.sexnnw, log, configdir, 'sex.nnw', 'sexnnw')
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
+    args.catfitstype = 'FITS_%s' %(args.catfitstype.upper())
 
 
 def ParseDefaultArgs(args,log):
@@ -1049,6 +1057,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-na", "--noassoc", help="Don't do association mode matching in sextractor. Association mode is sextractor lingo for only look for sources at certain positions; in Balrog, the simulated galaxy positions. Using association mode is much faster.", action="store_true")
     parser.add_argument( "-ne", "--noempty", help="Skip sextractor run over original image, prior to any simulation. One usage for such a run is to identify cases where a galaxy is simulated in the same position as something originally there. Depending on how the objects' properties conspire, Sextractor may not know any blending happened, ", action="store_true")
     parser.add_argument( "-sep", "--sexemptyparam", help="Sextractor param file for run over original image, prior to any simulation, If only interested in the run for 'deblending' issues, the file's contents are mostly irrelevant. The default file does not do model fitting to be faster.", type=str, default=None)
+    parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
 
 
 def RaiseException(debug=False):

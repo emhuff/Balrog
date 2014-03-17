@@ -153,7 +153,7 @@ class RulesIndexOutOfRange(BaseException):
 
 class RulesAssignmentNoArrayError(BaseException):
     def init(self):
-        self.msg = 'ERROR code: %i. Attempted an illegal reassingment of sersic component rules. These must be arrays of the same length as the number of profiles' %(self.code)
+        self.msg = 'ERROR code: %i. Attempted an illegal reassingment of sersic component rules where the number of components is greater than 1. These must be arrays of the same length as the number of profiles' %(self.code)
 
 
 class RulesnProfilesError(BaseException):

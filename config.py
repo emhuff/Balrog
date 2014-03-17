@@ -73,6 +73,10 @@ def SimulationRules(args, rules, sampled):
     rules.magnitude = Catalog(cat,ext,args.mag)
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
     rules.axisratio = Function(function=rand, args=(0.01, 1.0, args.ngal))
+    #rules.halflightradius = 2
+    #rules.magnitude = 17
+    #rules.sersicindex = 1
+    #rules.axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
 
     '''
     InitializeSersic(rules, sampled, nProfiles=2)
