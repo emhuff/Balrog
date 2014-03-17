@@ -409,11 +409,6 @@ def GalError(name):
     raise RulesAssignmentError(303, name)
 
 
-'''
-def InitializeSersic(rules, sampled, nProfiles=1):
-    rules.InitializeSersic(nProfiles=nProfiles)
-    sampled.InitializeSersic(nProfiles=nProfiles)
-'''
 
 
 class CompRules(object):
@@ -1163,7 +1158,9 @@ def GetConfig(parser):
         try:
             config = imp.load_source('config', known.config)
         except:
+            #log.warning('Python could not import your Balrog config file: %s. All properties of the simulated galaxies will assume their defaults.' %known.config)
             raise ConfigImportError(151, known.config)
+            #config = None
 
     return config, known.config, known.outdir, log
 

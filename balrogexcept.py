@@ -206,4 +206,4 @@ class ConfigFileNotFound(BaseException):
 
 class ConfigImportError(BaseException):
     def init(self, path):
-        self.msg = "ERROR code: %i. Python could not import your Balrog config file: %s" %(self.code, path)
+        self.msg = "ERROR code: %i. Python could not import your Balrog config file: %s. This means it has the python equivalen of a compiling error, apart from any possible runtime errors. Check for an error global in scope, such as an import." %(self.code, path)
