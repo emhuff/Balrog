@@ -1119,10 +1119,11 @@ def GetNativeOptions():
 
 
 def AddCustomOptions(parser, config, log):
-    if 'CustomArgs' not in dir(config):
-        log.warning('The function CustomArgs was not found in your Balrog python config file. Will continue without adding any custom command line arguments.')
-    else:
-        config.CustomArgs(parser) 
+    if config!=None:
+        if 'CustomArgs' not in dir(config):
+            log.warning('The function CustomArgs was not found in your Balrog python config file. Will continue without adding any custom command line arguments.')
+        else:
+            config.CustomArgs(parser) 
 
 
 def NativeParse(parser, config_file, outdir, log):
@@ -1158,9 +1159,9 @@ def GetConfig(parser):
         try:
             config = imp.load_source('config', known.config)
         except:
-            #log.warning('Python could not import your Balrog config file: %s. All properties of the simulated galaxies will assume their defaults.' %known.config)
-            raise ConfigImportError(151, known.config)
-            #config = None
+            log.warning('Python could not import your Balrog config file: %s. This means it has the python equivalen of a compiling error, apart from any possible runtime errors. Check for an error global in scope, such as an import. Continuing by assigning all properties of the simulated galaxies to their defaults.' %known.config)
+            config = None
+            #raise ConfigImportError(151, known.config)
 
     return config, known.config, known.outdir, log
 
