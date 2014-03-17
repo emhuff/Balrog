@@ -1033,6 +1033,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-c", "--clean", help="Delete output image files", action="store_true")
     parser.add_argument( "-sv", "--stdverbosity", help="Verbosity level of stdout", type=str, default='n', choices=['n','v','vv','q'])
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
+    parser.add_argument( "-dbg", "--debug", help="Traceback debug mode", action="store_true")
 
     # How to run sextractor
     parser.add_argument( "-spp", "--sexpath", help='Path for sextractor binary', type=str, default='sex')
@@ -1045,21 +1046,23 @@ def DefaultArgs(parser):
     parser.add_argument( "-sep", "--sexemptyparam", help="Sextractor param file for run over original image, prior to any simulation, If only interested in the run for 'deblending' issues, the file's contents are mostly irrelevant. The default file does not do model fitting to be faster.", type=str, default=None)
 
 
-def RaiseException():
-    exc_info = sys.exc_info()
-    config_errs = []
-    err_list = traceback.extract_tb(exc_info[2])
-    for err in err_list: 
-        file = err[0]
-        if file.find('config.py')!=-1:
-            config_errs.append(err)
-        '''
-        else:
-            config_errs.append(err)
-        '''
-    keep = traceback.format_list(config_errs)
-    keep_tb = ''.join(keep)
-    logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
+def RaiseException(debug=False):
+
+    if not debug:
+        exc_info = sys.exc_info()
+        config_errs = []
+        err_list = traceback.extract_tb(exc_info[2])
+        for err in err_list: 
+            file = err[0]
+            if file.find('config.py')!=-1:
+                config_errs.append(err)
+        keep = traceback.format_list(config_errs)
+        keep_tb = ''.join(keep)
+        logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
+
+    else:
+        logging.exception('Run error caused Balrog to exit.')
+
     sys.exit()
 
 
@@ -1126,8 +1129,15 @@ def RunBalrog():
 
 
 if __name__ == "__main__":
+    debug = False
+    args = ' '.join(sys.argv)
+    if args.find('--debug')!=-1:
+        debug=True
+    if args.find('-dbg')!=-1:
+        debug=True
+
     try:
         RunBalrog()
     except:
-        RaiseException()
+        RaiseException(debug=debug)
 
