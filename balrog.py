@@ -26,17 +26,31 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
         arr = sample.galaxy[key]
         if key=='x':
             arr = arr - BalrogSetup.xmin + 1
-        if key=='y':
+            unit = 'pix'
+        elif key=='y':
             arr = arr - BalrogSetup.ymin + 1
-        col = pyfits.Column(name=name, array=arr,format='E')
+            unit = 'pix'
+        elif key=='sum':
+            unit = 'ADU'
+        else:
+            unit = 'none'
+        col = pyfits.Column(name=name, array=arr,format='E', unit=unit)
         columns.append(col)
     for i in range(len(sample.component)):
         for key in sample.component[i].keys():
             name = '%s_%i' %(key,i)
             if key.find('halflightradius')!=-1:
-                col = pyfits.Column(name=name, array=sample.component[i][key]/np.sqrt(sample.component[i]['axisratio']), format='E')
+                col = pyfits.Column(name=name, array=sample.component[i][key]/np.sqrt(sample.component[i]['axisratio']), format='E', unit='arcsec')
             else:
-                col = pyfits.Column(name=name, array=sample.component[i][key],format='E')
+                if key.find('sersicindex')!=-1:
+                    unit = 'none'
+                if key.find('flux')!=-1:
+                    unit = 'ADU'
+                if key.find('beta')!=-1:
+                    unit = 'deg'
+                if key.find('axisratio')!=-1:
+                    unit = 'none'
+                col = pyfits.Column(name=name, array=sample.component[i][key],format='E', unit=unit)
             columns.append(col)
     tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
     tbhdu.header['XSTART'] = BalrogSetup.xmin
@@ -68,6 +82,19 @@ def CopyAssoc(BalrogSetup, outfile):
     mhead = mhdus[2].header
     for i in range(len(BalrogSetup.assocnames)):
         mhead[ 'V%i'%i ] = BalrogSetup.assocnames[i]
+        if BalrogSetup.assocnames[i] in ['x','y']:
+            unit = 'pix'
+        elif BalrogSetup.assocnames[i] in ['sum']:
+            unit = 'ADU'
+        elif BalrogSetup.assocnames[i].find('halflightradius')!=-1:
+            unit = 'arcsec'
+        elif BalrogSetup.assocnames[i].find('beta')!=-1:
+            unit = 'deg'
+        elif BalrogSetup.assocnames[i].find('flux')!=-1:
+            unit = 'ADU'
+        else:
+            unit = 'none'
+        mhead[ 'VUNIT%i'%i ] = unit
     mhdus.close() 
 
 

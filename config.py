@@ -61,8 +61,8 @@ def SimulationRules(args, rules, sampled):
     rules.halflightradius[0] = Catalog(file=cat,ext=ext,col=args.reff)
     rules.magnitude[0] = Catalog(cat,ext,args.mag)
     rules.sersicindex[0] = Catalog(cat,ext,args.sersicindex)
-    #rules.axisratio[0] = Function(function=rand, args=(0.01, 1.0, args.ngal))
-    rules.axisratio[0] = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
+    rules.axisratio[0] = Function(function=rand, args=(0.01, 1.0, args.ngal))
+    #rules.axisratio[0] = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
 
     '''
     InitializeSersic(rules, sampled, nProfiles=2)
