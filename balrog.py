@@ -1008,6 +1008,11 @@ def ParseSex(args, log, configdir):
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
     args.catfitstype = 'FITS_%s' %(args.catfitstype.upper())
 
+    try:
+        sex = subprocess.check_output(['which', args.sexpath])
+    except:
+        raise SextractorPathError(140, args.sexpath)
+
 
 def ParseDefaultArgs(args,log):
     thisdir = os.path.dirname( os.path.realpath(__file__) )

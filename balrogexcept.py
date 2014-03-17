@@ -18,6 +18,8 @@
 # 136 xmin larger than xmax
 # 137 ymin larger than ymax
 
+# 140 sextractor path does not exist
+
 # 201 Cannot create --outdir
 # 202 Cannot create output subdirectory
 
@@ -189,3 +191,8 @@ class CatalogExtError(BaseException):
 class CatalogColError(BaseException):
     def init(self, file, ext, col):
         self.msg = "ERROR code: %i. Catalog column specified does not exist: %s, %s[%i]." %(self.code, col, file, ext)
+
+
+class SextractorPathError(BaseException):
+    def init(self, path):
+        self.msg = "ERROR code: %i. Path to sextractor does not exist: %s." %(self.code, path)
