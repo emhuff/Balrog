@@ -3,14 +3,7 @@
 import os
 import numpy as np
 from model_class import *
-#from balrog import InitializeSersic
-#from model_class import InitializeSersic
 
-'''
-import imp
-imp.load_source('test2', '/n/des/suchyta.1/des/magnification/current_balrog/Balrog/balrog.py')
-from test2 import InitializeSersic
-'''
 
 ### In this function you can define, your own command line arguments.
 ### Google python argparse for help if the syntax is unclear.

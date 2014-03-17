@@ -14,13 +14,7 @@ import astropy.io.fits as pyfits
 import galsim
 import galsim.des
 import sextractor_engine
-
 from model_class import *
-#from balrogexcept import *
-
-#import config
-'''
-'''
 
 
 def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):

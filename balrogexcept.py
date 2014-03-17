@@ -20,7 +20,8 @@
 
 # 140 sextractor path does not exist
 
-# 150 config.py not found
+# 150 config.py not found...This is actually just a warning now
+# 151 config.py did not load during import...This is actually just a warning now
 
 # 201 Cannot create --outdir
 # 202 Cannot create output subdirectory
