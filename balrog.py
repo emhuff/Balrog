@@ -1054,8 +1054,21 @@ def RaiseException(debug=False):
         err_list = traceback.extract_tb(exc_info[2])
         for err in err_list: 
             file = err[0]
+            '''
             if file.find('config.py')!=-1:
                 config_errs.append(err)
+            '''
+            if file.find('balrogexcept.py')!=-1:
+                pass
+            elif file.find('balrog.py')!=-1:
+                pass
+            elif file.find('model_class.py')!=-1:
+                pass
+            elif file.find('sextractor_engine.py')!=-1:
+                pass
+            else:
+                config_errs.append(err)
+
         keep = traceback.format_list(config_errs)
         keep_tb = ''.join(keep)
         logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))

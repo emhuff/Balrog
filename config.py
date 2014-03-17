@@ -82,6 +82,13 @@ def SimulationRules(args, rules, sampled):
     '''
 
 
+# These are extra configurations to give to sextractor which will override the ones in the config file
+def SextractorConfigs(args, config):
+    config['CHECKIMAGE_TYPE'] = 'NONE'
+
+
+
+# Extra functions the user has defined. Could be used with sampling type Function
 def f(item):
     return item
 
@@ -99,9 +106,3 @@ def SampleFunction(x,y, xmax,ymax):
     dist = np.sqrt(x*x + y*y)
     max = np.sqrt(xmax*xmax + ymax*ymax)
     return dist/max
-
-
-# These are extra configurations to give to sextractor which will override the ones in the config file
-def SextractorConfigs(args, config):
-    config['CHECKIMAGE_TYPE'] = 'NONE'
-
