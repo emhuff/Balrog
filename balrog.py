@@ -1137,8 +1137,13 @@ def CustomParse(cmdline_opts, BalrogSetup, config):
     return rules, extra_sex_config
 
 
-def GetConfig(parser):
+def GetKnown(parser):
     known, unknown = parser.parse_known_args(sys.argv)
+    return known
+
+
+def GetConfig(known):
+    #known, unknown = parser.parse_known_args(sys.argv)
     log = SetupLogger(known)
 
     if known.config==None:
@@ -1160,14 +1165,13 @@ def GetConfig(parser):
     return config, known.config, known.outdir, log
 
 
-def RunBalrog():
-    parser = GetNativeOptions()
-    config, config_file, outdir, log = GetConfig(parser)
+def RunBalrog(parser, known):
 
+    # Find the user's config file
+    config, config_file, outdir, log = GetConfig(known)
 
     # Add the user's command line options
     AddCustomOptions(parser, config, log)
-
 
     # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser, config_file, outdir, log)
@@ -1201,16 +1205,11 @@ def RunBalrog():
 
 
 if __name__ == "__main__":
-
-    debug = False
-    args = ' '.join(sys.argv)
-    if args.find('--debug')!=-1:
-        debug=True
-    if args.find('-dbg')!=-1:
-        debug=True
-
+    
+    parser = GetNativeOptions()
+    known = GetKnown(parser)
     try:
-        RunBalrog()
+        RunBalrog(parser, known)
     except:
-        RaiseException(debug=debug)
+        RaiseException(debug=known.debug)
 
