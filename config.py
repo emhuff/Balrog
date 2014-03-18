@@ -70,6 +70,7 @@ def SimulationRules(args, rules, sampled):
     rules.g1 = 0
     rules.g2 = 0
     rules.magnification = 1
+    #rules.magnification = Function(function=f, args=(sampled.axisratio[0]))
     
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
@@ -87,11 +88,12 @@ def SimulationRules(args, rules, sampled):
     # If you have a single Sersic component, you don't need to use the indexing if you don't want. With more than one component the indexing is mandatory
     InitializeSersic(rules, sampled, nProfiles=1)
     rules.beta = Function(function=rand, args=(-90, 90, args.ngal))
-    rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
+    #rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
     rules.magnitude = Catalog(cat,ext,args.mag)
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
     #rules.axisratio = Function(function=rand, args=(0.01, 1.0, args.ngal))
-    rules.axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
+    rules.axisratio = Function(function=SampleFunction, args=(sampled.sersicindex, sampled.y, args.xmax, args.ymax))
+    rules.halflightradius = sampled.axisratio
     #rules.halflightradius = 2
     #rules.magnitude = 17
     #rules.sersicindex = 1

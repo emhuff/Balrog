@@ -149,6 +149,10 @@ class nComponentSersic(object):
         arguments = []
         notready = False
         for arg in args:
+            if type(arg).__name__=='CompResult':
+                if arg.nProfiles==1:
+                    arg = arg[0]
+
             if type(arg).__name__=='Rule':
                 if arg.type=='value':
                     a = self.ReturnValue(arg.param[0])

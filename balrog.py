@@ -497,13 +497,14 @@ class SimRules(object):
                 else:
                     size = 1
                     value = [value]
+                    #print type(value[0]).__name__
 
             if size!=self.nProfiles:
                 raise RulesAssignmentNoArrayError(306)
 
             for i in range(size):
-                value[i] = self._CheckRule(name, value[i], 'component', i=i)
-                exec "self.%s[%i] = value[%i]" %(name, i, i)
+                val = self._CheckRule(name, value[i], 'component', i=i)
+                exec "self.%s[%i] = val" %(name, i)
 
         else:
             raise RulesAttributeError(301,name)
@@ -538,6 +539,9 @@ class CompResult(object):
     def __init__(self, nProfiles, name):
         super(CompResult, self).__setattr__('name', name)
         super(CompResult, self).__setattr__('nProfiles', nProfiles)
+
+    def __len__(self):
+        return self.nProfiles
 
     def __getitem__(self,index):
         if index >= self.nProfiles:
@@ -625,7 +629,7 @@ class DerivedArgs():
         self.nosim_sexlog = DefaultName(self.nosim_catalogmeasured, '.fits', '.log.txt', self.logdir)
         self.simruleslog = DefaultName(args.imagein, '.fits', '.simulation_rules.log.txt', self.logdir)
         self.catruleslog = DefaultName(args.imagein, '.fits', '.simulationcat_rules.log.txt', self.logdir)
-        self.balroglog = DefaultName(args.imagein, '.fits', '.balrog.log.txt', self.logdir)
+        #self.balroglog = DefaultName(args.imagein, '.fits', '.balrog.log.txt', self.logdir)
 
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
