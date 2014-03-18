@@ -143,42 +143,63 @@ class nComponentSersic(object):
                 self.galaxy[key] = c
             completed.append(i)
         return completed
-       
 
-    def OneFunction(self, func, args, used):
-        arguments = []
-        notready = False
-        for arg in args:
-            if type(arg).__name__=='CompResult':
-                if arg.nProfiles==1:
-                    arg = arg[0]
 
-            if type(arg).__name__=='Rule':
-                if arg.type=='value':
-                    a = self.ReturnValue(arg.param[0])
-                elif arg.type=='array':
-                    a = np.array( arg.param[0] )
-                elif arg.type=='catalog':
-                    a = self.FunctionCatalog(used, arg.param)
+    def TryRule(self, arg, notready, used):
+        if arg.type=='value':
+            a = self.ReturnValue(arg.param[0])
+        elif arg.type=='array':
+            a = np.array( arg.param[0] )
+        elif arg.type=='catalog':
+            a = self.FunctionCatalog(used, arg.param)
 
-                elif arg.type=='component':
-                    a = self.ReturnComponent(arg.param[1],mindex=arg.param[0])
-                    if a==None:
-                        notready = True
+        elif arg.type=='component':
+            a = self.ReturnComponent(arg.param[1],mindex=arg.param[0])
+            if a==None:
+                notready = True
 
-                elif arg.type=='function':
-                    aa, notready = self.OneFunction(arg.param[0], arg.param[1], used)
-                    if notready==False:
-                        a = arg.param[0](aa)
-
-                if notready:
-                    break
-
+        elif arg.type=='function':
+            aa, aaa, notready = self.OneFunction(arg.param[0], arg.param[1], arg.param[2], used)
+            if notready==False:
+                a = arg.param[0](*aa, **aaa)
             else:
-                a = arg
+                a = None
 
+        return a, notready
+
+
+    def TryArg(self, arg, notready, used):
+        if type(arg).__name__=='CompResult':
+            if arg.nProfiles==1:
+                arg = arg[0]
+
+        if type(arg).__name__=='Rule':
+            a, notready = self.TryRule(arg, notready, used)
+        else:
+            a = arg
+
+        return a, notready
+
+
+    def OneFunction(self, func, args, kwargs, used):
+        notready = False
+
+        arguments = []
+        for arg in args:
+            if notready:
+                break
+            a, notready = self.TryArg(arg, notready, used)
             arguments.append(a)
-        return [arguments, notready]
+
+        kwarguments = {}
+        for key in kwargs.keys():
+            arg = kwargs[key]
+            if notready:
+                break
+            a, notready = self.TryArg(arg, notready, used)
+            kwarguments[key] = a
+
+        return [arguments, kwarguments, notready]
 
 
     def DoFunction(self, function, used, comp=[]):
@@ -191,19 +212,20 @@ class nComponentSersic(object):
             key = function[i][1]
             func = function[i][2]
             args = function[i][3]
-            arguments, notready = self.OneFunction(func, args, used)
+            kwargs = function[i][4]
+            arguments, kwarguments, notready = self.OneFunction(func, args, kwargs, used)
 
             if notready:
                 continue
 
             if index > -1:
-                self.component[index][key] = func(*arguments)
+                self.component[index][key] = func(*arguments, **kwarguments)
                 try:
                     size = len(self.component[index][key])
                 except:
                     raise FunctionReturnError(501, func.__name__)
             else:
-                self.galaxy[key] = func(*arguments)
+                self.galaxy[key] = func(*arguments, **kwarguments)
                 try:
                     size = len(self.galaxy[key])
                 except:
@@ -268,7 +290,7 @@ class nComponentSersic(object):
         elif rtype=='component':
             component.append( (i, key, param[0], param[1]) )
         elif rtype=='function':
-            function.append( (i, key, param[0], param[1]) )
+            function.append( (i, key, param[0], param[1], param[2]) )
 
 
     def TryFunctionComponent(self, function, component, used):
@@ -481,7 +503,7 @@ def b_n_estimate(n):
 
 class Rule(object):
 
-    def __init__(self, type=None, average=None, sigma=None, joint=False, value=None, array=None, component=None, minimum=None, maximum=None, function=None, args=None, catalog=None, ext=None, column=None, ):
+    def __init__(self, type=None, average=None, sigma=None, joint=False, value=None, array=None, component=None, minimum=None, maximum=None, function=None, args=None, catalog=None, ext=None, column=None, kwargs=None ):
 
         if type=='catalog':
             if catalog==None:
@@ -528,7 +550,7 @@ class Rule(object):
                 raise FunctionArgError(502, 'a function name (function)')
             if args==None:
                 raise FunctionArgError(502, 'the arguments to the function (args)')
-            self.param = [function, args]
+            self.param = [function, args, kwargs]
 
         elif type==None:
             self.param = None
@@ -552,8 +574,8 @@ def Catalog( file=None, ext=None, col=None ):
 def Same( comp ):
     return Rule(type='component', component=comp)
 
-def Function(function=None, args=None):
-    return Rule(type='function', function=function, args=args)
+def Function(function=None, args=(), kwargs={}):
+    return Rule(type='function', function=function, args=args, kwargs=kwargs)
 
 
 def Tuplify(g, k):

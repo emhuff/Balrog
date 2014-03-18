@@ -67,6 +67,7 @@ def SimulationRules(args, rules, sampled):
     # Simulated galaxies only have one of each of these
     rules.x = Function(function=rand, args=(args.xmin, args.xmax, args.ngal))
     rules.y = Function(function=rand, args=(args.ymin, args.ymax, args.ngal))
+    #rules.y = Function(function=r)
     rules.g1 = 0
     rules.g2 = 0
     rules.magnification = 1
@@ -92,7 +93,8 @@ def SimulationRules(args, rules, sampled):
     rules.magnitude = Catalog(cat,ext,args.mag)
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
     #rules.axisratio = Function(function=rand, args=(0.01, 1.0, args.ngal))
-    rules.axisratio = Function(function=SampleFunction, args=(sampled.sersicindex, sampled.y, args.xmax, args.ymax))
+    #rules.axisratio = Function(function=SampleFunction, args=(sampled.sersicindex, sampled.y, args.xmax, args.ymax))
+    rules.axisratio = Function(function=SampleFunction, args=[sampled.sersicindex, sampled.y, args.xmax], kwargs={'ymax':args.ymax})
     rules.halflightradius = sampled.axisratio
     #rules.halflightradius = 2
     #rules.magnitude = 17
@@ -134,10 +136,14 @@ def g(avg, std, ngal, other):
 def rand(minimum, maximum, ngal):
     return np.random.uniform( minimum, maximum, ngal )
 
+def r():
+    return np.random.uniform( 1, 1000, 50 )
+
 def gaussian(avg, std, ngal):
     return np.random.normal( avg, std, ngal )
 
-def SampleFunction(x,y, xmax,ymax):
+#def SampleFunction(x,y, xmax,ymax):
+def SampleFunction(x,y, xmax,ymax=1000):
     dist = np.sqrt(x*x + y*y)
     max = np.sqrt(xmax*xmax + ymax*ymax)
     return dist/max
