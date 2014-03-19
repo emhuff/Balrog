@@ -3,6 +3,7 @@
 import os
 import numpy as np
 from model_class import *
+import array
 
 
 ### In this function you can define, your own command line arguments.
@@ -40,66 +41,32 @@ def CustomParseArgs(args):
     if args.mag==None:
         args.mag = '%sMAG' %(args.band.upper())
     
-    '''
-    args.catalogsample = os.path.join(thisdir, 'cosmos.fits')
-    args.mag = 'IMAG'
-    args.sersicindex = 'SERSIC_INDEX'
-    args.reff = 'HALF_LIGHT_RADIUS'
-    args.ext = 1
-    '''
-
 
 ### How you want to simulate your galaxies
 def SimulationRules(args, rules, sampled):
-    '''
-    thisdir = os.path.dirname( os.path.realpath(__file__) )
-    args.catalogsample = os.path.join(thisdir, 'cosmos.fits')
-    args.mag = 'IMAG'
-    args.sersicindex = 'SERSIC_INDEX'
-    args.reff = 'HALF_LIGHT_RADIUS'
-    args.ext = 1
-    '''
-
     cat = args.catalogsample
     ext = args.ext
 
-
     # Simulated galaxies only have one of each of these
-    rules.x = Function(function=rand, args=(args.xmin, args.xmax, args.ngal))
-    rules.y = Function(function=rand, args=(args.ymin, args.ymax, args.ngal))
-    #rules.y = Function(function=r)
+    rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
+    rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
     rules.g1 = 0
     rules.g2 = 0
     rules.magnification = 1
-    #rules.magnification = Function(function=f, args=(sampled.axisratio[0]))
     
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
-    # All 3 of these blocks (2 of which are commented out) work fine.
-    '''
-    InitializeSersic(rules, sampled, nProfiles=1)
-    rules.beta[0] = Function(function=rand, args=(-90, 90, args.ngal))
-    rules.halflightradius[0] = Catalog(file=cat,ext=ext,col=args.reff)
-    rules.magnitude[0] = Catalog(cat,ext,args.mag)
-    rules.sersicindex[0] = Catalog(cat,ext,args.sersicindex)
-    rules.axisratio[0] = Function(function=rand, args=(0.01, 1.0, args.ngal))
-    #rules.axisratio[0] = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
-    '''
 
     # If you have a single Sersic component, you don't need to use the indexing if you don't want. With more than one component the indexing is mandatory
     InitializeSersic(rules, sampled, nProfiles=1)
-    rules.beta = Function(function=rand, args=(-90, 90, args.ngal))
-    #rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
+    rules.beta = Function(function=rand, args=[-90, 90, args.ngal])
+    rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
     rules.magnitude = Catalog(cat,ext,args.mag)
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
-    #rules.axisratio = Function(function=rand, args=(0.01, 1.0, args.ngal))
-    #rules.axisratio = Function(function=SampleFunction, args=(sampled.sersicindex, sampled.y, args.xmax, args.ymax))
-    rules.axisratio = Function(function=SampleFunction, args=[sampled.sersicindex, sampled.y, args.xmax], kwargs={'ymax':args.ymax})
-    rules.halflightradius = sampled.axisratio
-    #rules.halflightradius = 2
-    #rules.magnitude = 17
-    #rules.sersicindex = 1
-    #rules.axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
+    pos = [sampled.x, sampled.y]
+    max_pos = [args.xmax, args.ymax]
+    #rules.axisratio = Function(function=SampleFunction, args=[pos], kwargs={'pos_max':max_pos})
+    rules.axisratio = Function(function=SampleFunction, args=[pos, max_pos])
 
     '''
     InitializeSersic(rules, sampled, nProfiles=2)
@@ -107,16 +74,18 @@ def SimulationRules(args, rules, sampled):
     rules.beta[0] = sampled.beta[1]
     rules.halflightradius = [Catalog(cat,ext,args.reff), sampled.halflightradius[0]]
     rules.magnitude = [Catalog(cat,ext,args.mag), sampled.magnitude[0]]
-    ns = Function(function=f, args=(np.ones(args.ngal)))
-    nc = Catalog(file='cosmos_n=1.fits',ext=1,col='SERSIC_INDEX')
-    # Both of these work
-    #n = Function(function=g, args=(4, 0.05, args.ngal, ns))
-    n = Function(function=g, args=(4, 0.05, args.ngal, nc))
-    rules.sersicindex = [1, n]
-    #rules.sersicindex = [1]
-    axisratio = Function(function=SampleFunction, args=(sampled.x, sampled.y, args.xmax, args.ymax))
+    pos = [sampled.x, sampled.y]
+    pos_max = [args.xmax, args.ymax]
+    axisratio = Function(function=SampleFunction, args=[pos, pos_max])
     rules.axisratio = [axisratio, sampled.axisratio[0]]
+    # Both of these work
+    ns = Function(function=f, args=[np.ones(args.ngal)])
+    n = Function(function=g, args=[4, 0.05, args.ngal, ns])
+    #nc = Catalog(file='cosmos_n=1.fits',ext=1,col='SERSIC_INDEX')
+    #n = Function(function=g, args=[4, 0.05, args.ngal, nc])
+    rules.sersicindex = [1, n]
     '''
+
 
 
 # These are extra configurations to give to sextractor which will override the ones in the config file
@@ -126,6 +95,9 @@ def SextractorConfigs(args, config):
 
 
 # Extra functions the user has defined. Could be used with sampling type Function
+def rand(minimum, maximum, ngal):
+    return np.random.uniform( minimum, maximum, ngal )
+
 def f(item):
     return item
 
@@ -133,17 +105,10 @@ def g(avg, std, ngal, other):
     gg = gaussian(avg, std, ngal)
     return gg-other
 
-def rand(minimum, maximum, ngal):
-    return np.random.uniform( minimum, maximum, ngal )
-
-def r():
-    return np.random.uniform( 1, 1000, 50 )
-
 def gaussian(avg, std, ngal):
     return np.random.normal( avg, std, ngal )
 
-#def SampleFunction(x,y, xmax,ymax):
-def SampleFunction(x,y, xmax,ymax=1000):
-    dist = np.sqrt(x*x + y*y)
-    max = np.sqrt(xmax*xmax + ymax*ymax)
+def SampleFunction(pos, pos_max=[1000,1000]):
+    dist = np.sqrt(pos[0]*pos[0] + pos[1]*pos[1])
+    max = np.sqrt(pos_max[0]*pos_max[0] + pos_max[1]*pos_max[1])
     return dist/max

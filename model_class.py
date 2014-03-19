@@ -154,6 +154,8 @@ class nComponentSersic(object):
             a = self.FunctionCatalog(used, arg.param)
 
         elif arg.type=='component':
+            if type(arg.param)==str:
+                arg.param = (-1,arg.param)
             a = self.ReturnComponent(arg.param[1],mindex=arg.param[0])
             if a==None:
                 notready = True
@@ -173,10 +175,29 @@ class nComponentSersic(object):
             if arg.nProfiles==1:
                 arg = arg[0]
 
+
         if type(arg).__name__=='Rule':
             a, notready = self.TryRule(arg, notready, used)
         else:
+            try:
+                length = len(arg)
+                ok = True
+            except:
+                ok = False
+            
             a = arg
+            if ok:
+                if length > 0:
+                    if type(arg)==tuple:
+                        aa = [None]*length
+                    else:
+                        aa = copy.copy(arg)
+
+                    for i in range(length):
+                        aa[i], notready = self.TryArg(arg[i], notready, used)
+                        if notready:
+                            break
+                    a = aa 
 
         return a, notready
 
@@ -214,7 +235,7 @@ class nComponentSersic(object):
             args = function[i][3]
             kwargs = function[i][4]
             arguments, kwarguments, notready = self.OneFunction(func, args, kwargs, used)
-
+            
             if notready:
                 continue
 
