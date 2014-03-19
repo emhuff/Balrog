@@ -47,7 +47,7 @@ def SimulationRules(args, rules, sampled):
     cat = args.catalogsample
     ext = args.ext
 
-    # Simulated galaxies only have one of each of these
+    # Simulated galaxies only have one of each of these. You can't index these.
     rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
     rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
     rules.g1 = 0
@@ -57,7 +57,7 @@ def SimulationRules(args, rules, sampled):
     # Simulated galaxies can have as many Sersic Profiles as you want. Make an array element for each.
     # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
 
-    # If you have a single Sersic component, you don't need to use the indexing if you don't want. With more than one component the indexing is mandatory
+    # If you have a single Sersic component, you don't need to use the indexing if you don't want. Giving the [0] will also work though. With more than one component the indexing is mandatory
     InitializeSersic(rules, sampled, nProfiles=1)
     rules.beta = Function(function=rand, args=[-90, 90, args.ngal])
     rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
@@ -65,13 +65,13 @@ def SimulationRules(args, rules, sampled):
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
     pos = [sampled.x, sampled.y]
     max_pos = [args.xmax, args.ymax]
-    #rules.axisratio = Function(function=SampleFunction, args=[pos], kwargs={'pos_max':max_pos})
     rules.axisratio = Function(function=SampleFunction, args=[pos, max_pos])
+    #rules.axisratio = Function(function=SampleFunction, args=[pos], kwargs={'pos_max':max_pos})
 
     '''
     InitializeSersic(rules, sampled, nProfiles=2)
-    rules.beta[1] = 0
     rules.beta[0] = sampled.beta[1]
+    rules.beta[1] = 0
     rules.halflightradius = [Catalog(cat,ext,args.reff), sampled.halflightradius[0]]
     rules.magnitude = [Catalog(cat,ext,args.mag), sampled.magnitude[0]]
     pos = [sampled.x, sampled.y]
@@ -85,7 +85,6 @@ def SimulationRules(args, rules, sampled):
     #n = Function(function=g, args=[4, 0.05, args.ngal, nc])
     rules.sersicindex = [1, n]
     '''
-
 
 
 # These are extra configurations to give to sextractor which will override the ones in the config file
