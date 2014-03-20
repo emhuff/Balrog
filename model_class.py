@@ -626,7 +626,6 @@ def HandleFunction(g, k):
 
 def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nProfiles=1, axisratio=None, beta=None, halflightradius=None, magnitude=None, sersicindex=None ):
     simulatedgals = nComponentSersic(ngal=opts.ngal, ncomp=nProfiles)
-    out = open(opts.simruleslog, 'w')
 
     galrules = [x, y, g1, g2, magnification]
     keys = ['x', 'y', 'g1', 'g2', 'magnification']
@@ -639,12 +638,6 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                 g = HandleFunction(g,k)
             simulatedgals.GalaxyRule(key=k, rule=g)
 
-        if g!=None:
-            out.write('%s %s %s\n' %(k, g.type, str(g.param)) )
-        else:
-            out.write('%s None\n' %(k))
-   
-    out.write('\n')
     keys = ['axisratio', 'beta', 'halflightradius', 'flux', 'sersicindex']
     comprules = [axisratio, beta, halflightradius, magnitude, sersicindex]
     for j in range(len(comprules)):
@@ -671,12 +664,6 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                     arg = HandleFunction(comp, key)
                 simulatedgals.ComponentRule(component=i, key=key, rule=comp)
                       
-            if comp!=None:
-                out.write('%s %s %s %s\n' %(str(i), key, comp.type, str(comp.param)) )
-            else:
-                out.write('%s %s None\n' %(str(i), key))
-
-    out.close()
     return simulatedgals
 
 

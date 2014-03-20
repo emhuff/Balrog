@@ -247,30 +247,17 @@ def WriteConfigFile(BalrogSetup, config_file, catalogmeasured):
 
 
 def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng):
-    #out = open(autologfile, 'w')
     eng.Path(BalrogSetup.sexpath)
-
     eng.config['IMAGE'] = '%s[%i],%s[%s]' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext)
-    #out.write('IMAGE %s[%i],%s[%s]\n' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext) )
     eng.config['WEIGHT_IMAGE'] = '%s[%i],%s[%i]' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext)
-    #out.write('WEIGHT_IMAGE %s[%i],%s[%i]\n' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext) )
     eng.config['CATALOG_NAME'] = catalogmeasured
-    #out.write('CATALOG_NAME %s\n' %(catalogmeasured) )
     eng.config['c'] = config_file
-    #out.write('c %s\n' %(config_file) )
     eng.config['PARAMETERS_NAME'] = param_file
-    #out.write('PARAMETERS_NAME %s\n' %(param_file) )
     eng.config['STARNNW_NAME'] = BalrogSetup.sexnnw
-    #out.write('STARNNW_NAME %s\n' %(BalrogSetup.sexnnw) )
     eng.config['FILTER_NAME'] = BalrogSetup.sexconv
-    #out.write('FILTER_NAME %s\n'  %(BalrogSetup.sexconv) )
     eng.config['MAG_ZEROPOINT'] = BalrogSetup.zeropoint
-    #out.write('MAG_ZEROPOINT %s\n' %(BalrogSetup.zeropoint) )
     eng.config['PSF_NAME'] = '%s,%s' %(BalrogSetup.psfout,BalrogSetup.psfout)
-    #out.write('PSF_NAME %s,%s\n' %(BalrogSetup.psfout,BalrogSetup.psfout) )
-
     eng.config['CATALOG_TYPE'] = '%s' %(BalrogSetup.catfitstype)
-    #out.write('CATALOG_TYPE %s\n' %(BalrogSetup.catfitstype) )
 
     if not BalrogSetup.noassoc:
         ind = range(1, len(BalrogSetup.assocnames)+1)
@@ -282,20 +269,12 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
             if BalrogSetup.assocnames[i-1] == 'y':
                 y = i
         eng.config['ASSOC_NAME'] = afile
-        #out.write('ASSOC_NAME %s\n' %(afile) )
         eng.config['ASSOC_PARAMS'] = '%i,%i' %(x,y)
-        #out.write('ASSOC_PARAMS %i,%i\n' %(x,y) )
         eng.config['ASSOC_DATA'] = ','.join(inds)
-        #out.write('ASSOC_DATA %s\n' %(','.join(inds)) )
         eng.config['ASSOC_RADIUS'] = '2.0'
-        #out.write('ASSOC_RADIUS 2.0\n')
         eng.config['ASSOC_TYPE'] = 'NEAREST'
-        #out.write('ASSOC_TYPE NEAREST\n')
         eng.config['ASSOCSELEC_TYPE'] = 'MATCHED'
-        #out.write('ASSOCSELEC_TYPE MATCHED\n')
    
-    #out.close()
-
 
 def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
 
@@ -303,15 +282,11 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
         weightout = BalrogSetup.nosim_weightout
-        autologfile = BalrogSetup.nosim_sexautolog
-        logfile = BalrogSetup.nosim_sexlog
         afile = BalrogSetup.assoc_nosimfile
     else:
         catalogmeasured = BalrogSetup.catalogmeasured
         imageout = BalrogSetup.imageout
         weightout = BalrogSetup.weightout
-        autologfile = BalrogSetup.sexautolog
-        logfile = BalrogSetup.sexlog
         afile = BalrogSetup.assoc_simfile
 
     if not BalrogSetup.noassoc:
@@ -389,13 +364,11 @@ def UserDefinitions(cmdline_args, BalrogSetup, config):
             config.SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.arglogger, '\n# Final parsed values for each command line option')
-    #LogExtraSexConfig(ExtraSexConfig, BalrogSetup)
     return rules, ExtraSexConfig
 
 
 def GetSimulatedGalaxies(BalrogSetup, simgals):
     simgals.Sample(BalrogSetup)
-    LogSimRules(simgals, BalrogSetup)
     return simgals
 
 
@@ -603,7 +576,7 @@ class DerivedArgs():
     def __init__(self,args, known):
         self.imgdir = os.path.join(args.outdir, 'balrog_image')
         self.catdir = os.path.join(args.outdir, 'balrog_cat')
-        self.logdir = os.path.join(args.outdir, 'balrog_log')
+        #self.logdir = os.path.join(args.outdir, 'balrog_log')
         self.sexdir = os.path.join(args.outdir, 'balrog_sexconfig')
 
         self.imageout = DefaultName(args.imagein, '.fits', '.sim.fits', self.imgdir)
@@ -625,17 +598,6 @@ class DerivedArgs():
         self.nosim_weightout = '%s%s' %(self.weightout[:-length],ext)
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
 
-        #self.cmdlinelog = DefaultName(args.imagein, '.fits', '.cmdline_arguments.log.txt', self.logdir)
-        #self.derivedlog = DefaultName(args.imagein, '.fits', '.derived_arguments.log.txt', self.logdir)
-        self.extrasexlog = DefaultName(args.imagein, '.fits', '.sextractor_config_override.log.txt', self.logdir)
-        self.sexautolog = DefaultName(args.imagein, '.fits', '.sextractor_config_auto.sim.log.txt', self.logdir)
-        self.sexlog = DefaultName(self.catalogmeasured, '.fits', '.log.txt', self.logdir)
-        self.nosim_sexautolog = DefaultName(args.imagein, '.fits', '.sextractor_config_auto.nosim.log.txt', self.logdir)
-        self.nosim_sexlog = DefaultName(self.nosim_catalogmeasured, '.fits', '.log.txt', self.logdir)
-        self.simruleslog = DefaultName(args.imagein, '.fits', '.simulation_rules.log.txt', self.logdir)
-        self.catruleslog = DefaultName(args.imagein, '.fits', '.simulationcat_rules.log.txt', self.logdir)
-        #self.balroglog = DefaultName(args.imagein, '.fits', '.balrog.log.txt', self.logdir)
-
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
         CreateSubDir(self.sexdir)
@@ -648,7 +610,7 @@ class DerivedArgs():
         self.CopyFile(args.sexconv, self.sexdir)
         self.CopyFile(args.sexemptyparam, self.sexdir)
         if os.path.lexists(args.config):
-            self.CopyFile(args.config, self.logdir)
+            self.CopyFile(args.config, known.logdir)
 
         self.outimageext = 0
         self.outweightext = 0
@@ -742,17 +704,6 @@ def ConfigureBalrog(cmdline_opts, known):
     return BalrogSetup
 
 
-def LogSimRules(catalog, BalrogSetup):
-    out = open(BalrogSetup.catruleslog, 'w')
-    for key in catalog.galaxyrule.keys():
-        out.write('%s %s %s\n' %(key, catalog.galaxyrule[key].type, str(catalog.galaxyrule[key].param)) )
-
-    out.write('\n')
-    for i in range(len(catalog.componentrule)):
-        for key in catalog.componentrule[i].keys():
-            out.write('%s %s %s %s\n' %(str(i), key, catalog.componentrule[i][key].type, str(catalog.componentrule[i][key].param)) )
-
-
 def LogDerivedOpts(cmdline_args, BalrogSetup, desc):
     ArgsDict = vars(BalrogSetup)
     VetoDict = vars(cmdline_args)
@@ -763,37 +714,7 @@ def LogDerivedOpts(cmdline_args, BalrogSetup, desc):
             BalrogSetup.arglogger.info('%s %s' %(key, ArgsDict[key]) )
 
 
-def LogExtraSexConfig(ExtraSexConfig, BalrogSetup):
-    out = open(BalrogSetup.extrasexlog, 'w')
-    veto = NoOverride()
-    for key in ExtraSexConfig:
-        if key not in veto:
-            out.write('%s %s\n' %(key, ExtraSexConfig[key]) )
-    out.close()
-  
-    
-def NoOverride():
-    keys = ['IMAGE',
-            'WEIGHT_IMAGE',
-            'CATALOG_NAME',
-            'c',
-            'PARAMETERS_NAME',
-            'STARNNW_NAME',
-            'FILTER_NAME',
-            'MAG_ZEROPOINT',
-            'PSF_NAME',
-            'ASSOC_NAME',
-            'ASSOC_PARAMS',
-            'ASSOC_DATA',
-            'ASSOC_RADIUS',
-            'ASSOC_TYPE',
-            'ASSOCSELEC_TYPE']
-    return keys
-
-
-
 def LogCmdlineOpts(cmdline_args, cmdline_args_copy, logger, desc):
-
     logger.info('%s' %desc)
     ArgsDict = vars(cmdline_args)
     ordered = CmdlineListOrdered()
