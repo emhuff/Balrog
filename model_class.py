@@ -175,7 +175,6 @@ class nComponentSersic(object):
             if arg.nProfiles==1:
                 arg = arg[0]
 
-
         if type(arg).__name__=='Rule':
             a, notready = self.TryRule(arg, notready, used)
         else:
