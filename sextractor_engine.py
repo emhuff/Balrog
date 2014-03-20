@@ -2,6 +2,8 @@
 
 import subprocess
 import os
+import sys
+import time
 
 #import utils
 #from defaults import *
@@ -147,9 +149,7 @@ class SextractorEngine():
         self.config['CHECKIMAGE_NAME'] = nstr
     
 
-    def run(self, logfile=None):
-        #sex = utils.astro_code(SEX_DIR,'sex')
-        #args = ['sex', self.config['IMAGE']]
+    def run(self, logger=None):
         args = [self.path, self.config['IMAGE']]
         for key in self.config.keys():
             if key=='IMAGE':
@@ -157,24 +157,14 @@ class SextractorEngine():
             else:
                 args.append( '-%s' %key )
             args.append( str(self.config[key]) )
-
-        if logfile==None:
-            #logfile = self._strip('CATALOG_NAME',['cat.fits','.fits']) + '_log.txt'
-            #logfile = self._strip('CATALOG_NAME',['.fits']) + '.log.txt'
-            #logfile = self.config['CATALOG_NAME'].replace('.fits,','.fits_').replace('.cat.fits','.fits').replace('.fits','') + '_log.txt' 
-            logfile = self.config['CATALOG_NAME'].replace('.fits','.log.txt')
     
-        log = open(logfile,'w')
-        subprocess.call( args, stdout=log, stderr=log )
-        log.close()
+        logger.info('# Exact command call')
+        logger.info(' '.join(args))
+        logger.info('\n# sextractor command line output')
+        p = subprocess.Popen( args, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+        stdout, stderr = p.communicate()
+        logger.info(stdout)
+        logger.info(stderr)
+        logger.info('\n')
 
 
-##### Example of how to use the class
-
-if __name__=='__main__':
-
-    eng = SextractorEngine(IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/images/sptw2_r.13.fits', WEIGHT_IMAGE='/n/cima/cima02/des/SV/suchyta/cluster_coadds/sptw2/weights/sptw2_r.13.fits', CHECKIMAGE_TYPE='BACKGROUND')
-    print eng.config['CHECKIMAGE_NAME']
-    print eng.config['IMAGE']
-    eng.run()
-    

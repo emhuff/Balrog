@@ -246,31 +246,31 @@ def WriteConfigFile(BalrogSetup, config_file, catalogmeasured):
     return cfile
 
 
-def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng):
-    out = open(autologfile, 'w')
+def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng):
+    #out = open(autologfile, 'w')
     eng.Path(BalrogSetup.sexpath)
 
     eng.config['IMAGE'] = '%s[%i],%s[%s]' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext)
-    out.write('IMAGE %s[%i],%s[%s]\n' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext) )
+    #out.write('IMAGE %s[%i],%s[%s]\n' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext) )
     eng.config['WEIGHT_IMAGE'] = '%s[%i],%s[%i]' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext)
-    out.write('WEIGHT_IMAGE %s[%i],%s[%i]\n' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext) )
+    #out.write('WEIGHT_IMAGE %s[%i],%s[%i]\n' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext) )
     eng.config['CATALOG_NAME'] = catalogmeasured
-    out.write('CATALOG_NAME %s\n' %(catalogmeasured) )
+    #out.write('CATALOG_NAME %s\n' %(catalogmeasured) )
     eng.config['c'] = config_file
-    out.write('c %s\n' %(config_file) )
+    #out.write('c %s\n' %(config_file) )
     eng.config['PARAMETERS_NAME'] = param_file
-    out.write('PARAMETERS_NAME %s\n' %(param_file) )
+    #out.write('PARAMETERS_NAME %s\n' %(param_file) )
     eng.config['STARNNW_NAME'] = BalrogSetup.sexnnw
-    out.write('STARNNW_NAME %s\n' %(BalrogSetup.sexnnw) )
+    #out.write('STARNNW_NAME %s\n' %(BalrogSetup.sexnnw) )
     eng.config['FILTER_NAME'] = BalrogSetup.sexconv
-    out.write('FILTER_NAME %s\n'  %(BalrogSetup.sexconv) )
+    #out.write('FILTER_NAME %s\n'  %(BalrogSetup.sexconv) )
     eng.config['MAG_ZEROPOINT'] = BalrogSetup.zeropoint
-    out.write('MAG_ZEROPOINT %s\n' %(BalrogSetup.zeropoint) )
+    #out.write('MAG_ZEROPOINT %s\n' %(BalrogSetup.zeropoint) )
     eng.config['PSF_NAME'] = '%s,%s' %(BalrogSetup.psfout,BalrogSetup.psfout)
-    out.write('PSF_NAME %s,%s\n' %(BalrogSetup.psfout,BalrogSetup.psfout) )
+    #out.write('PSF_NAME %s,%s\n' %(BalrogSetup.psfout,BalrogSetup.psfout) )
 
     eng.config['CATALOG_TYPE'] = '%s' %(BalrogSetup.catfitstype)
-    out.write('CATALOG_TYPE %s\n' %(BalrogSetup.catfitstype) )
+    #out.write('CATALOG_TYPE %s\n' %(BalrogSetup.catfitstype) )
 
     if not BalrogSetup.noassoc:
         ind = range(1, len(BalrogSetup.assocnames)+1)
@@ -282,19 +282,19 @@ def AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, c
             if BalrogSetup.assocnames[i-1] == 'y':
                 y = i
         eng.config['ASSOC_NAME'] = afile
-        out.write('ASSOC_NAME %s\n' %(afile) )
+        #out.write('ASSOC_NAME %s\n' %(afile) )
         eng.config['ASSOC_PARAMS'] = '%i,%i' %(x,y)
-        out.write('ASSOC_PARAMS %i,%i\n' %(x,y) )
+        #out.write('ASSOC_PARAMS %i,%i\n' %(x,y) )
         eng.config['ASSOC_DATA'] = ','.join(inds)
-        out.write('ASSOC_DATA %s\n' %(','.join(inds)) )
+        #out.write('ASSOC_DATA %s\n' %(','.join(inds)) )
         eng.config['ASSOC_RADIUS'] = '2.0'
-        out.write('ASSOC_RADIUS 2.0\n')
+        #out.write('ASSOC_RADIUS 2.0\n')
         eng.config['ASSOC_TYPE'] = 'NEAREST'
-        out.write('ASSOC_TYPE NEAREST\n')
+        #out.write('ASSOC_TYPE NEAREST\n')
         eng.config['ASSOCSELEC_TYPE'] = 'MATCHED'
-        out.write('ASSOCSELEC_TYPE MATCHED\n')
+        #out.write('ASSOCSELEC_TYPE MATCHED\n')
    
-    out.close()
+    #out.close()
 
 
 def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
@@ -326,8 +326,13 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
-    AutoConfig(autologfile, BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng)
-    eng.run(logfile=logfile)
+    AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng)
+    if nosim:
+        msg = '# Running sextractor prior to inserting simulated galaxies\n'
+    else:
+        msg = '# Running sextractor after inserting simulated galaxies\n'
+    BalrogSetup.sexlogger.info(msg)
+    eng.run(logger=BalrogSetup.sexlogger)
 
     if not BalrogSetup.noassoc:
         CopyAssoc(BalrogSetup, catalogmeasured)
@@ -369,22 +374,22 @@ def UserDefinitions(cmdline_args, BalrogSetup, config):
 
     if config!=None:
         if 'CustomParseArgs' not in dir(config):
-            BalrogSetup.logger.warning('The function CustomParseArgs was not found in your Balrog python config file: %s. Will continue without parsing any custom command line arguments.' %BalrogSetup.config)
+            BalrogSetup.runlogger.warning('The function CustomParseArgs was not found in your Balrog python config file: %s. Will continue without parsing any custom command line arguments.' %BalrogSetup.config)
         else:
             config.CustomParseArgs(cmdline_args_copy)
 
         if 'SimulationRules' not in dir(config):
-            BalrogSetup.logger.warning('The function SimulationRules was not found in your Balrog python config file: %s. All properties of the simulated galaxies will assume their defaults.' %BalrogSetup.config)
+            BalrogSetup.runlogger.warning('The function SimulationRules was not found in your Balrog python config file: %s. All properties of the simulated galaxies will assume their defaults.' %BalrogSetup.config)
         else:
             config.SimulationRules(cmdline_args_copy,rules,results)
 
         if 'SextractorConfigs' not in dir(config):
-            BalrogSetup.logger.info('The function SextractorConfigs  was not found in your Balrog python config file: %s. Add this function to manually override configurations in the sextractor config file.' %BalrogSetup.config)
+            BalrogSetup.runlogger.info('The function SextractorConfigs  was not found in your Balrog python config file: %s. Add this function to manually override configurations in the sextractor config file.' %BalrogSetup.config)
         else:
             config.SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
-    LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup)
-    LogExtraSexConfig(ExtraSexConfig, BalrogSetup)
+    LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.arglogger, '\n# Final parsed values for each command line option')
+    #LogExtraSexConfig(ExtraSexConfig, BalrogSetup)
     return rules, ExtraSexConfig
 
 
@@ -595,7 +600,7 @@ class Results(object):
     
 
 class DerivedArgs():
-    def __init__(self,args,log):
+    def __init__(self,args, known):
         self.imgdir = os.path.join(args.outdir, 'balrog_image')
         self.catdir = os.path.join(args.outdir, 'balrog_cat')
         self.logdir = os.path.join(args.outdir, 'balrog_log')
@@ -620,8 +625,8 @@ class DerivedArgs():
         self.nosim_weightout = '%s%s' %(self.weightout[:-length],ext)
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
 
-        self.cmdlinelog = DefaultName(args.imagein, '.fits', '.cmdline_arguments.log.txt', self.logdir)
-        self.derivedlog = DefaultName(args.imagein, '.fits', '.derived_arguments.log.txt', self.logdir)
+        #self.cmdlinelog = DefaultName(args.imagein, '.fits', '.cmdline_arguments.log.txt', self.logdir)
+        #self.derivedlog = DefaultName(args.imagein, '.fits', '.derived_arguments.log.txt', self.logdir)
         self.extrasexlog = DefaultName(args.imagein, '.fits', '.sextractor_config_override.log.txt', self.logdir)
         self.sexautolog = DefaultName(args.imagein, '.fits', '.sextractor_config_auto.sim.log.txt', self.logdir)
         self.sexlog = DefaultName(self.catalogmeasured, '.fits', '.log.txt', self.logdir)
@@ -658,7 +663,12 @@ class DerivedArgs():
         if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
             self.subsample = False
          
-        self.logger = log
+        self.runlogger = known.logs[0]
+        self.runlog = known.runlogfile
+        self.sexlogger = known.logs[1]
+        self.sexlog = known.sexlogfile
+        self.arglogger = known.logs[2]
+        self.arglog = known.arglogfile
 
 
     def CopyFile(self, file, dir):
@@ -692,55 +702,44 @@ def SetLevel(h, choice):
     return h
 
 
-def SetupLogger(cmdline_args):
-    thisdir = os.path.dirname( os.path.realpath(__file__) )
-    defdir = os.path.join(thisdir, 'default_example')
-    outdir = os.path.join(defdir, 'output')
-    if cmdline_args.outdir==None:
-        cmdline_args.outdir = outdir
-
-    CreateDir(cmdline_args.outdir)
-    logdir = os.path.join(cmdline_args.outdir, 'balrog_log')
-    CreateSubDir(logdir)
+def SetupLogger(known):
     
     log = logging.getLogger()
     log.setLevel(logging.NOTSET)
+
+    runlog = logging.getLogger('run')
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-    file = os.path.join(logdir, 'run.log.txt')
-    fh = logging.FileHandler(file, mode='w')
+    known.runlogfile = os.path.join(known.logdir, 'run.log.txt')
+    fh = logging.FileHandler(known.runlogfile, mode='w')
     fh.setFormatter(formatter)
-    SetLevel(fh, cmdline_args.logverbosity)
-    log.addHandler(fh)
-
+    SetLevel(fh, known.logverbosity)
+    runlog.addHandler(fh)
     ph = logging.StreamHandler(stream=sys.stderr)
     ph.setFormatter(formatter)
-    ph = SetLevel(ph, cmdline_args.stdverbosity)
-    log.addHandler(ph)
-    return log
+    ph = SetLevel(ph, known.stdverbosity)
+    runlog.addHandler(ph)
+
+    sexlog = logging.getLogger('sex')
+    sexlog.setLevel(logging.INFO)
+    known.sexlogfile = os.path.join(known.logdir, 'sex.log.txt')
+    fh = logging.FileHandler(known.sexlogfile, mode='w')
+    SetLevel(fh, logging.INFO)
+    sexlog.addHandler(fh)
+
+    arglog = logging.getLogger('arg')
+    arglog.setLevel(logging.INFO)
+    known.arglogfile = os.path.join(known.logdir, 'args.log.txt')
+    fh = logging.FileHandler(known.arglogfile, mode='w')
+    SetLevel(fh, logging.INFO)
+    arglog.addHandler(fh)
+
+    return [runlog, sexlog, arglog]
 
 
-'''
-def GetOpts():
-    parser = argparse.ArgumentParser()
-    DefaultArgs(parser)
-    CustomArgs(parser) 
-    cmdline_args = parser.parse_args()
-    log = SetupLogger(cmdline_args)
-    ParseDefaultArgs(cmdline_args,log)
-    return cmdline_args, log
-'''
-
-
-def ConfigureBalrog(cmdline_opts, log):
-    cmdline_opts, derived_opts = GetMoreOpts(cmdline_opts, log)
+def ConfigureBalrog(cmdline_opts, known):
+    derived_opts = DerivedArgs(cmdline_opts, known)
     BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
     return BalrogSetup
-
-
-def GetMoreOpts(cmdline_args, log):
-    derived_args = DerivedArgs(cmdline_args, log)
-    return [cmdline_args, derived_args]
 
 
 def LogSimRules(catalog, BalrogSetup):
@@ -754,14 +753,14 @@ def LogSimRules(catalog, BalrogSetup):
             out.write('%s %s %s %s\n' %(str(i), key, catalog.componentrule[i][key].type, str(catalog.componentrule[i][key].param)) )
 
 
-def LogDerivedOpts(cmdline_args, BalrogSetup):
-    out = open(BalrogSetup.derivedlog, 'w')
+def LogDerivedOpts(cmdline_args, BalrogSetup, desc):
     ArgsDict = vars(BalrogSetup)
     VetoDict = vars(cmdline_args)
-    for key in ArgsDict:
-        if key not in VetoDict:
-            out.write('%s %s\n' %(key, ArgsDict[key]) )
-    out.close()
+    BalrogSetup.arglogger.info(desc)
+    extra_veto = ['runlogger','sexlogger','arglogger','assocnames']
+    for key in ArgsDict.keys():
+        if (key not in VetoDict.keys()) and (key not in extra_veto):
+            BalrogSetup.arglogger.info('%s %s' %(key, ArgsDict[key]) )
 
 
 def LogExtraSexConfig(ExtraSexConfig, BalrogSetup):
@@ -793,27 +792,30 @@ def NoOverride():
 
 
 
-def LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup):
-    out = open(BalrogSetup.cmdlinelog, 'w')
+def LogCmdlineOpts(cmdline_args, cmdline_args_copy, logger, desc):
 
+    logger.info('%s' %desc)
     ArgsDict = vars(cmdline_args)
     ordered = CmdlineListOrdered()
+    logger.info('# Native args')
     for key in ordered:
-        out.write('%s %s\n' %(key, ArgsDict[key]) )
+        logger.info('%s %s' %(key, ArgsDict[key]) )
 
-    out.write('\n')
     ArgsDict = vars(cmdline_args_copy)
+    logger.info('# User-defined args')
     for key in ArgsDict.keys():
         if key not in ordered:
-            out.write('%s %s\n' %(key, ArgsDict[key]) ) 
+            logger.info('%s %s' %(key, ArgsDict[key]) ) 
 
-    out.close()
 
-   
 def CmdlineListOrdered():
-    args = ["imagein", "imageext", "weightin", "weightext", "psfin","outdir", "clean",
-            "xmin", "xmax", "ymin", "ymax","ngal", "seed", "gain", "zeropoint","fluxthresh", 
-            "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noempty", "sexemptyparam", "noassoc"]
+    args = ["outdir","clean",
+            "config",
+            "imagein", "imageext", "weightin", "weightext", "psfin", 
+            "xmin", "xmax", "ymin", "ymax",
+            "ngal", "seed", "gain", "zeropoint","fluxthresh", 
+            "stdverbosity", "logverbosity", "debug", 
+            "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noempty", "sexemptyparam", "noassoc", "catfitstype"]
     return args
 
 
@@ -1081,7 +1083,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
 
 
-def RaiseException(debug=False):
+def RaiseException(log, debug=False):
 
     if not debug:
         exc_info = sys.exc_info()
@@ -1102,10 +1104,12 @@ def RaiseException(debug=False):
 
         keep = traceback.format_list(config_errs)
         keep_tb = ''.join(keep)
-        logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
+        log.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
+        #logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
 
     else:
-        logging.exception('Run error caused Balrog to exit.')
+        log.exception('Run error caused Balrog to exit.')
+        #logging.exception('Run error caused Balrog to exit.')
 
     sys.exit()
 
@@ -1124,14 +1128,17 @@ def AddCustomOptions(parser, config, log):
             config.CustomArgs(parser) 
 
 
-def NativeParse(parser, config_file, outdir, log):
+def NativeParse(parser, known):
     cmdline_opts = parser.parse_args()
-    cmdline_opts.config = config_file
-    cmdline_opts.outdir = outdir
-    #cmdline_opts.logdir = logdir
-    #log = SetupLogger(cmdline_opts)
-    ParseDefaultArgs(cmdline_opts,log)
-    BalrogSetup = ConfigureBalrog(cmdline_opts, log)
+    known.logs[2].info('# Exact command call')
+    known.logs[2].info(' '.join(sys.argv))
+    LogCmdlineOpts(cmdline_opts, cmdline_opts, known.logs[2], '\n# Values received for each possible command line option, filling with defaults if necessary')
+    
+    cmdline_opts.config = known.config
+    cmdline_opts.outdir = known.outdir
+
+    ParseDefaultArgs(cmdline_opts, known.logs[0])
+    BalrogSetup = ConfigureBalrog(cmdline_opts, known)
     return cmdline_opts, BalrogSetup
 
 
@@ -1143,42 +1150,51 @@ def CustomParse(cmdline_opts, BalrogSetup, config):
 
 def GetKnown(parser):
     known, unknown = parser.parse_known_args(sys.argv)
+
+    thisdir = os.path.dirname( os.path.realpath(__file__) )
+    defdir = os.path.join(thisdir, 'default_example')
+    outdir = os.path.join(defdir, 'output')
+    if known.outdir==None:
+        known.outdir = outdir
+    CreateDir(known.outdir)
+    known.logdir = os.path.join(known.outdir, 'balrog_log')
+    CreateSubDir(known.logdir)
+    
+    known.logs = SetupLogger(known)
     return known
 
 
 def GetConfig(known):
-    #known, unknown = parser.parse_known_args(sys.argv)
-    log = SetupLogger(known)
 
     if known.config==None:
         thisdir = os.path.dirname( os.path.realpath(__file__) )
         known.config = os.path.join(thisdir, 'config.py')
 
     if not os.path.lexists(known.config):
-        log.warning('Path to Balrog python config file not found: %s. All properties of the simulated galaxies will assume their defaults.' %known.config)
         #raise ConfigFileNotFound(150, known.config)
+        log.warning('Path to Balrog python config file not found: %s. All properties of the simulated galaxies will assume their defaults.' %known.config)
         config = None
     else:
         try:
             config = imp.load_source('config', known.config)
         except:
+            #raise ConfigImportError(151, known.config)
             log.warning('Python could not import your Balrog config file: %s. This means it has the python equivalen of a compiling error, apart from any possible runtime errors. Check for an error global in scope, such as an import. Continuing by assigning all properties of the simulated galaxies to their defaults.' %known.config)
             config = None
-            #raise ConfigImportError(151, known.config)
 
-    return config, known.config, known.outdir, log
+    return config
 
 
 def RunBalrog(parser, known):
 
     # Find the user's config file
-    config, config_file, outdir, log = GetConfig(known)
+    config = GetConfig(known)
 
     # Add the user's command line options
-    AddCustomOptions(parser, config, log)
+    AddCustomOptions(parser, config, known.logs[0])
 
     # Parse the command line agruments and interpret the user's settings for the simulation
-    cmdline_opts, BalrogSetup = NativeParse(parser, config_file, outdir, log)
+    cmdline_opts, BalrogSetup = NativeParse(parser, known)
     rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup, config)
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
@@ -1204,7 +1220,7 @@ def RunBalrog(parser, known):
         Cleanup(BalrogSetup)
 
     # Log some  extra stuff Balrog used along the way
-    LogDerivedOpts(cmdline_opts, BalrogSetup)
+    LogDerivedOpts(cmdline_opts, BalrogSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
 
 
 
@@ -1215,5 +1231,5 @@ if __name__ == "__main__":
     try:
         RunBalrog(parser, known)
     except:
-        RaiseException(debug=known.debug)
+        RaiseException(known.logs[0], debug=known.debug)
 
