@@ -106,6 +106,7 @@ def ReadImages(BalrogSetup):
         image.wcs = galsim.GSFitsWCS(file)
         weight.wcs = image.wcs
         BalrogSetup.wcshead = file
+        BalrogSetup.runlogger.warning('No WCS was found in the input image header. Using default pixel scale of 0.263 arcsec/pixel.')
     wcs = image.wcs
 
     subBounds = galsim.BoundsI(BalrogSetup.xmin,BalrogSetup.xmax,BalrogSetup.ymin,BalrogSetup.ymax)
