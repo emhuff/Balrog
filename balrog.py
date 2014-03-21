@@ -1106,8 +1106,8 @@ def GetConfig(known):
 
     return config
 
-## @file balrog.py
-#  balrog file
+## @namespace balrog.py
+#  Balrog stuff
 
 ## The main function for called to run Balrog.
 #  @param parser Command line parser object made by argparse.ArgumentParser() which has had the native Balrog arguments added to it.
