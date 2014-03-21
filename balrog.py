@@ -1109,7 +1109,7 @@ def GetConfig(known):
 ## @file balrog.py
 #  balrog file
 
-## The main function for called to run Balrog.
+## \fn RunBalrog The main function for called to run Balrog.
 #  @param parser Command line parser object made by argparse.ArgumentParser() which has had the native Balrog arguments added to it.
 #  @param known  Contains a few parsed arguments, namely those needed for logging which have already been set up.
 #
