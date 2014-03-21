@@ -382,7 +382,8 @@ def GalError(name):
 
 
 
-
+## For use with rules.
+#  Other stuff
 class CompRules(object):
     def __init__(self, nProfiles, name):
         super(CompRules, self).__setattr__('rules', [None]*nProfiles)
@@ -952,15 +953,18 @@ def ParseSex(args, log, configdir):
         raise SextractorPathError(140, args.sexpath)
 
 
-def ParseDefaultArgs(args,log):
+def ParseDefaultArgs(args,known):
+    args.config = known.config
+    args.outdir = known.outdir
+
     thisdir = os.path.dirname( os.path.realpath(__file__) )
     defdir = os.path.join(thisdir, 'default_example')
     indir = os.path.join(defdir, 'input')
     configdir = os.path.join(thisdir, 'astro_config')
     
-    ParseImages(args, log, indir)
-    ParseFloatKeyword(args, log) 
-    ParseSex(args, log, configdir)
+    ParseImages(args, known.logs[0], indir)
+    ParseFloatKeyword(args, known.logs[0]) 
+    ParseSex(args, known.logs[0], configdir)
 
     return args
 
@@ -1055,10 +1059,7 @@ def NativeParse(parser, known):
     known.logs[2].info(' '.join(sys.argv))
     LogCmdlineOpts(cmdline_opts, cmdline_opts, known.logs[2], '\n# Values received for each possible command line option, filling with defaults if necessary')
     
-    cmdline_opts.config = known.config
-    cmdline_opts.outdir = known.outdir
-
-    ParseDefaultArgs(cmdline_opts, known.logs[0])
+    ParseDefaultArgs(cmdline_opts, known)
     BalrogSetup = ConfigureBalrog(cmdline_opts, known)
     return cmdline_opts, BalrogSetup
 
@@ -1100,7 +1101,7 @@ def GetConfig(known):
             config = imp.load_source('config', known.config)
         except:
             #raise ConfigImportError(151, known.config)
-            log.warning('Python could not import your Balrog config file: %s. This means it has the python equivalen of a compiling error, apart from any possible runtime errors. Check for an error global in scope, such as an import. Continuing by assigning all properties of the simulated galaxies to their defaults.' %known.config)
+            log.warning('Python could not import your Balrog config file: %s. This means it has the python equivalent of a compiling error, apart from any possible runtime errors. First check for an error global in scope, such as an import. Continuing by assigning all properties of the simulated galaxies to their defaults.' %known.config)
             config = None
 
     return config
@@ -1146,7 +1147,9 @@ def RunBalrog(parser, known):
 
 
 if __name__ == "__main__":
-    
+   
+    # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
+    # Only a writable outdir is required to be able to get the output log file.
     parser = GetNativeOptions()
     known = GetKnown(parser)
     try:
