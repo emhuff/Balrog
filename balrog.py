@@ -1106,7 +1106,7 @@ def GetConfig(known):
 
     return config
 
-## @namespace balrog.py
+## @namespace balrog
 #  Balrog stuff is in this namespace.
 
 ## The main function for called to run Balrog.
