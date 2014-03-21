@@ -1,59 +1,56 @@
-\newcommand{\extra}{3pt}
-\newcommand{\vsp}{\\[8pt]}
 \newcommand{\hsp}{\hspace{17pt}}
 \newcommand{\hspsmall}{\hspace{5pt}}
 
-\setlength\extrarowheight{\extra}
-\newcommand{\vspsmall}{\\[-\extra]}
-\newcommand{\optrow}[3]{\opt{#1} & #2\\ &\MakeUppercase{\textbf{default}}: #3}
+\setlength\extrarowheight{3pt}
+\newcommand{\optrow}[3]{\opt{#1} & #2 \newline \MakeUppercase{\textbf{default}}: #3}
 
 \LTcapwidth=\textwidth
 \newcommand{\optstab}{
 \vspace{10pt}
-\begin{longtabu} to \linewidth {l X}
+\begin{longtabu} to \linewidth {p{1.2in} X}
 \caption{Command line arguments natively built-in to \balrog{}.} \label{tab:opts}\\
-\underline{\textbf{Option Name}} & \underline{\textbf{Description}} \vsp
-\optrow{outdir}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} {\texttt{\$INSTALLDIR/default\_example/output/}} \vsp
-\optrow{imagein}{Image to insert simulated galaxies into. Must be in FITS format.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \vsp
-\optrow{imageext}{Index of the FITS extension where the image flux data lives. Indexing begins at 0.}{0} \vsp
-\optrow{weightin}{File containing the weight map associated with \opt{imagein}. This can be a separate file from \opt{imagein} or the same file, where the flux image and weigh map live in different extensions.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \vsp
-\optrow{weightext}{Index of the FITS extension where the weight map data lives. Indexing begins at 0.}{\vspsmall &
-\begin{tabular}[t]{l}
-\hspsmall if \opt{imagein} != \opt{weightin}: \vspsmall
-\hsp \opt{weighext} = 0 \vspsmall
-\hspsmall else: \vspsmall
-\hsp \opt{weightext} = \opt{imageext} + 1 \vspsmall
-\end{tabular} \vsp} \vspsmall
-\optrow{psfin}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \texttt{.psf} as the extension.}{\texttt{\$INSTALLDIR/default\_example/input/example.psf}} \vsp
-\optrow{xmin}{$x$-coordinate pixel for the lower bound of the subimage (if subsampling). $x \in \left[1, N_{\text{cols}} \right]$.}{1} \vsp
-\optrow{xmax}{$x$-coordinate pixel for the upper bound of the subimage (if subsampling). $x \in \left[1, N_{\text{cols}} \right]$.}{$N_{\text{cols}}$} \vsp
-\optrow{ymin}{$y$-coordinate pixel for the lower bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{1} \vsp
-\optrow{ymax}{$y$-coordinate pixel for the upper bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{$N_{\text{rows}}$} \vsp
-\optrow{ngal}{Number of galaxies to simulate.}{40} \vsp
-\optrow{gain}{Gain [e$^{-}/\text{ADU}$] for adding CCD noise to the simulated galaxies. Refer to \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1\_c\_c\_d\_noise.html}{galsim.CCDNoise documentation} for further details. \opt{gain} can take two types of values: a float explicitly defining the gain, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the defaults.}{\vspsmall &
-\begin{tabular}[t]{l}
-\hspsmall try: \vspsmall
-\hsp \opt{gain} = \opt{imagein[--imageext].header[`GAIN']} \vspsmall
-\hspsmall except: \vspsmall
-\hsp \opt{gain} = 1.0 \vspsmall
-\end{tabular} \vsp} \vspsmall
-\optrow{zeropoint}{Zeropoint for converting sampled simulation magnitudes to simulated fluxes. \sex{} will run using this zeropoint when reporting magnitudes. \opt{zeropoint} can take two types values: a float explicitly defining the zeropoint, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the defaults.}{\vspsmall &
-\begin{tabular}[t]{l}
-\hspsmall try: \vspsmall
-\hsp \opt{zeropoint} = \opt{imagein[--imageext].header[`SEXMGZPT']} \vspsmall
-\hspsmall except: \vspsmall
-\hsp \opt{zeropoint} = 30.0 \vspsmall
-\end{tabular} \vsp} \vspsmall
-\optrow{seed}{Seed to give random number generator for any sampling which requires it, except noise realizations which are always different.}{Current time} \vsp
-\optrow{fluxthresh}{Flux threshold below which the simulated galaxy's profile must fall before drawing the postage stamp.}{0.01} \vsp
-\optrow{clean}{Delete Image files after catalogs have been written.}{Unflagged, i.e. effectively false} \vsp
-\optrow{sexpath}{Full path to \sex{} executable.}{sex, i.e. system default} \vsp
-\optrow{sexconfig}{Configuration file for running \sex{}. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{\texttt{\$INSTALLDIR/astro\_config/sex.config}} \vsp
-\optrow{sexparam}{Parameter file specifying which measurements \sex{} outputs. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{\texttt{\$INSTALLDIR/astro\_config/bulge.param}. This performs S\'{e}rsic profile model fits to each galaxy with free S\'{e}rsic index.} \vsp
-\optrow{sexnnw}{\sex{} neural network file for star-galaxy separation. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{\texttt{\$INSTALLDIR/astro\_config/sex.nnw}} \vsp
-\optrow{sexconv}{\sex{} filter convolution file when making detections. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{ç} \vsp
-\optrow{noassoc}{Do not run \sex{} in association mode. Association mode is \sex{} speak to only look for sources at certain positions; here, the simulated galaxy positions. Using association mode is signficantly faster when simulating into an image consisting of many objects prior to any simulation.}{Unflagged, i.e. use association mode.} \vsp
-\optrow{noempty}{Skip \sex{} run over original image, prior to any simulation. One usage for such a run is to identify cases where a galaxy is simulated in the same position as something originally there. Depending on how the objects' properties conspire, \sex{} may not know any blending happened.}{Unflagged, i.e. perform the \sex{} run} \vsp
+\textbf{\texttt{--}Full Name} \newline \underline{\textbf{\texttt{-}Short Name}} & \hspace{1in} \newline \underline{\textbf{Description}} \\ \\
+\optrow{outdir  \newline -od}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} {\texttt{\$INSTALLDIR/default\_example/output/}} \\ \\
+\optrow{imagein}{Image to insert simulated galaxies into. Must be in FITS format.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \\ \\
+\optrow{imageext}{Index of the FITS extension where the image flux data lives. Indexing begins at 0.}{0} \\ \\
+\optrow{weightin}{File containing the weight map associated with \opt{imagein}. This can be a separate file from \opt{imagein} or the same file, where the flux image and weigh map live in different extensions.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \\ \\
+\optrow{weightext}{Index of the FITS extension where the weight map data lives. Indexing begins at 0.}{\\ 
+& \begin{tabular}[t]{l}
+\hspsmall if \opt{imagein} != \opt{weightin}: \\
+\hsp \opt{weighext} = 0 \\
+\hspsmall else: \\
+\hsp \opt{weightext} = \opt{imageext} + 1
+\end{tabular}} \\ \\ 
+\optrow{psfin}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \texttt{.psf} as the extension.}{\texttt{\$INSTALLDIR/default\_example/input/example.psf}} \\ \\
+\optrow{xmin}{$x$-coordinate pixel for the lower bound of the subimage (if subsampling). $x \in \left[1, N_{\text{cols}} \right]$.}{1} \\ \\
+\optrow{xmax}{$x$-coordinate pixel for the upper bound of the subimage (if subsampling). $x \in \left[1, N_{\text{cols}} \right]$.}{$N_{\text{cols}}$} \\ \\
+\optrow{ymin}{$y$-coordinate pixel for the lower bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{1} \\ \\
+\optrow{ymax}{$y$-coordinate pixel for the upper bound of the subimage (if subsampling). $y \in \left[1, N_{\text{rows}} \right]$.}{$N_{\text{rows}}$} \\ \\
+\optrow{ngal}{Number of galaxies to simulate.}{40} \\ \\
+\optrow{gain}{Gain [e$^{-}/\text{ADU}$] for adding CCD noise to the simulated galaxies. Refer to \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1\_c\_c\_d\_noise.html}{galsim.CCDNoise documentation} for further details. \opt{gain} can take two types of values: a float explicitly defining the gain, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the defaults.}{\\ 
+& \begin{tabular}[t]{l}
+\hspsmall try: \\
+\hsp \opt{gain} = \opt{imagein[--imageext].header[`GAIN']} \\
+\hspsmall except: \\
+\hsp \opt{gain} = 1.0 \\
+\end{tabular}} \\ \\
+\optrow{zeropoint}{Zeropoint for converting sampled simulation magnitudes to simulated fluxes. \sex{} will run using this zeropoint when reporting magnitudes. \opt{zeropoint} can take two types values: a float explicitly defining the zeropoint, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the defaults.}{\\
+& \begin{tabular}[t]{l}
+\hspsmall try: \\
+\hsp \opt{zeropoint} = \opt{imagein[--imageext].header[`SEXMGZPT']} \\
+\hspsmall except: \\
+\hsp \opt{zeropoint} = 30.0 \\
+\end{tabular}} \\ \\
+\optrow{seed}{Seed to give random number generator for any sampling which requires it, except noise realizations which are always different.}{Current time} \\ \\
+\optrow{fluxthresh}{Flux threshold below which the simulated galaxy's profile must fall before drawing the postage stamp.}{0.01} \\ \\
+\optrow{clean}{Delete Image files after catalogs have been written.}{Unflagged, i.e. effectively false} \\ \\
+\optrow{sexpath}{Full path to \sex{} executable.}{sex, i.e. system default} \\ \\
+\optrow{sexconfig}{Configuration file for running \sex{}. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{\texttt{\$INSTALLDIR/astro\_config/sex.config}} \\ \\
+\optrow{sexparam}{Parameter file specifying which measurements \sex{} outputs. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{\texttt{\$INSTALLDIR/astro\_config/bulge.param}. This performs S\'{e}rsic profile model fits to each galaxy with free S\'{e}rsic index.} \\ \\
+\optrow{sexnnw}{\sex{} neural network file for star-galaxy separation. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{\texttt{\$INSTALLDIR/astro\_config/sex.nnw}} \\ \\
+\optrow{sexconv}{\sex{} filter convolution file when making detections. Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.}{ç} \\ \\
+\optrow{noassoc}{Do not run \sex{} in association mode. Association mode is \sex{} speak to only look for sources at certain positions; here, the simulated galaxy positions. Using association mode is signficantly faster when simulating into an image consisting of many objects prior to any simulation.}{Unflagged, i.e. use association mode.} \\ \\
+\optrow{noempty}{Skip \sex{} run over original image, prior to any simulation. One usage for such a run is to identify cases where a galaxy is simulated in the same position as something originally there. Depending on how the objects' properties conspire, \sex{} may not know any blending happened.}{Unflagged, i.e. perform the \sex{} run} \\ \\
 \optrow{sexemptyparam}{Parameter file specifying which measurements \sex{} outputs during run over original image, prior to any simulation. If only interested in the run for `deblending' issues, the file's contents are mostly irrelevant. The default file does not do model fitting to be faster.}{\texttt{\$INSTALLDIR/astro\_config/sex.param}}
 \end{longtabu}
 }
