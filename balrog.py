@@ -1112,7 +1112,6 @@ def GetConfig(known):
 #                    has had the native Balrog arguments added to it
 #  @param[in] known  Contains a few parsed arguments, namely those needed for logging
 #                    which has already been set up
-
 def RunBalrog(parser, known):
 
     # Find the user's config file
