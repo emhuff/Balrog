@@ -383,28 +383,50 @@ def GalError(name):
 
 
 
-## For use with rules.
-#  Other stuff
+## Class used with the {sersicindex, halflightradius, magnitude, axisratio, beta} components of rules.
+#  Since a simulated galaxy can have as many Sersic components as desired, the basic object of the class is an array called @p rules.
+#  Index/attribute get/set methods are overwritten to put restrictions on how users can interact with the class
+#  and then handle errors if they do something bad.
 class CompRules(object):
+
+    ## Initialize the rules, setting each rule to None, which will equate to using Balrog's defaults if the rule is not reassigned.
+    #  @param nProfiles Integer number of Sersic profiles which make up the simulated galaxy
+    #  @param name String name for the Sersic parameter, e.g. @p halflightradius
     def __init__(self, nProfiles, name):
         super(CompRules, self).__setattr__('rules', [None]*nProfiles)
         super(CompRules, self).__setattr__('name', name)
         super(CompRules, self).__setattr__('nProfiles', nProfiles)
 
+    ## Throw an error if the user tries to define a new attribute.
+    #  e.g. @p rules.beta.nonsense = 100
+    #  @param name Attempted attribute name
+    #  @param value Attempted attribute value
     def __setattr__(self, name, value):
         raise RulesComponentAttributeError(305)
 
+    ## Throw an error if the user asks for an attribute which does not exist.
+    #  The only attributes which exist are {rules, name, nProfiles}.
+    #  However, unless they dig through the code, users will not know those three exist anyway.
+    #  I would have preferred if python let me forbid access to these as well, but since
+    #  they cannot be reassigned access to them does not hurt.
+    #  @param name Attempted attribute name
     def __getattr__(self, name):
         raise RulesComponentAttributeError(305)
-  
+ 
+    ## Return the length of the @p rules array
     def __len__(self):
         return self.nProfiles
 
+    ## Throw an error if the requested index is out of range; otherwise get element @p index of the rules array.
+    #  @param index Attempted integer array position
     def __getitem__(self, index):
         if index >= self.nProfiles:
             raise RulesIndexOutOfRange(304, self.name, self.nProfiles)
         return self.rules[index]
 
+    ## Throw an error if the requested index is out of range; otherwise check to make sure the rule given is valid before assigning the new rule or raising an exception.
+    #  @param index Attempted integer array position
+    #  @param value Attempted rule
     def __setitem__(self, index, value):
         if index >= self.nProfiles:
             raise RulesIndexOutOfRange(304, self.name, self.nProfiles)
