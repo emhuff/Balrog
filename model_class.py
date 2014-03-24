@@ -335,19 +335,19 @@ class nComponentSersic(object):
         file = os.path.join(thisdir, 'cosmos.fits')
 
         if key == 'beta':
-            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of 0.' %(i, key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of 0.' %(i, key))
             return np.zeros(self.ngal)
         if key=='axisratio':
-            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of 1.' %(i, key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of 1.' %(i, key))
             return np.ones(self.ngal)
         if key=='halflightradius':
-            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
             return self.FunctionCatalog(used, [file,1,'HALF_LIGHT_RADIUS'])
         if key=='sersicindex':
-            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
             return self.FunctionCatalog(used, [file,1,'SERSIC_INDEX'])
         if key=='magnitude' or key=='flux':
-            BalrogSetup.logger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
             return self.FunctionCatalog(used, [file,1,'IMAG'])
 
     def GetGalaxyDefault(self, key, used, BalrogSetup):
@@ -355,16 +355,16 @@ class nComponentSersic(object):
         file = os.path.join(thisdir, 'cosmos.fits')
 
         if key in ['g1', 'g2']:
-            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of 0.' %(key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for %s. Balrog will use the default of 0.' %(key))
             return np.zeros(self.ngal)
         if key == 'magnification':
-            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of 1.' %(key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for %s. Balrog will use the default of 1.' %(key))
             return np.ones(self.ngal)
         if key=='x':
-            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
             return np.random.uniform( BalrogSetup.xmin, BalrogSetup.xmax, self.ngal )
         if key=='y':
-            BalrogSetup.logger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
+            BalrogSetup.runlogger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
             return np.random.uniform( BalrogSetup.ymin, BalrogSetup.ymax, self.ngal )
         
 
