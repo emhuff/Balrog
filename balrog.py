@@ -452,13 +452,22 @@ class CompRules(object):
         return rule
 
 
+## Class which defines @p rules.
+#  The {sersicindex, halflightradius, magnitude, axisratio, beta} attributes are of type @p CompRules.
+#  No set methods are allowed to be called by the user.
 class SimRules(object):
+
+    ## Initialize are the simulation parameters to their balrog defaults.
+    #  @param ngal Integer number of galaxies simulated
     def __init__(self, ngal):
         super(SimRules, self).__setattr__('ngal', ngal)
         for name in self._GetGalaxy():
             super(SimRules, self).__setattr__(name, None)
         self.InitializeSersic()
 
+    ## Setup the attributes of type @p CompRules: {sersicindex, halflightradius, magnitude, axisratio, beta}.
+    #  This function allocates the proper size array and will reset all rules to their defaults.
+    #  @param nProfiles Integer number of Sersic profiles the simulated galaxies are composed of
     def InitializeSersic(self, nProfiles=1):
         super(SimRules, self).__setattr__('nProfiles', nProfiles)
         for c in self._GetComponent():
@@ -470,15 +479,27 @@ class SimRules(object):
     def _GetComponent(self):
         return ['axisratio','beta','halflightradius','magnitude','sersicindex']
 
+    ## Throw an error if the user tries to index @p rules
+    #  @param index Attempted integer array element position
     def __getitem__(self, index):
         raise RulesIndexingError(302)
 
+    ## Throw an error if the user tries to index @p rules
+    #  @param index Attempted integer array element position
+    #  @param value Attempted assignment value
     def __setitem__(self, index, value):
         raise RulesIndexingError(302)
 
+    ## Throw an error if the user asks for an attribute that does not exist.
+    #  @param name Attempted attribute name
     def __getattr__(self, name):
         raise RulesAttributeError(301, name)
 
+    ## Set a rule.
+    #  Before new rules are assigned they are check and if found to be invalid an exception occurs.
+    #  Attributes @p ngal and @p nProfiles cannot be reassigned.
+    #  @param name Attempted attribute to reassign
+    #  @param value Attempted assignment value
     def __setattr__(self, name, value):
         if name=='ngal':
             raise RulesNgalError(-1)
