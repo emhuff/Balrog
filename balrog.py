@@ -457,7 +457,7 @@ class CompRules(object):
 #  No set methods are allowed to be called by the user.
 class SimRules(object):
 
-    ## Initialize are the simulation parameters to their balrog defaults.
+    ## Initialize the simulation parameters to their balrog defaults.
     #  @param ngal Integer number of galaxies simulated
     def __init__(self, ngal):
         super(SimRules, self).__setattr__('ngal', ngal)
@@ -559,7 +559,7 @@ class SimRules(object):
 
 
 ## Class for use
-#  Test
+#  Testing more stuff
 class CompResult(object):
     def __init__(self, nProfiles, name):
         super(CompResult, self).__setattr__('name', name)
@@ -1155,7 +1155,7 @@ def GetConfig(known):
 ## @namespace balrog
 #  Balrog stuff is in this namespace.
 
-## The main function for called to run Balrog.
+## The main function called to run Balrog.
 #  @param parser Command line parser object made by argparse.ArgumentParser() which has had the native Balrog arguments added to it.
 #  @param known  Contains a few parsed arguments, namely those needed for logging which have already been set up.
 #
