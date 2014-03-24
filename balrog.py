@@ -558,6 +558,8 @@ class SimRules(object):
         return rule
 
 
+## Class for use
+#  Test
 class CompResult(object):
     def __init__(self, nProfiles, name):
         super(CompResult, self).__setattr__('name', name)
