@@ -1,3 +1,5 @@
+\renewcommand*\footnoterule{}
+
 \newcommand*{\balrogtitlepage}{
 \begingroup % Create the command for including the title page in the document
 \newlength{\drop} % Command for generating a specific amount of whitespace
@@ -9,8 +11,10 @@
 
 \vspace{\drop} % Whitespace between the top lines and title
 \centering % Center all text
-\Huge Balorog\\[0.5\baselineskip] % Title line 1
-\Large For those who dig too deeply and greedily into their data...\\[0.75\baselineskip] % 
+\Huge \balrog \\[0.5\baselineskip] % Title line 1
+\Large An astronomical imaging simulation d(a)emon\footnote{Technically, the package is not a daemon. Please forgive our attempts at naming humor.}\\[0.5\baselineskip]
+\Large for those who dig too deeply and \\[0.75\baselineskip]
+\Large   greedily into their data...\\[0.75\baselineskip] % 
 \vspace{\drop} % Whitespace between the title and short horizontal line
 
 \rule{0.5\textwidth}{0.4pt}\par % Short horizontal line under the title
