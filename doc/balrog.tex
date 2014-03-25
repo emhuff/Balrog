@@ -26,7 +26,7 @@
 \newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\psfex}{\textsc{PSFEx}}
 \newcommand{\opt}[1]{\texttt{--#1}}
-\newcommand{\inset}{\\[0.4cm]}
+\newcommand{\inline}{\\[0.4cm]}
 \newcommand{\bcmd}[1]{\texttt{\% runbalrog #1}}
 \newcommand{\sersic}{S\'{e}rsic}
 
@@ -52,11 +52,14 @@ Installation is a bitch. Let your system administrator worry about it.
 But if you have to do it, here are some steps that \emph{might} work...
 
 \begin{table}
-\caption{Definitions used throughout this manual. \notesuchyta{I'm not sure where this table belongs, if it belongs anywhere at all.}} \label{tab:def}
+\caption{Definitions used throughout this manual.}
+\label{tab:def}
 \begin{tabular}{l l}
 \underline{\textbf{Name}} & \underline{\textbf{Meaning}} \\
 \texttt{\$INSTALLDIR} & Directory where \balrog{} was installed \\
-\texttt{runbalrog} & \texttt{\$INSTALLDIR/balrog.py}
+\texttt{runbalrog} & \texttt{\$INSTALLDIR/balrog.py} \\
+\texttt{configfile} & \texttt{\$INSTALLDIR/config.py} \\
+\multicolumn{2}{l}{\notesuchyta{I'm not sure where this table belongs, if it belongs anywhere at all.}}
 \end{tabular}
 \end{table}
 
@@ -65,30 +68,53 @@ But if you have to do it, here are some steps that \emph{might} work...
 \label{quick}
 
 The fastest way to get started understanding how to configure and use \balrog{} is to
-run using the example files which come packaged with the software, then examing the input
+run it using the example files which come packaged with the software, and then examine the input
 and output of the run. 
-\balrog{} has been set such that when the executable \py{}
+\balrog{} has been set up such that when the executable \py{}
 file is called without any command line arguments, it will run over
 the example files, filling in defaults as necessary. 
 Thus, this inital call is as simple as:
-\inset
+\inline
 \bcmd{}
-\inset
+\inline
 Referring to \autoref{tab:def}, \texttt{runbalrog} is equivalent to an alias to the file
-\texttt{balrog.py} located within the installation directory. We will use this convention
-throughout the documentation. \autoref{sec:input} briefly introduces where to find
-the input used for this run and \autoref{sec:output} briefly introduces the output
+\texttt{balrog.py} located within the installation directory, labelled like an environment variable as \texttt{\$INSTALLDIR}. We will use these conventions
+throughout the documentation. \autoref{sec:input} briefly addresses
+the input which was read in for the \texttt{runbalrog} command and \autoref{sec:output} introduces the output
 generated during the run.  \notesuchyta{Add text to see relevant later sections for more comprehensive details. For now I'm not quite sure what those are.}
 
 \subsection{Input}
 \label{sec:input}
 
-Something...
+\balrog{}'s input comes in two forms, command line arguments and \py{} statements.
+The command line arguments can be printed, along with brief help string by running:
+\inline
+\bcmd{help}
+\inline
+Furthermore, a complete description of \balrog{}'s command line arguments can be found in \autoref{sec:cmdline}.
+In brief, the command line parameters are used to specify input images and their properties, as well as configuration
+files to use with \sex{}. The default example's image data and PSF live in \texttt{\$INSTALLDIR/default\_example/}.
+The default \sex{} configuration files live in \texttt{\$INSTALLDIR/astro\_config}. File names are intended to be transparent.
+
+In order to define how galaxies will be simulated, \balrog{} accepts defined blocks of code
+within \texttt{configfile}. Included is support for implementing custom user-defined functions and command line arguments.
+The default location for \balrog{} to look for this configuration file is noted in \autoref{tab:def}, within
+the installation directory as a file named \texttt{config.py}. The core functions inside \texttt{configfile} have a strictly
+defined syntax which will be fully described in \autoref{sec:cmdline} and \autoref{sec:simrules}. The syntax is designed to be as \py esque as possible, so
+many users will likely be able to extrapolate directly from the examples in the default \texttt{configfile}. Additionally, the file
+includes comments as a guide. A slightly more sophisticated \texttt{configfile} can be found in \texttt{\$INSTALLDIR/config2.py}.
+The command line option \opt{config} is used to switch the file \balrog{} reads its configuration from.
+
 
 \subsection{Output}
 \label{sec:output}
 
-Something...
+All \balrog{} output is saved in subdirectories under the command line option \opt{outdir}.
+If left unspecified, this defaults to \texttt{\$INSTALLDIR/default\_example/output}.
+Most relevant for getting started are the \texttt{balrog\_cat} directory and the \texttt{balrog\_log} directory.
+\texttt{balrog\_cat} contains \texttt{example.truthcat.sim.fits}, the truth parameters assigned to simulated galaxies
+and \texttt{example.measuredcat.sim.fits}, the simulated galaxies properties as measured in the image by \sex{}.
+\texttt{balrog\_log} saves log files useful for debugging \balrog{} runs.
 
 
 \section{The \balrog{} Algorithm}
@@ -103,6 +129,8 @@ To get the postage stamps ...
 
 
 \section{Command Line Options}
+\label{sec:cmdline}
+
 \balrog{} runs can be configured via command line options.
 Two types of options exist. First are the built-in
 ones, native to \balrog{}. In addition, \balrog{}
@@ -111,9 +139,9 @@ own command line options.
 To print a list of all \balrog{}'s command line options,
 both native and user-defined, along with
 brief help strings, run:
-\inset
+\inline
 \bcmd{\opt{help}}
-\inset
+\inline
 \autoref{sec:builtin} further details each
 of the native options and \autoref{sec:user}
 explains how to create custom options.
@@ -210,9 +238,9 @@ for these different galaxy characteristics. Users overwrite
 each of \simrules{}'s attributes to define their simulations.
 For example the statement to set each galaxy's magnification
 to 1 would read:
-\inset
+\inline
 \texttt{magnification = 1}
-\inset
+\inline
 \simrules{} has 11 attributes in total, whose names are intended to be simple to understand.
 These are printed and desribed in \autoref{tab:attr} below.
 
@@ -236,7 +264,7 @@ These are printed and desribed in \autoref{tab:attr} below.
 \noindent \texttt{rules.sersicindex}, \texttt{rules.halflightradius}, \texttt{rules.magnitude}, \texttt{rules.axisratio},
 and \texttt{rules.beta} must be arrays, whose length is equal to \texttt{rules.nProfiles}. For example, simulating
 galaxies with both an expontential and a de Vaucouleurs component would read:
-\inset
+\inline
 \texttt{rules.nProfiles} = 2 \\
 \texttt{rules.sersicindex = [1,4]}
 
