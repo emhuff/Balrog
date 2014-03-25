@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[12pt]{book}
 
 \usepackage{amsfonts,amsmath,amssymb}
 \usepackage{graphicx}
@@ -34,16 +34,37 @@
 \newcommand\notesuchyta[1]{\note{red!50}{EDS}{#1}}
 
 \begin{document}
-\balrogtitlepage
+{\balrogtitlepage \let\cleardoublepage\clearpage \tableofcontents}
 
-\newpage
-\tableofcontents
-
-\newpage
+\chapter{What is \balrog{} and what is it good for?}
 \section{Introduction}
 \label{sec:intro}
 \balrog{} is ...
 
+\section{The \balrog{} Algorithm}
+\label{sec:algorithm}
+
+\balrog{} does ...
+
+\begin{figure}[bh]
+\includegraphics[width=0.9\linewidth]{flowchart.jpg}
+\caption{Visualization of \balrog{}'s data flow. Optional configurations are represented as dotted connections.}
+\label{fig:flowchart}
+\end{figure}
+
+\subsection{Postage Stamp Size}
+\label{sec:postagestamp}
+
+To get the postage stamps ...
+
+
+\section{Science Motivation}
+\label{sec:motivation}
+
+What is \balrog{} good for?
+
+
+\chapter{Installation}
 
 \section{Installation}
 \label{sec:install}
@@ -64,7 +85,7 @@ But if you have to do it, here are some steps that \emph{might} work...
 \end{table}
 
 
-\section{Quick Start}
+\chapter{Quick Start}
 \label{quick}
 
 The fastest way to get started understanding how to configure and use \balrog{} is to
@@ -83,7 +104,7 @@ throughout the documentation. \autoref{sec:input} briefly addresses
 the input which was read in for the \texttt{runbalrog} command and \autoref{sec:output} introduces the output
 generated during the run.  \notesuchyta{Add text to see relevant later sections for more comprehensive details. For now I'm not quite sure what those are.}
 
-\subsection{Input}
+\section{Input}
 \label{sec:input}
 
 \balrog{}'s input comes in two forms, command line arguments and \py{} statements.
@@ -106,7 +127,7 @@ includes comments as a guide. A slightly more sophisticated \texttt{configfile} 
 The command line option \opt{config} is used to switch the file \balrog{} reads its configuration from.
 
 
-\subsection{Output}
+\section{Output}
 \label{sec:output}
 
 All \balrog{} output is saved in subdirectories under the command line option \opt{outdir}.
@@ -117,23 +138,7 @@ and \texttt{example.measuredcat.sim.fits}, the simulated galaxies properties as 
 \texttt{balrog\_log} saves log files useful for debugging \balrog{} runs.
 
 
-\section{The \balrog{} Algorithm}
-\label{sec:algorithm}
-
-\balrog{} does ...
-
-\begin{figure}
-\includegraphics[width=0.9\linewidth]{flowchart.jpg}
-\caption{Visualization of \balrog{}'s data flow. Optional configurations are represented as dotted connections.}
-\label{fig:flowchart}
-\end{figure}
-
-\subsection{Postage Stamp Size}
-\label{sec:postagestamp}
-
-To get the postage stamps ...
-
-
+\chapter{Detailed}
 \section{Command Line Options}
 \label{sec:cmdline}
 
