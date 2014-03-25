@@ -3,6 +3,7 @@
 \usepackage{amsfonts,amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{color}
+\usepackage{color,soul}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta}]{hyperref}
 \usepackage[margin=1.0in]{geometry}
 \usepackage{longtable}
@@ -14,19 +15,23 @@
 \usepackage{optstable}
 \usepackage{config}
 \usepackage{outtable}
+\usepackage{todonotes}
 
 \renewcommand*\sectionautorefname{Section}
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
 
-\newcommand{\balrog}{Balrog}
+\newcommand{\py}{Python}
+\newcommand{\balrog}{\textsc{Balrog}}
 \newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\psfex}{\textsc{PSFEx}}
 \newcommand{\opt}[1]{\texttt{--#1}}
-\newcommand{\bcmd}[1]{\vspace{6pt} \noindent \texttt{\% ./balrog.py #1} \vspace{6pt}}
+\newcommand{\inset}{\\[0.4cm]}
+\newcommand{\bcmd}[1]{\texttt{\% runbalrog #1}}
 \newcommand{\sersic}{S\'{e}rsic}
 
-
+\newcommand\note[3]{\todo[color=#1, inline, size=\small]{#2: #3}}
+\newcommand\notesuchyta[1]{\note{red!50}{EDS}{#1}}
 
 \begin{document}
 \balrogtitlepage
@@ -46,22 +51,50 @@
 Installation is a bitch. Let your system administrator worry about it. 
 But if you have to do it, here are some steps that \emph{might} work...
 
+\begin{table}
+\caption{Definitions used throughout this manual. \notesuchyta{I'm not sure where this table belongs, if it belongs anywhere at all.}} \label{tab:def}
+\begin{tabular}{l l}
+\underline{\textbf{Name}} & \underline{\textbf{Meaning}} \\
+\texttt{\$INSTALLDIR} & Directory where \balrog{} was installed \\
+\texttt{runbalrog} & \texttt{\$INSTALLDIR/balrog.py}
+\end{tabular}
+\end{table}
+
 
 \section{Quick Start}
 \label{quick}
 
-First run:
-
+The fastest way to get started understanding how to configure and use \balrog{} is to
+run using the example files which come packaged with the software, then examing the input
+and output of the run. 
+\balrog{} has been set such that when the executable \py{}
+file is called without any command line arguments, it will run over
+the example files, filling in defaults as necessary. 
+Thus, this inital call is as simple as:
+\inset
 \bcmd{}
+\inset
+Referring to \autoref{tab:def}, \texttt{runbalrog} is equivalent to an alias to the file
+\texttt{balrog.py} located within the installation directory. We will use this convention
+throughout the documentation. \autoref{sec:input} briefly introduces where to find
+the input used for this run and \autoref{sec:output} briefly introduces the output
+generated during the run.  \notesuchyta{Add text to see relevant later sections for more comprehensive details. For now I'm not quite sure what those are.}
 
-\noindent and check the output directories in \texttt{default\_example/output}.  Check \texttt{config.py} for how to 
-do simulations.
+\subsection{Input}
+\label{sec:input}
+
+Something...
+
+\subsection{Output}
+\label{sec:output}
+
+Something...
 
 
 \section{The \balrog{} Algorithm}
 \label{sec:algorithm}
 
-Balrog does ...
+\balrog{} does ...
 
 \subsection{Postage Stamp Size}
 \label{sec:postagestamp}
@@ -78,10 +111,10 @@ own command line options.
 To print a list of all \balrog{}'s command line options,
 both native and user-defined, along with
 brief help strings, run:
-
+\inset
 \bcmd{\opt{help}}
-
-\noindent \autoref{sec:builtin} further details each
+\inset
+\autoref{sec:builtin} further details each
 of the native options and \autoref{sec:user}
 explains how to create custom options.
 
@@ -177,15 +210,10 @@ for these different galaxy characteristics. Users overwrite
 each of \simrules{}'s attributes to define their simulations.
 For example the statement to set each galaxy's magnification
 to 1 would read:
-
-\setlength{\tabcolsep}{0pt}
-\begin{longtabu*} to \linewidth {X}
-\texttt{rules.magnification = 1}
-\end{longtabu*}
-\setlength{\tabcolsep}{6pt}
-\addtocounter{table}{-1}
-
-\noindent \simrules{} has 11 attributes in total, whose names are intended to be simple to understand.
+\inset
+\texttt{magnification = 1}
+\inset
+\simrules{} has 11 attributes in total, whose names are intended to be simple to understand.
 These are printed and desribed in \autoref{tab:attr} below.
 
 \vspace{10pt}
@@ -208,15 +236,9 @@ These are printed and desribed in \autoref{tab:attr} below.
 \noindent \texttt{rules.sersicindex}, \texttt{rules.halflightradius}, \texttt{rules.magnitude}, \texttt{rules.axisratio},
 and \texttt{rules.beta} must be arrays, whose length is equal to \texttt{rules.nProfiles}. For example, simulating
 galaxies with both an expontential and a de Vaucouleurs component would read:
-
-\setlength{\tabcolsep}{0pt}
-\begin{longtabu} to \linewidth {X}
+\inset
 \texttt{rules.nProfiles} = 2 \\
 \texttt{rules.sersicindex = [1,4]}
-\end{longtabu}
-\setlength{\tabcolsep}{6pt}
-\addtocounter{table}{-1}
-
 
 Simulation rules can assume four types. The first is a constant, meaning each of the 
 galaxies in the simulated galaxy sample
