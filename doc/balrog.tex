@@ -17,11 +17,13 @@
 \usepackage{outtable}
 \usepackage{todonotes}
 
+\renewcommand*\chapterautorefname{Chapter}
 \renewcommand*\sectionautorefname{Section}
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
 
 \newcommand{\py}{Python}
+\newcommand{\galsim}{GalSim}
 \newcommand{\balrog}{\textsc{Balrog}}
 \newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\psfex}{\textsc{PSFEx}}
@@ -34,17 +36,28 @@
 \newcommand\notesuchyta[1]{\note{red!50}{EDS}{#1}}
 
 \begin{document}
-{\balrogtitlepage \let\cleardoublepage\clearpage \tableofcontents}
+
+%\setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt}
+\setlength{\intextsep}{25pt plus 1.0pt minus 2.0pt}
+\let\cleardoublepage\clearpage
+
+%{\balrogtitlepage \let\cleardoublepage\clearpage \tableofcontents}
+\balrogtitlepage
+\tableofcontents
+
 
 \chapter{What is \balrog{} and what is it good for?}
 \section{Introduction}
 \label{sec:intro}
 \balrog{} is ...
 
+
 \section{The \balrog{} Algorithm}
 \label{sec:algorithm}
 
-\balrog{} does ...
+\balrog{} operates using two initally unrelated pieces of information: real imaging data and simulated galaxies.
+The central idea of \balrog{} is to place the simulated galaxies into the images themselves.
+
 
 \begin{figure}[bh]
 \includegraphics[width=0.9\linewidth]{flowchart.jpg}
@@ -72,21 +85,18 @@ What is \balrog{} good for?
 Installation is a bitch. Let your system administrator worry about it. 
 But if you have to do it, here are some steps that \emph{might} work...
 
-\begin{table}
-\caption{Definitions used throughout this manual.}
-\label{tab:def}
-\begin{tabular}{l l}
-\underline{\textbf{Name}} & \underline{\textbf{Meaning}} \\
-\texttt{\$INSTALLDIR} & Directory where \balrog{} was installed \\
-\texttt{runbalrog} & \texttt{\$INSTALLDIR/balrog.py} \\
-\texttt{configfile} & \texttt{\$INSTALLDIR/config.py} \\
-\multicolumn{2}{l}{\notesuchyta{I'm not sure where this table belongs, if it belongs anywhere at all.}}
-\end{tabular}
-\end{table}
-
 
 \chapter{Quick Start}
 \label{quick}
+
+\balrog{} has been designed with flexibility of use in mind. As a necessary consequence, 
+a number of different configuration possiblities exist, each of which must be
+adequately explained, which quickly expands the length of the documentation.
+We realize parsing the entirity of this manual requires some time.
+Hence, the intent of the this section is to offer a short primer for a few of the most import features
+\balrog{} users will want to become familiar with.
+The comprehensive usage instructions are saved for \autoref{chap:detailed}.
+The following start up sections will refer readers to the relevant sections of \autoref{chap:detailed} for more details.
 
 The fastest way to get started understanding how to configure and use \balrog{} is to
 run it using the example files which come packaged with the software, and then examine the input
@@ -102,7 +112,7 @@ Referring to \autoref{tab:def}, \texttt{runbalrog} is equivalent to an alias to 
 \texttt{balrog.py} located within the installation directory, labelled like an environment variable as \texttt{\$INSTALLDIR}. We will use these conventions
 throughout the documentation. \autoref{sec:input} briefly addresses
 the input which was read in for the \texttt{runbalrog} command and \autoref{sec:output} introduces the output
-generated during the run.  \notesuchyta{Add text to see relevant later sections for more comprehensive details. For now I'm not quite sure what those are.}
+generated during the run.
 
 \section{Input}
 \label{sec:input}
@@ -113,32 +123,52 @@ The command line arguments can be printed, along with brief help string by runni
 \bcmd{help}
 \inline
 Furthermore, a complete description of \balrog{}'s command line arguments can be found in \autoref{sec:cmdline}.
+Each comes with a default \balrog{} will assume if the user does not supply one.
 In brief, the command line parameters are used to specify input images and their properties, as well as configuration
-files to use with \sex{}. The default example's image data and PSF live in \texttt{\$INSTALLDIR/default\_example/}.
-The default \sex{} configuration files live in \texttt{\$INSTALLDIR/astro\_config}. File names are intended to be transparent.
+files to use with \sex{}, and a few other variables every \balrog{} run will need to define. 
+The default example's image data and PSF live in \texttt{\$INSTALLDIR/default\_example/}.
+The \sex{} configuration files live in \texttt{\$INSTALLDIR/astro\_config}. 
+Command line argument names and default file names are intended to be transparent.
 
-In order to define how galaxies will be simulated, \balrog{} accepts defined blocks of code
-within \texttt{configfile}. Included is support for implementing custom user-defined functions and command line arguments.
-The default location for \balrog{} to look for this configuration file is noted in \autoref{tab:def}, within
-the installation directory as a file named \texttt{config.py}. The core functions inside \texttt{configfile} have a strictly
-defined syntax which will be fully described in \autoref{sec:cmdline} and \autoref{sec:simrules}. The syntax is designed to be as \py esque as possible, so
-many users will likely be able to extrapolate directly from the examples in the default \texttt{configfile}. Additionally, the file
-includes comments as a guide. A slightly more sophisticated \texttt{configfile} can be found in \texttt{\$INSTALLDIR/config2.py}.
-The command line option \opt{config} is used to switch the file \balrog{} reads its configuration from.
+In order to flexibly define how galaxies will be simulated, \balrog{} accepts defined blocks of \py{} code
+within the file specified by command line option \opt{config}.
+The example's \opt{config} defaults to \texttt{\$INSTALLDIR/config.py}.
+Included within this \balrog{} configuration file is support for implementing custom user-defined functions 
+and command line arguments.
+The core functions defined in the file have a strictly
+structured syntax which will be fully described in \autoref{sec:cmdline} and \autoref{sec:simrules}. The syntax is designed to be as \py esque as possible, so
+many users will likely be able to extrapolate directly from the examples without reading lengthy documentation. The file also
+includes comment lines as a guide. A slightly more sophisticated configuration file can be found in \texttt{\$INSTALLDIR/config2.py}.
+These two examples are designed to demonstrate the range of statements available to \balrog{}'s \py{} configuration files.
 
 
 \section{Output}
 \label{sec:output}
 
-All \balrog{} output is saved in subdirectories under the command line option \opt{outdir}.
-If left unspecified, this defaults to \texttt{\$INSTALLDIR/default\_example/output}.
-Most relevant for getting started are the \texttt{balrog\_cat} directory and the \texttt{balrog\_log} directory.
+All \balrog{} output is saved in subdirectories under the directory chosen by command line option \opt{outdir}.
+If no \opt{outdir} is given, it defaults to \texttt{\$INSTALLDIR/default\_example/output}.
+The complete set of output generated by \balrog{} is detailed in \autoref{sec:out};
+most relevant for getting started are the \texttt{balrog\_cat} subdirectory and the \texttt{balrog\_log} subdirectory.
 \texttt{balrog\_cat} contains \texttt{example.truthcat.sim.fits}, the truth parameters assigned to simulated galaxies
-and \texttt{example.measuredcat.sim.fits}, the simulated galaxies properties as measured in the image by \sex{}.
-\texttt{balrog\_log} saves log files useful for debugging \balrog{} runs.
+and \texttt{example.measuredcat.sim.fits}, the simulated galaxies' properties as measured in the image by \sex{}.
+\texttt{balrog\_log} saves log files useful for debugging \balrog{} runs, including dumps of how the the command line
+arguments were parsed, \sex{}'s command line output, and any \balrog{} specific run errors or warning which occured.
+\autoref{sec:debug} offers some debugging hints.
 
+
+\begin{table}[h]
+\caption{Definitions used throughout this manual.}
+\label{tab:def}
+\begin{tabular}{l l}
+\underline{\textbf{Name}} & \underline{\textbf{Meaning}} \\
+\texttt{\$INSTALLDIR} & Directory where \balrog{} was installed \\
+\texttt{runbalrog} & \texttt{\$INSTALLDIR/balrog.py} \\
+\end{tabular}
+\end{table}
 
 \chapter{Detailed}
+\label{chap:detailed}
+
 \section{Command Line Options}
 \label{sec:cmdline}
 
@@ -345,6 +375,7 @@ by the user.
 
 
 \section{Output}
+\label{sec:out}
 Each \balrog{} run generates a number of output files. 
 These are organized into a fixed directory structure.
 Users indicate the \opt{outdir} command line option, and
