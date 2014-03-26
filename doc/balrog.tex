@@ -52,14 +52,32 @@
 
 \section{Introduction}
 \label{sec:intro}
-\balrog{} is ...
+
+\balrog{} is a package of \py{} code, intended for use
+with astronomical imaging data. 
+Strictly speaking, \balrog{} is a simulation tool.
+However, its ambition is derived from the aspiration to better 
+characterize and understand real data.
+By performing a set of simulations,
+\balrog{}'s intent is to allow users to infer properties of their images
+by directly testing on the images themselves.
+
+The core functionality driving \balrog{}'s design is rather straightforward.
+Galaxies are simulated, trivially writing their simulated properties to a \emph{truth catalog}.
+Noisy images of the galaxies are then inserted into real data. 
+Source detection software runs over the image,
+whose measurements for the simulated galaxies
+can be directly compared to the truth catalog.
+Accordingly, one is able to answer the question of how the measured
+properties of the image are related to the true properties.
 
 \section{The \balrog{} Algorithm}
 \label{sec:algorithm}
 
+
 \balrog{} operates using two initally unrelated pieces of information: real imaging data and simulated galaxies.
 The central idea of \balrog{} is to place the simulated galaxies into the images themselves.
-\autoref{fig:flowchart}
+\autoref{fig:flowchart}.
 
 \begin{figure}[h]
 \includegraphics[width=0.9\linewidth]{flowchart.jpg}
