@@ -42,7 +42,7 @@
 \titlespacing*{\chapter}{0pt}{0pt}{25pt}
 
 \renewcommand\footnoterule{}
-\widowpenalty=10000
+%\widowpenalty=10000
 
 \begin{document}
 
@@ -53,7 +53,7 @@
 \tableofcontents
 
 
-\chapter{Introduction: What Is \balrog{}?}
+\chapter{Introduction}
 \label{sec:intro}
 \setlength{\parskip}{0pt}
 \renewcommand\footnoterule{\kern-3pt \hrule width 2in \kern 2.6pt}
@@ -123,13 +123,20 @@ The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
 \autoref{sec:debug} offers some debugging hints.
 
 
-\chapter{The \balrog{} Algorithm}
+\chapter{The \balrog{} Pipeline}
 \label{sec:algorithm}
 
-
-\balrog{} operates using two initally unrelated pieces of information: real imaging data and simulated galaxies.
-The central idea of \balrog{} is to place the simulated galaxies into the images themselves.
-\autoref{fig:flowchart}.
+\autoref{sec:intro} briefly introduced the workflow through the \balrog{} pipeline.
+The purpose of this section is to characterize the algorithm in full.
+The focus here is methodology, not usage instructions. 
+The text is organized into three sections.
+First, \balrog{}'s required input data is discussed.
+Next, the process of simulating galaxies is described.
+Finally, \balrog{}'s image processing steps are laid out.
+As a complement to the text we have included \autoref{fig:flowchart},
+a flowchart visually representing the pipeline's flow.
+Roughly speaking, the text steps throgh the flowchart from left to right.
+However, \balrog{} runs trace out more than a single horizontal line through the diagram.
 
 \begin{figure}[h]
 \includegraphics[width=0.9\linewidth]{flowchart.jpg}
@@ -138,7 +145,7 @@ The central idea of \balrog{} is to place the simulated galaxies into the images
 \end{figure}
 
 
-\subsection{Input Data}
+\section{Input Data}
 \label{sec:data}
 
 \balrog{} begins by reading in an astronomical image of pixellated flux values.
@@ -153,6 +160,7 @@ Thus, generating \psfex{} models constitues a prerequisite users must complete p
 \balrog{} requires each image contain a WCS solution. \balrog{} reads this solution from the image's header.
 If no WCS exists in the header, a constant default pixel scale of 0.263 arcsec/pixel is adopted.
 
+
 \balrog{} supports subsampling the input images if desired, meaning galaxies will only be
 inserted into a portion of the image.
 Once galaxies are simulated, the input image's flux values change by adding the galaxies on top of the original images. 
@@ -161,10 +169,9 @@ The weight map and PSF remain unchanged.
 Conceptually, the bulk of the undertaking goes into simulationg the galaxies, which is described
 in the following section. 
 
-
 \notesuchyta{Is it worth adding some kind of support to generate the \psfex{} model? This introduces some issues doing so, but it might be worthwhile.}
 
-\subsection{Galaxy Simulation}
+\section{Galaxy Simulation}
 \label{sec:galsim}
 
 To simulate galaxies, \balrog{} makes use of \galsim{}. 
@@ -180,13 +187,13 @@ The reduced shear follows the usual lensing notation convention, with positive $
 negative $g_1$ along the $y$-axis, and positive and negative $g_2$ rotated 45\degree{} from the
 respective $g_1$ counterparts. Magnification is the usual $\mu = 1 + \kappa$.
 
-\subsubsection{Postage Stamp Size}
+\subsection{Postage Stamp Size}
 \label{sec:postagestamp}
 
 To get the postage stamps ...
 
 
-\subsection{Image Processing}
+\section{Image Processing}
 \label{sec:processing}
 
 \sex{}, etc.
@@ -215,8 +222,8 @@ adequately explained, which quickly expands the length of the documentation.
 We realize parsing the entirity of this manual requires some time.
 Hence, the intent of the this section is to offer a short primer for a few of the most import features
 \balrog{} users will want to become familiar with.
-The comprehensive usage instructions are saved for \autoref{sec:detailed}.
-The following start up sections will refer readers to the relevant sections of \autoref{sec:detailed} for more details.
+The comprehensive usage instructions are saved for later sections.
+These start up pointers below will refer readers to the relevant comprehensive sections for more details.
 
 The fastest way to get started understanding how to configure and use \balrog{} is to
 run it using the example files which come packaged with the software, and then examine the input
