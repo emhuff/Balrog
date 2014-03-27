@@ -5,7 +5,7 @@
 \usepackage{color}
 \usepackage{color,soul}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta}]{hyperref}
-\usepackage[margin=1.0in]{geometry}
+\usepackage[margin=1in]{geometry}
 \usepackage{longtable}
 \usepackage{tabu}
 \usepackage{array}
@@ -40,8 +40,9 @@
 \titleformat{\chapter}[hang]
 {\normalfont\huge\bfseries}{\thechapter.}{1em}{}
 \titlespacing*{\chapter}{0pt}{0pt}{25pt}
-\renewcommand\footnoterule{}
 
+\renewcommand\footnoterule{}
+\widowpenalty=10000
 
 \begin{document}
 
@@ -52,12 +53,10 @@
 \tableofcontents
 
 
-\chapter{What Is \balrog{}?}
+\chapter{Introduction: What Is \balrog{}?}
+\label{sec:intro}
 \setlength{\parskip}{0pt}
 \renewcommand\footnoterule{\kern-3pt \hrule width 2in \kern 2.6pt}
-
-\section{Introduction}
-\label{sec:intro}
 
 \balrog{} is a package of \py{} code, intended for use
 with astronomical imaging data. 
@@ -92,17 +91,20 @@ of implementing a wide variety of simulation possibilites.
 The framework allows users to define their own arguments
 and functions to plug into \balrog{} when generating simulated galaxies.
 
-An often overlooked feature of scientific software is its usability.
+In order to maximize convenience,
 \balrog{} has been written making our best attempts at user-friendliness.
-Example files have been packaged with the code so that following installation,
-the pipeline is able to run out of the box.
-Users can run over these example files while they become familiar with
-the \balrog{} environment.
+Example files are packaged with the code so that following installation,
+the pipeline is able to run out of the box without specifying any arguments.
+Users are encouraged to use and inspect the default example runs 
+to become more familiar with the \balrog{} environment.
 To preserve an intuitive feel, \balrog{}'s simulation framework mimics ordinary \py{} syntax. 
-Files and directories are given understandable names. Log files are automatically written,
-useful in cases where something does go wrong and debugging must occur.
+Where necessary, files and directories are given understandable names.
 Numerous errors and warning are handled, printing useful messages
 about why the exception was raised.
+Log files are automatically written, useful for follow-up degugging
+in the cases where exceptions do occur. User configurations are copied into
+the output directory, owing to the consideration that every run should be
+reproducible from the output.
 
 In this brief introduction, we have merely scratched the surface explaining \balrog{}'s
 uses and capabilites. The remainder of the documentation elaborates further.
@@ -113,12 +115,15 @@ Until now, we have been rather vague about practical applications for \balrog{}.
 Beyond, the remainder of the document concerns how to configure and run \balrog{}.
 \autoref{sec:quick} presents an approach to hit the ground running and quickly get
 started with some key features of \balrog{}.
-\autoref{sec:detailed} builds upon \autoref{sec:quick} spelling out all the usage details,
-including commad line arguments and the framework for specifying galaxy simulations.
-The format of \balrog{}'s outputs are explained and some debugging hints are offered.
+\autoref{sec:quick} is followed by a number of more comprehensive sections,
+which spell out all the usage details.
+\autoref{sec:cmdline} covers command line arguments, and
+\autoref{sec:simrules} establishes how to simulate galaxies within the \balrog{} framework.
+The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
+\autoref{sec:debug} offers some debugging hints.
 
 
-\section{The \balrog{} Algorithm}
+\chapter{The \balrog{} Algorithm}
 \label{sec:algorithm}
 
 
@@ -281,10 +286,8 @@ arguments were parsed, \sex{}'s command line output, and any \balrog{} specific 
 \end{tabular}
 \end{table}
 
-\chapter{Detailed}
-\label{sec:detailed}
 
-\section{Command Line Options}
+\chapter{Command Line Options}
 \label{sec:cmdline}
 
 \balrog{} runs can be configured via command line options.
@@ -368,7 +371,7 @@ simulation scenarios. These parameters are available to the user
 when setting up the galaxy simulations. How to define these simulations is described in
 \autoref{sec:simrules} below.
 
-\section{Defining How to Simulate Galaxies}
+\chapter{Defining How to Simulate Galaxies}
 \label{sec:simrules}
 
 Defining how galaxies should be simulated is controlled within \config{}
@@ -489,7 +492,7 @@ in the proper order and will throw an error if something ambiguous was defined
 by the user.
 
 
-\section{Output}
+\chapter{Output}
 \label{sec:out}
 Each \balrog{} run generates a number of output files. 
 These are organized into a fixed directory structure.
@@ -515,7 +518,7 @@ base name would be \texttt{image}.
 
 \outtab{}
 
-\section{Debugging}
+\chapter{Debugging}
 \label{sec:debug}
 
 
