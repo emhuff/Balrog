@@ -53,6 +53,7 @@
 
 
 \chapter{What Is \balrog{}?}
+\setlength{\parskip}{0pt}
 \renewcommand\footnoterule{\kern-3pt \hrule width 2in \kern 2.6pt}
 
 \section{Introduction}
@@ -102,6 +103,19 @@ Files and directories are given understandable names. Log files are automaticall
 useful in cases where something does go wrong and debugging must occur.
 Numerous errors and warning are handled, printing useful messages
 about why the exception was raised.
+
+In this brief introduction, we have merely scratched the surface explaining \balrog{}'s
+uses and capabilites. The remainder of the documentation elaborates further.
+\autoref{sec:algorithm} enumerates the components of the \balrog{} pipeline, illustrating its algorithm.
+Until now, we have been rather vague about practical applications for \balrog{}.
+\autoref{sec:motivation} addresses just that.
+\autoref{sec:install} discusses what is necessary for installation.
+Beyond, the remainder of the document concerns how to configure and run \balrog{}.
+\autoref{sec:quick} presents an approach to hit the ground running and quickly get
+started with some key features of \balrog{}.
+\autoref{sec:detailed} builds upon \autoref{sec:quick} spelling out all the usage details,
+including commad line arguments and the framework for specifying galaxy simulations.
+The format of \balrog{}'s outputs are explained and some debugging hints are offered.
 
 
 \section{The \balrog{} Algorithm}
@@ -188,7 +202,7 @@ But if you have to do it, here are some steps that \emph{might} work...
 
 
 \chapter{Quick Start}
-\label{quick}
+\label{sec:quick}
 
 \balrog{} has been designed with flexibility of use in mind. As a necessary consequence, 
 a number of different configuration possiblities exist, each of which must be
@@ -196,8 +210,8 @@ adequately explained, which quickly expands the length of the documentation.
 We realize parsing the entirity of this manual requires some time.
 Hence, the intent of the this section is to offer a short primer for a few of the most import features
 \balrog{} users will want to become familiar with.
-The comprehensive usage instructions are saved for \autoref{chap:detailed}.
-The following start up sections will refer readers to the relevant sections of \autoref{chap:detailed} for more details.
+The comprehensive usage instructions are saved for \autoref{sec:detailed}.
+The following start up sections will refer readers to the relevant sections of \autoref{sec:detailed} for more details.
 
 The fastest way to get started understanding how to configure and use \balrog{} is to
 run it using the example files which come packaged with the software, and then examine the input
@@ -268,7 +282,7 @@ arguments were parsed, \sex{}'s command line output, and any \balrog{} specific 
 \end{table}
 
 \chapter{Detailed}
-\label{chap:detailed}
+\label{sec:detailed}
 
 \section{Command Line Options}
 \label{sec:cmdline}
