@@ -10,6 +10,7 @@
 \usepackage{tabu}
 \usepackage{array}
 \usepackage{gensymb}
+\usepackage{titlesec}
 \usepackage[singlelinecheck=false]{caption}
 
 \usepackage{title}
@@ -35,6 +36,10 @@
 
 \newcommand\note[3]{\todo[color=#1, inline, size=\small]{#2: #3}}
 \newcommand\notesuchyta[1]{\note{red!50}{EDS}{#1}}
+
+\titleformat{\chapter}[hang]
+{\normalfont\huge\bfseries}{\thechapter.}{1em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{25pt}
 \renewcommand\footnoterule{}
 
 
@@ -47,7 +52,7 @@
 \tableofcontents
 
 
-\chapter{What is \balrog{} and what is it good for?}
+\chapter{What Is \balrog{}?}
 \renewcommand\footnoterule{\kern-3pt \hrule width 2in \kern 2.6pt}
 
 \section{Introduction}
@@ -59,7 +64,7 @@ Strictly speaking, \balrog{} is a simulation tool.
 However, its ambition is derived from the aspiration to better 
 characterize and understand real data.
 By performing a set of simulations,
-\balrog{}'s intent is to allow users to infer properties of their images
+\balrog{}'s intent is to allow observers to infer properties of their images
 by directly testing on the images themselves.
 
 The core functionality driving \balrog{}'s design is rather straightforward.
@@ -70,6 +75,34 @@ whose measurements for the simulated galaxies
 can be directly compared to the truth catalog.
 Accordingly, one is able to answer the question of how the measured
 properties of the image are related to the true properties.
+
+Instead of reinventing the wheel, the \balrog{} pipeline wraps around existing codes,
+well known within the Astronomy community.
+All galaxy simulations are implemented via
+\galsim{}\footnote{\url{https://github.com/GalSim-developers/GalSim}}
+and source extraction and measurement occurs using
+\sex\footnote{\url{https://www.astromatic.net/software/sextractor}}.
+\balrog{} facilitates the ease of running these codes en masse over
+many images, filling in many of the bookkeeping steps in an automated way.
+
+Since different users will have different needs, \balrog{} strives to be as flexible as possible. 
+It includes a well defined framework capable 
+of implementing a wide variety of simulation possibilites.
+The framework allows users to define their own arguments
+and functions to plug into \balrog{} when generating simulated galaxies.
+
+An often overlooked feature of scientific software is its usability.
+\balrog{} has been written making our best attempts at user-friendliness.
+Example files have been packaged with the code so that following installation,
+the pipeline is able to run out of the box.
+Users can run over these example files while they become familiar with
+the \balrog{} environment.
+To preserve an intuitive feel, \balrog{}'s simulation framework mimics ordinary \py{} syntax. 
+Files and directories are given understandable names. Log files are automatically written,
+useful in cases where something does go wrong and debugging must occur.
+Numerous errors and warning are handled, printing useful messages
+about why the exception was raised.
+
 
 \section{The \balrog{} Algorithm}
 \label{sec:algorithm}
@@ -115,7 +148,7 @@ in the following section.
 \subsection{Galaxy Simulation}
 \label{sec:galsim}
 
-To simulate galaxies, \balrog{} makes use of \galsim{}\footnote{\url{https://github.com/GalSim-developers/GalSim}}. 
+To simulate galaxies, \balrog{} makes use of \galsim{}. 
 It calls the \texttt{Sersic} class to define the galaxies' light distriubtions as \sersic{} profiles. By adding
 \texttt{Sersic} objects together, \balrog{} allows galaxies to be composed of as many superimposed
 \sersic{} components as desired. Each of these components has its own \sersic{} index, half light radius, flux,
@@ -140,15 +173,14 @@ To get the postage stamps ...
 \sex{}, etc.
 
 
-\section{Science Motivation}
+
+\chapter{What Is \balrog{} Good For?}
 \label{sec:motivation}
 
 What is \balrog{} good for?
 
 
 \chapter{Installation}
-
-\section{Installation}
 \label{sec:install}
 
 Installation is a bitch. Let your system administrator worry about it. 
