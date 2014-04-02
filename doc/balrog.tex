@@ -117,7 +117,7 @@ Noisy images of the galaxies are then inserted into real data.
 Source detection software runs over the image,
 whose measurements for the simulated galaxies
 can be directly compared to the truth catalog.
-Accordingly, one is able to answer the question of how the measured
+Accordingly, one is able to answer questions about how measured
 properties of the image are related to the true properties.
 
 Instead of reinventing the wheel, the \balrog{} pipeline wraps around existing codes,
@@ -127,7 +127,7 @@ All galaxy simulations are implemented via
 and source extraction and measurement occurs using
 \sex\footnote{\url{https://www.astromatic.net/software/sextractor}} \citep{sextractor}.
 \balrog{} facilitates the ease of running these codes en masse over
-many images, filling in many of the bookkeeping steps in an automated way.
+many images, filling in many of the bookkeeping steps in an automated fashion.
 
 Since different users will have different needs, \balrog{} strives to be as flexible as possible. 
 It includes a well defined framework capable 
@@ -173,26 +173,67 @@ The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
 \autoref{sec:intro} briefly introduced the workflow through the \balrog{} pipeline.
 The purpose of this section is to characterize the algorithm in full.
 The focus here is methodology, not usage instructions. 
-The text is organized into three sections.
+The text is organized as follows.
+To begin, the workflow of pipeline as a whole is described.
+This is then subdivided into three sections to be expanded further.
 First, \balrog{}'s required input data is discussed.
-Next, the process of simulating galaxies is described.
+Next, properties of the simulating galaxies are described,
+with a brief conceptual overview of how the properties can be generated
+and comments regarding the steps implements in \galsim{}.
 Finally, \balrog{}'s image processing steps are laid out.
-As a complement to the text we have included \autoref{fig:flowchart},
-a flowchart visually representing the pipeline's flow.
-Roughly speaking, the text steps throgh the flowchart from left to right.
-However, \balrog{} runs trace out more than a single horizontal line through the diagram.
 
-\begin{figure}[hb]
+
+\section{Workflow}
+\label{sec:workflow}
+
+To open this section, we preseent \autoref{fig:flowchart} as a complement to the text,
+and as a guide for what is to come.
+The figure is a flowchart visually representing \balrog{}.
+Roughly speaking, the text steps throgh this flowchart from left to right.
+However, as the lines in \autoref{fig:flowchart} indicate, \balrog{} runs trace out more than a single horizontal line through the diagram.
+In order to maintain visually clarity and simplicity, \autoref{fig:flowchart} does not include every possible detail of the pipeline.
+Rather, it lays out the structure of how the various steps depend on each other.
+Effectively, there are two requirements: a set of simulation configurations and some imaging data.
+The pipeline's central components are \galsim{} and \sex{}, which operate on these requirements
+to produce output catalogs for further analysis.
+The following paragraphs comment further.
+
+
+\begin{figure}[h]
 \includegraphics[width=0.9\linewidth]{flowchart.jpg}
 \caption{Visualization of \balrog{}'s data flow. Optional configurations are represented as dotted connections.}
 \label{fig:flowchart}
 \end{figure}
 
+The \balrog{}  pipeline begins by opening a log file and parsing the command line options.
+The code enforces a number of rules on the user's configurations.
+If any errors or warnings occur they are directed to the log file. 
+Errors are raised when users make a syntax error and \balrog{} cannot continue.
+Generally, warnings occur when something is missing, but the code is able to continue using an internal default. 
+Warnings likely, but not always indicate something is not quite right.
+The log file remains open, recording messages through the full pipeline.
+
+Next \balrog{} interprets how the user wants to generate their simulated galaxies.
+\autoref{sec:galsim} fully prescribes the attributes of these galaxies.
+To summarize, each galaxy is composed of one or more \sersic{} profiles.
+The user's directives are executed, and  a truth catalog of the galaxy parameters is written.
+
+The code reads in the image into which the simulated galaxies will be drawn.
+Optionally, \sex{} is run over the image. Please note, at this point no simulated
+galaxies have been inserted. However, this command is potentially useful
+for reasons discussed further in \autoref{sec:processing}.
+An image of each galaxy, commonly known as a postage stamp, is generated and then added atop the input image.
+Galaxy postage stamp drawing is treated in \autoref{sec:galsim}.
+Once galaxies have been added to the image, \sex{} is called again.
+Details of \sex{}'s implementation are deferred to \autoref{sec:processing}.
+\sex{} outputs a catalog of the object measurements, which is now ready
+for the user to compare with the trutch catalog.
+
 
 \section{Input Data}
 \label{sec:data}
 
-\balrog{} begins by reading in an astronomical image of pixellated flux values.
+\balrog{} reads in an astronomical image of pixellated flux values.
 Required with each image is the image's weight map and PSF model. 
 The weight map will be needed when extracting the sources from the image.
 At a minimum, the PSF model is necessary for convolving the simulated galaxies
@@ -216,7 +257,7 @@ in the following section.
 
 \notesuchyta{Is it worth adding some kind of support to generate the \psfex{} model? This introduces some issues doing so, but it might be worthwhile.}
 
-\section{Galaxy Simulation}
+\section{Simulated Galaxies}
 \label{sec:galsim}
 
 To simulate galaxies, \balrog{} makes use of \galsim{}. 
@@ -231,8 +272,21 @@ two centroid coordinate positions $(x, y)$, two components of lesning reduced sh
 The reduced shear follows the usual lensing notation convention, with positive $g_1$ along the $x$-axis,
 negative $g_1$ along the $y$-axis, and positive and negative $g_2$ rotated 45\degree{} from the
 respective $g_1$ counterparts. Magnification is the usual $\mu = 1 + \kappa$.
-To be explictly clear, the shear and magnification are lensing effects applied a galaxy,
-and the axis ratio mentioned is the intrinsic axis ratio for the galaxy.
+To be explictly clear, the shear and magnification are lensing effects applied to a galaxy,
+and the axis ratio and orientation angle are intrinsic to the galaxy, as they would in the abscence of lensing.
+
+\balrog{} presents users with a number of different options for how to generate
+the truth properties of their galaxies.
+Simple types include a constant to be applied commonly to every galaxy or an array containing an element for each galaxy.
+Alternatively, values can be sampled from the columns in a catalog file. 
+Multiple columns from the same table are automatically jointly sampled.
+Last but certainly not least, users can define their own functions which determine the truth paramters of the simulated galaxies.
+This is perhaps \balrog{}'s most powerful feature.
+It is this functionality which adds the flexibility for \balrog{} to support
+virtually anything users can think of and code up in \py{} themselves.
+Conveniently, the functions may operate over the galaxies' truth parameters themselves,
+allowing one parmeter to be defined in terms of another.
+
 
 Each galaxy is initally simulated within its own image, commonly known as a postage stamp.
 The postage stamp pixel values are then added to the appropriate pixel values in the original input image.
