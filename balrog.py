@@ -377,7 +377,7 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
             config.SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.arglogger, '\n# Final parsed values for each command line option')
-    return rules, ExtraSexConfig
+    return rules, ExtraSexConfig, cmdline_args_copy
 
 
 class Result4GSP(object):
@@ -412,10 +412,9 @@ class Result4GSP(object):
         raise SampledAssignmentError(403, name, 'galaxies')
 
 
-def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts):
+def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy):
     simgals.Sample(BalrogSetup)
     
-    cmdline_args_copy = copy.copy(cmdline_opts)
     gkeys = ['minimum_fft_size','maximum_fft_size','alias_threshold','stepk_minimum_hlr','maxk_threshold','kvalue_accuracy','xvalue_accuracy','table_spacing','realspace_relerr','realspace_abserr','integration_relerr','integration_abserr']
     gsp = SimRules(BalrogSetup.ngal, gkeys, [])
     if config!=None:
@@ -423,7 +422,7 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts):
             BalrogSetup.runlogger.info('The function GalsimParams  was not found in your Balrog python config file: %s. Add this function to manually override the Galsim GSParams.' %BalrogSetup.config)
         else:
             s = Result4GSP(simgals)
-            config.GalsimParams(cmdline_args_copy, gsp, s)
+            config.GalsimParams(cmdline_opts_copy, gsp, s)
     grules =  [gsp.minimum_fft_size, gsp.maximum_fft_size, gsp.alias_threshold, gsp.stepk_minimum_hlr, gsp.maxk_threshold, gsp.kvalue_accuracy, gsp.xvalue_accuracy, gsp.table_spacing, gsp.realspace_relerr, gsp.realspace_abserr, gsp.integration_relerr, gsp.integration_abserr]
     gsprules = DefineRules(BalrogSetup.ngal, gkeys, grules, [], [], 0)
     gsprules.SimpleSample(BalrogSetup)
@@ -1184,14 +1183,14 @@ def NativeParse(parser, known):
 def CustomParse(cmdline_opts, BalrogSetup, config):
     galkeys = ['x', 'y', 'g1', 'g2', 'magnification']
     compkeys = ['sersicindex', 'halflightradius', 'magnitude', 'axisratio', 'beta']
-    rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup, config, galkeys, compkeys)
+    rules, extra_sex_config, cmdline_opts_copy = UserDefinitions(cmdline_opts, BalrogSetup, config, galkeys, compkeys)
     compkeys[2] = 'flux'
 
     galrules = [rules.x, rules.y, rules.g1, rules.g2, rules.magnification]
     comprules = [rules.sersicindex, rules.halflightradius, rules.magnitude, rules.axisratio, rules.beta]
     rules = DefineRules(BalrogSetup.ngal, galkeys, galrules, compkeys, comprules, rules.nProfiles )
 
-    return rules, extra_sex_config
+    return rules, extra_sex_config, cmdline_opts_copy
 
 
 def GetKnown(parser):
@@ -1247,10 +1246,10 @@ def RunBalrog(parser, known):
 
     # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser, known)
-    rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup, config)
+    rules, extra_sex_config, cmdline_opts_copy = CustomParse(cmdline_opts, BalrogSetup, config)
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
-    catalog, gspcatalog = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts)
+    catalog, gspcatalog = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy)
    
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
