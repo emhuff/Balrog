@@ -853,7 +853,7 @@ def CmdlineListOrdered():
             "imagein", "imageext", "weightin", "weightext", "psfin", 
             "xmin", "xmax", "ymin", "ymax",
             "ngal", "seed", "gain", "zeropoint", 
-            "stdverbosity", "logverbosity", "debug", 
+            "stdverbosity", "logverbosity", "fulltraceback", 
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noempty", "sexemptyparam", "noassoc", "catfitstype"]
     return args
 
@@ -1109,7 +1109,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-c", "--clean", help="Delete output image files", action="store_true")
     parser.add_argument( "-sv", "--stdverbosity", help="Verbosity level of stdout", type=str, default='n', choices=['n','v','vv','q'])
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
-    parser.add_argument( "-dbg", "--debug", help="Traceback debug mode", action="store_true")
+    parser.add_argument( "-ft", "--fulltraceback", help="Full traceback is written out", action="store_true")
     parser.add_argument( "-cnfg", "--config", help="Balrog config file", type=str, default=None)
 
     # How to run sextractor
@@ -1124,9 +1124,9 @@ def DefaultArgs(parser):
     parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
 
 
-def RaiseException(log, debug=False):
+def RaiseException(log, fulltraceback=False):
 
-    if not debug:
+    if not fulltraceback:
         exc_info = sys.exc_info()
         config_errs = []
         err_list = traceback.extract_tb(exc_info[2])
@@ -1284,5 +1284,5 @@ if __name__ == "__main__":
     try:
         RunBalrog(parser, known)
     except:
-        RaiseException(known.logs[0], debug=known.debug)
+        RaiseException(known.logs[0], fulltraceback=known.fulltraceback)
 

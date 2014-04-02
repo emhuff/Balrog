@@ -3,7 +3,6 @@
 import os
 import numpy as np
 from model_class import *
-import array
 
 
 ### In this function you can define your own command line arguments.
@@ -20,7 +19,6 @@ def CustomArgs(parser):
 
 ### Throughout the remainder of the file, you have access to your custom command line arguments in the attributes of args.
 ### The three functions below execute in the order they appear. Attributes changed in ealier functions will propogate downstream.
-### Your custom command line arguments will be logged as they exist at the end of the three functions.
 
 ### You also have local access to the native Balrog command line arguments. 
 ### However, to avoid accidentally breaking Balrog, any changes you make to these native args do not propagate outside this file.
