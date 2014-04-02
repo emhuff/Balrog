@@ -400,16 +400,16 @@ class Result4GSP(object):
 
 
     def __getattr__(self, name):
-        raise SampledAttributeError(401, name)
+        raise SampledAttributeError(401, name, 'galaxies')
     
     def __getitem__(self, index):
-        raise SampledIndexingError(402)
+        raise SampledIndexingError(402, 'galaxies')
 
     def __setitem__(self, index, value):
-        raise SampledIndexingError(402)
+        raise SampledIndexingError(402, 'galaxies')
 
     def __setattr__(self, name, value):
-        raise SampledAssignmentError(403, name)
+        raise SampledAssignmentError(403, name, 'galaxies')
 
 
 def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts):
@@ -646,10 +646,10 @@ class CompResult(object):
             return Same( (index,self.name) )
 
     def __setitem__(self, index, value):
-        raise SampledAssignmentError(403, '%s[%i]'%(self.name,index))
+        raise SampledAssignmentError(403, '%s[%i]'%(self.name,index), 'sampled')
 
     def __setattr__(self, name, value):
-        raise SampledAssignmentError(403, '%s.%s'%(self.name,name))
+        raise SampledAssignmentError(403, '%s.%s'%(self.name,name), sampled)
 
     def __getattr__(self, name):
         raise SampledComponentAttributeError(405)
@@ -676,18 +676,18 @@ class Results(object):
 
     def __getattr__(self, name):
         if name not in self._GetGalaxy():
-            raise SampledAttributeError(401, name)
+            raise SampledAttributeError(401, name, 'sampled')
         else:
             return Same(name)
     
     def __getitem__(self, index):
-        raise SampledIndexingError(402)
+        raise SampledIndexingError(402, 'sampled')
 
     def __setitem__(self, index, value):
-        raise SampledIndexingError(402)
+        raise SampledIndexingError(402, 'sampled')
 
     def __setattr__(self, name, value):
-        raise SampledAssignmentError(403, name)
+        raise SampledAssignmentError(403, name, 'sampled')
         
     
 

@@ -113,8 +113,8 @@ class SizeError(BaseException):
 
 
 class SampledAttributeError(BaseException):
-    def init(self, name):
-        self.msg = 'ERROR code: %i. Asked for an attribute of sampled which does not exist: sampled.%s. Only sampled.{x,y,g1,g2,magnification,sersicindex,halflightradius,magnitude,axisratio,beta} are valid.' %(self.code, name)
+    def init(self, name, samp):
+        self.msg = 'ERROR code: %i. Asked for an attribute of %s which does not exist: %s.%s. Only %s.{x,y,g1,g2,magnification,sersicindex,halflightradius,magnitude,axisratio,beta} are valid.' %(self.code, samp, samp, name, samp)
 
 class RulesAttributeError(BaseException):
     def init(self, name):
@@ -130,8 +130,8 @@ class SampledComponentAttributeError(BaseException):
 
 
 class SampledIndexingError(BaseException):
-    def init(self):
-        self.msg = 'ERROR code: %i. The object sampled itself has no indexing. Only sampled.{sersicindex,halflightradius,magnitude,axisratio,beta} are indexed.' %(self.code)
+    def init(self, samp):
+        self.msg = 'ERROR code: %i. The object %s itself has no indexing. Only %s.{sersicindex,halflightradius,magnitude,axisratio,beta} are indexed.' %(self.code, samp, samp)
 
 class RulesIndexingError(BaseException):
     def init(self):
@@ -139,8 +139,8 @@ class RulesIndexingError(BaseException):
 
 
 class SampledAssignmentError(BaseException):
-    def init(self, name):
-        self.msg = 'ERROR code: %i. Attempted to (re)assign sampled.%s. You cannot (re)assign any attributes of the sampling results. This is only to be used to access the results. Assign rules to change results.' %(self.code, name)
+    def init(self, name, samp):
+        self.msg = 'ERROR code: %i. Attempted to (re)assign %s.%s. You cannot (re)assign any attributes of the galaxy sampling results. This is only to be used to access the results. Assign rules to change results.' %(self.code, samp, name)
 
 class RulesAssignmentError(BaseException):
     def init(self, label):

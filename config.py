@@ -73,8 +73,7 @@ def SimulationRules(args, rules, sampled):
     
     # Being precise, halflightradius is along the major axis
     rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
-    #rules.magnitude = Catalog(cat,ext,args.mag)
-    rules.magnitude = 14
+    rules.magnitude = Catalog(cat,ext,args.mag)
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
 
     rules.beta = Function(function=rand, args=[-90, 90, args.ngal])
@@ -87,7 +86,6 @@ def SimulationRules(args, rules, sampled):
 def GalsimParams(args, gsparams, galaxies):
     gsparams.alias_threshold = 1e-3
     #gsparams.alias_threshold = Function( function=StupidSize, args=[galaxies.halflightradius] )
-
 
 
 # These are extra configurations to give to sextractor which will override the ones in the config file
