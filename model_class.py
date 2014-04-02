@@ -108,6 +108,7 @@ class nComponentSersic(object):
     
     def ReturnComponent(self, mkey, mindex=-1):
         if mindex!=-1:
+            print mkey
             return self.component[mindex][mkey]
         else:
             return self.galaxy[mkey]

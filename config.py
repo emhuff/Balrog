@@ -91,9 +91,10 @@ def SextractorConfigs(args, config):
     config['CHECKIMAGE_TYPE'] = 'NONE'
 
 
-def GalsimParams(args, gsparams):
+def GalsimParams(args, gsparams, galaxies):
     #gsparams.alias_threshold = 1e-5
-    gsparams.alias_threshold = Function( function=rand, args=[1e-5, 1e-3, args.ngal] )
+    gsparams.alias_threshold = Function( function=StupidSize, args=[galaxies.halflightradius[0]] )
+    #gsparams.alias_threshold = Function( function=rand, args=[1e-5, 1e-3, args.ngal] )
     #gsparams = galsim.GSParams(alias_threshold=1e-12, maxk_threshkold=1e-5, kvalue_accuracy=1e-7, maximum_fft_size=8280)
 
 
@@ -105,3 +106,6 @@ def SampleFunction(x, y, xmax=1000, ymax=1000):
     dist = np.sqrt(x*x + y*y)
     max = np.sqrt(xmax*xmax + ymax*ymax)
     return dist/max
+
+def StupidSize(size):
+    return size * 1.0e-3
