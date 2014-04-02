@@ -28,7 +28,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
         elif key=='y':
             arr = arr - BalrogSetup.ymin + 1
             unit = 'pix'
-        elif key=='sum':
+        elif key.find('flux')!=-1:
             unit = 'ADU'
         else:
             unit = 'none'
@@ -82,8 +82,6 @@ def CopyAssoc(BalrogSetup, outfile):
         mhead[ 'V%i'%i ] = BalrogSetup.assocnames[i]
         if BalrogSetup.assocnames[i] in ['x','y']:
             unit = 'pix'
-        elif BalrogSetup.assocnames[i] in ['sum']:
-            unit = 'ADU'
         elif BalrogSetup.assocnames[i].find('halflightradius')!=-1:
             unit = 'arcsec'
         elif BalrogSetup.assocnames[i].find('beta')!=-1:
@@ -146,35 +144,65 @@ def WritePsf(BalrogSetup, psfin, psfout):
 
 
 
-def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs):
-    psizes, athresh = simulatedgals.GetPSizes(BalrogSetup, wcs)
+def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs, gspcatalog):
+    #psizes, athresh = simulatedgals.GetPSizes(BalrogSetup, wcs)
+    athresh = None
 
     t0 = datetime.datetime.now()
     rt = long( t0.microsecond )
 
-    simulatedgals.galaxy['sum'] = np.copy(simulatedgals.galaxy['x'])
+    simulatedgals.galaxy['flux_noised'] = np.copy(simulatedgals.galaxy['x'])
+    simulatedgals.galaxy['flux_noiseless'] = np.copy(simulatedgals.galaxy['x'])
+    simulatedgals.galaxy['flux_sum'] = np.copy(simulatedgals.galaxy['x'])
     for i in range(BalrogSetup.ngal):
 
-        postageStampSize = int(psizes[i])
-        combinedObjConv = simulatedgals.GetPSFConvolved(psfmodel, i, wcs, athresh)
+        #postageStampSize = int(psizes[i])
+        #gsparams = galsim.GSParams(alias_threshold=BalrogSetup.alias_threshold)
+         
+        d = {}
+        for key in gspcatalog.galaxy.keys():
+            if gspcatalog.galaxy[key]!=None:
+                d[key] = gspcatalog.galaxy[key][i]
+        gsparams = galsim.GSParams(**d)
+        combinedObjConv = simulatedgals.GetPSFConvolved(psfmodel, i, wcs, gsparams)
 
         ix = int(simulatedgals.galaxy['x'][i])
         iy = int(simulatedgals.galaxy['y'][i])
+   
+        '''
         smallImage = galsim.Image(postageStampSize,postageStampSize)
         smallImage.setCenter(ix,iy)
         smallImage.wcs = bigImage.wcs
-        smallImage = combinedObjConv.draw(smallImage)
+        smallImage = combinedObjConv.draw(image=smallImage)
+        #print smallImage.xmax
+        '''
+       
+        pos = galsim.PositionD(simulatedgals.galaxy['x'][i], simulatedgals.galaxy['y'][i])
+        local = wcs.local(image_pos=pos)
+        localscale = np.sqrt(local.dudx * local.dvdy)
+        smallImage = combinedObjConv.draw(scale=localscale)
+        smallImage.setCenter(ix,iy)
+        #print smallImage.added_flux
+        #print smallImage.xmax
+        #smallImage.wcs = bigImage.wcs
 
         t1 = datetime.datetime.now()
         dt = t1 - t0
-        micro = long( (dt.days*24*60*60 + dt.seconds)*1.0e6 + dt.microseconds ) + rt
+        micro = long( (dt.days*24*60*60 + dt.seconds)*1.0e6 + dt.microseconds ) + rt + i
 
-        smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(rt)))
         bounds = smallImage.bounds & bigImage.bounds
+        simulatedgals.galaxy['flux_noiseless'][i] = smallImage.added_flux 
+        #flux_sum = np.sum(smallImage[bounds].array.flatten())
+        flux_sum = np.sum(smallImage.array.flatten())
+        simulatedgals.galaxy['flux_sum'][i] = flux_sum
 
-        sum = np.sum(smallImage[bounds].array.flatten())
-        simulatedgals.galaxy['sum'][i] = sum
+        smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(micro)))
+        #flux_noised = np.sum(smallImage[bounds].array.flatten())
+        flux_noised = np.sum(smallImage.array.flatten())
+        simulatedgals.galaxy['flux_noised'][i] = flux_noised
+        #simulatedgals.galaxy['flux_noised'][i] = smallImage.added_flux
 
+        bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
 
     return bigImage
@@ -341,12 +369,13 @@ def Cleanup(BalrogSetup):
             subprocess.call(['rm',file])
 
 
-def UserDefinitions(cmdline_args, BalrogSetup, config):
-    rules = SimRules(BalrogSetup.ngal)
+def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys, gkeys):
+    rules = SimRules(BalrogSetup.ngal, galkeys, compkeys)
     ExtraSexConfig = {}
-    results = Results()
+    results = Results(galkeys, compkeys)
     cmdline_args_copy = copy.copy(cmdline_args)
 
+    gsp = SimRules(BalrogSetup.ngal, gkeys, [])
 
     if config!=None:
         if 'CustomParseArgs' not in dir(config):
@@ -364,13 +393,19 @@ def UserDefinitions(cmdline_args, BalrogSetup, config):
         else:
             config.SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
 
+        if 'GalsimParams' not in dir(config):
+            BalrogSetup.runlogger.info('The function GalsimParams  was not found in your Balrog python config file: %s. Add this function to manually override the Galsim GSParams.' %BalrogSetup.config)
+        else:
+            config.GalsimParams(cmdline_args_copy, gsp)
+
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.arglogger, '\n# Final parsed values for each command line option')
-    return rules, ExtraSexConfig
+    return rules, ExtraSexConfig, gsp
 
 
-def GetSimulatedGalaxies(BalrogSetup, simgals):
+def GetSimulatedGalaxies(BalrogSetup, simgals, gsp):
     simgals.Sample(BalrogSetup)
-    return simgals
+    gsp.SimpleSample(BalrogSetup)
+    return simgals, gsp
 
 
 def CompError(name, i):
@@ -459,8 +494,10 @@ class SimRules(object):
 
     ## Initialize the simulation parameters to their balrog defaults.
     #  @param ngal Integer number of galaxies simulated
-    def __init__(self, ngal):
+    def __init__(self, ngal, galkeys, compkeys):
         super(SimRules, self).__setattr__('ngal', ngal)
+        super(SimRules, self).__setattr__('galkeys', galkeys)
+        super(SimRules, self).__setattr__('compkeys', compkeys)
         for name in self._GetGalaxy():
             super(SimRules, self).__setattr__(name, None)
         self.InitializeSersic()
@@ -474,10 +511,12 @@ class SimRules(object):
             super(SimRules, self).__setattr__(c, CompRules(nProfiles,c))
 
     def _GetGalaxy(self):
-        return ['x','y','g1','g2','magnification']
+        #return ['x','y','g1','g2','magnification']
+        return self.galkeys
 
     def _GetComponent(self):
-        return ['axisratio','beta','halflightradius','magnitude','sersicindex']
+        #return ['axisratio','beta','halflightradius','magnitude','sersicindex']
+        return self.compkeys
 
     ## Throw an error if the user tries to index @p rules
     #  @param index Attempted integer array element position
@@ -502,10 +541,16 @@ class SimRules(object):
     #  @param value Attempted assignment value
     def __setattr__(self, name, value):
         if name=='ngal':
-            raise RulesNgalError(-1)
+            raise RulesHiddenError(-1, name)
 
         elif name=='nProfiles':
             raise RulesnProfilesError(-2, name)
+
+        elif name=='galkeys':
+            raise RulesHiddenError(-1, name)
+
+        elif name=='compkeys':
+            raise RulesHiddenError(-1, name)
 
         elif name in self._GetGalaxy():
             value = self._CheckRule(name, value, 'galaxy')
@@ -588,7 +633,9 @@ class CompResult(object):
 
 
 class Results(object):
-    def __init__(self):
+    def __init__(self, galkeys, compkeys):
+        super(Results, self).__setattr__('galkeys', galkeys)
+        super(Results, self).__setattr__('compkeys', compkeys)
         self.InitializeSersic()
 
     def InitializeSersic(self, nProfiles=1):
@@ -597,10 +644,12 @@ class Results(object):
             super(Results, self).__setattr__(c, CompResult(nProfiles,c))
 
     def _GetGalaxy(self):
-        return ['x','y','g1','g2','magnification']
+        #return ['x','y','g1','g2','magnification']
+        return self.galkeys
 
     def _GetComponent(self):
-        return ['axisratio','beta','halflightradius','magnitude','sersicindex']
+        #return ['axisratio','beta','halflightradius','magnitude','sersicindex']
+        return self.compkeys
 
     def __getattr__(self, name):
         if name not in self._GetGalaxy():
@@ -1111,9 +1160,20 @@ def NativeParse(parser, known):
 
 
 def CustomParse(cmdline_opts, BalrogSetup, config):
-    rules, extra_sex_config = UserDefinitions(cmdline_opts, BalrogSetup, config)
-    rules = DefineRules(BalrogSetup, x=rules.x, y=rules.y, g1=rules.g1, g2=rules.g2, magnification=rules.magnification, nProfiles=rules.nProfiles, axisratio=rules.axisratio, beta=rules.beta, halflightradius=rules.halflightradius, magnitude=rules.magnitude, sersicindex=rules.sersicindex)
-    return rules, extra_sex_config
+    galkeys = ['x', 'y', 'g1', 'g2', 'magnification']
+    compkeys = ['sersicindex', 'halflightradius', 'magnitude', 'axisratio', 'beta']
+    gkeys = ['minimum_fft_size','maximum_fft_size','alias_threshold','stepk_minimum_hlr','maxk_threshold','kvalue_accuracy','xvalue_accuracy','table_spacing','realspace_relerr','realspace_abserr','integration_relerr','integration_abserr']
+    rules, extra_sex_config, gsp = UserDefinitions(cmdline_opts, BalrogSetup, config, galkeys, compkeys, gkeys)
+    compkeys[2] = 'flux'
+
+    galrules = [rules.x, rules.y, rules.g1, rules.g2, rules.magnification]
+    comprules = [rules.sersicindex, rules.halflightradius, rules.magnitude, rules.axisratio, rules.beta]
+    rules = DefineRules(BalrogSetup.ngal, galkeys, galrules, compkeys, comprules, rules.nProfiles )
+
+    grules =  [gsp.minimum_fft_size, gsp.maximum_fft_size, gsp.alias_threshold, gsp.stepk_minimum_hlr, gsp.maxk_threshold, gsp.kvalue_accuracy, gsp.xvalue_accuracy, gsp.table_spacing, gsp.realspace_relerr, gsp.realspace_abserr, gsp.integration_relerr, gsp.integration_abserr]
+    gsprules = DefineRules(BalrogSetup.ngal, gkeys, grules, [], [], 0)
+
+    return rules, extra_sex_config, gsprules
 
 
 def GetKnown(parser):
@@ -1169,10 +1229,10 @@ def RunBalrog(parser, known):
 
     # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser, known)
-    rules, extra_sex_config = CustomParse(cmdline_opts, BalrogSetup, config)
+    rules, extra_sex_config, gsprules = CustomParse(cmdline_opts, BalrogSetup, config)
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
-    catalog = GetSimulatedGalaxies(BalrogSetup, rules)
+    catalog, gspcatalog = GetSimulatedGalaxies(BalrogSetup, rules, gsprules)
    
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
@@ -1182,7 +1242,7 @@ def RunBalrog(parser, known):
         NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
 
     # Insert simulated galaxies.
-    bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs)
+    bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
     WriteImages(BalrogSetup, bigImage, subWeight)
     WriteCatalog(catalog, BalrogSetup, txt=None, fits=True)
 

@@ -46,7 +46,7 @@
 
 # 306 tried to assign one of the sersic components of rules to something other than an array
 
-#  -1 ngal direct change attempt
+#  -1 trying to change hidden attribute directly
 #  -2 nProfiles direct change attempt
 
 # 501 Function return something other than array of the right length
@@ -162,13 +162,12 @@ class RulesAssignmentNoArrayError(BaseException):
 
 
 class RulesnProfilesError(BaseException):
-    def init(self, name):
+    def init(self):
         self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.nProfiles. However, you're not allowed to change it directly. Use InitializeSersic()" %(self.code)
 
-
-class RulesNgalError(BaseException):
-    def init(self):
-        self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.ngal. However, you're not allowed to change it." %(self.code)
+class RulesHiddenError(BaseException):
+    def init(self,name):
+        self.msg = "ERROR code: %i. You've deduced that rules has an attribute called rules.%s. However, you're not allowed to change it." %(self.code, name)
 
 
 class FunctionReturnError(BaseException):

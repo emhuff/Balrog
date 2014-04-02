@@ -13,35 +13,25 @@ from balrogexcept import *
 
 class nComponentSersic(object):
 
-    def __init__(self, ngal=100, ncomp=2):
+    def __init__(self, ngal=100, ncomp=2, galkeys=[], compkeys=[]):
         self.ngal = ngal
         self.component = [None]*ncomp
         self.componentrule = [None]*ncomp
 
-        self.galaxy = self._InitGalaxy(ngal)
+        #self.galaxy = self._InitGalaxy(ngal)
+        self.galaxy = self._InitNone(galkeys)
         self.galaxyrule = self._InitRule(self.galaxy)
 
         for i in range(ncomp):
-            self.component[i] = self._InitSersicComponent(ngal)
+            #self.component[i] = self._InitSersicComponent(ngal)
+            self.component[i] = self._InitNone(compkeys)
             self.componentrule[i] = self._InitRule(self.component[i])
 
-
-    def _InitSersicComponent(self,ngal):
+    
+    def _InitNone(self, names):
         dict = {}
-        dict['flux'] = None
-        dict['halflightradius'] = None
-        dict['sersicindex'] = None
-        dict['axisratio'] = None
-        dict['beta'] = None
-        return dict
-
-    def _InitGalaxy(self,ngal):
-        dict = {}
-        dict['x'] = None
-        dict['y'] = None
-        dict['g1'] = None
-        dict['g2'] = None
-        dict['magnification'] = None
+        for name in names: 
+            dict[name] = None
         return dict
 
 
@@ -56,8 +46,6 @@ class nComponentSersic(object):
         
         if key==None:
             raise Exception('must indicate which field to give a rule for')
-        if key=='mag':
-            key = 'flux'
 
         if rule==None:
             raise Exception('must give a rule')
@@ -76,7 +64,6 @@ class nComponentSersic(object):
         self.galaxyrule[key] = rule
 
    
-
     def ReturnValue(self, val):
         return np.array( [val]*self.ngal )
 
@@ -366,9 +353,9 @@ class nComponentSersic(object):
         if key=='y':
             BalrogSetup.runlogger.warning('A user-defined rule was not found for %s. Balrog will use the default of random positions.' %(key))
             return np.random.uniform( BalrogSetup.ymin, BalrogSetup.ymax, self.ngal )
-        
+      
 
-    def Sample(self, BalrogSetup):
+    def SimpleSample(self, BalrogSetup):
         value = []
         array = []
         catalog = []
@@ -390,7 +377,11 @@ class nComponentSersic(object):
         self.DoArray(array)
         used = self.DoCatalog(cat)
         self.TryFunctionComponent(function, component, used)
+        return used
 
+
+    def Sample(self, BalrogSetup):
+        used = self.SimpleSample(BalrogSetup)
         for i in range(len(self.component)):
             for key in self.component[i].keys():
                 if self.component[i][key]==None:
@@ -463,8 +454,7 @@ class nComponentSersic(object):
           
 
 
-    def GetPSFConvolved(self, psfmodel, i, wcs, athresh):
-        #gsparams = galsim.GSParams(alias_threshold=athresh[i])#, kvalue_accuracy=athresh[i])
+    def GetPSFConvolved(self, psfmodel, i, wcs, gsparams):
         
         for j in range(len(self.component)):
             n = float(self.component[j]['sersicindex'][i])
@@ -474,8 +464,8 @@ class nComponentSersic(object):
             beta = self.component[j]['beta'][i]*galsim.degrees 
             intrinsic_shear = galsim.Shear(q=q, beta=beta )
 
-            #sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux, gsparams=gsparams)
-            sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux)
+            #sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux)
+            sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux, gsparams=gsparams)
             sersicObj.applyShear(intrinsic_shear)
 
             if j==0:
@@ -493,19 +483,24 @@ class nComponentSersic(object):
         iy = int(y)
         dx = x-ix
         dy = y-iy
+
         pos = galsim.PositionD(x,y)
         local = wcs.local(image_pos=pos)
-        combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
+        localscale = np.sqrt(local.dudx * local.dvdy)
+        #combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
+        combinedObj.applyShift(dx*localscale, dy*localscale)
 
-        #psf = psfmodel.getPSF(pos, gsparams=gsparams)
-        psf = psfmodel.getPSF(pos)
+        #psf = psfmodel.getPSF(pos)
+        psf = psfmodel.getPSF(pos, gsparams=gsparams)
         psf.setFlux(1.)
         psf_centroid = psf.centroid()
         psf.applyShift(-psf_centroid.x, -psf_centroid.y)
         combinedObj = galsim.Convolve([psf,combinedObj])
 
         #pix = galsim.Box(width=local.dudx, height=local.dvdy, gsparams=gsparams)
-        pix = galsim.Box(width=local.dudx, height=local.dvdy)
+        #pix = galsim.Box(width=local.dudx, height=local.dvdy)
+        #pix = galsim.Pixel(scale=localscale)
+        pix = galsim.Pixel(scale=localscale, gsparams=gsparams)
         combinedObj = galsim.Convolve([pix,combinedObj])
         
         return combinedObj
@@ -624,11 +619,10 @@ def HandleFunction(g, k):
     return g
 
 
-def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nProfiles=1, axisratio=None, beta=None, halflightradius=None, magnitude=None, sersicindex=None ):
-    simulatedgals = nComponentSersic(ngal=opts.ngal, ncomp=nProfiles)
+def DefineRules(ngal, galkeys, galrules, compkeys, comprules, nProfiles):
+    simulatedgals = nComponentSersic(ngal=ngal, ncomp=nProfiles, galkeys=galkeys, compkeys=compkeys)
 
-    galrules = [x, y, g1, g2, magnification]
-    keys = ['x', 'y', 'g1', 'g2', 'magnification']
+    keys = galkeys
     for g,k in zip(galrules,keys):
         if g!=None:
             if g.type=='component':
@@ -638,8 +632,7 @@ def DefineRules(opts, x=None, y=None, g1=None, g2=None, magnification=None, nPro
                 g = HandleFunction(g,k)
             simulatedgals.GalaxyRule(key=k, rule=g)
 
-    keys = ['axisratio', 'beta', 'halflightradius', 'flux', 'sersicindex']
-    comprules = [axisratio, beta, halflightradius, magnitude, sersicindex]
+    keys = compkeys
     for j in range(len(comprules)):
         key = keys[j]
         if comprules[j]!=None:
