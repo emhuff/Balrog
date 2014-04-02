@@ -18,12 +18,10 @@ class nComponentSersic(object):
         self.component = [None]*ncomp
         self.componentrule = [None]*ncomp
 
-        #self.galaxy = self._InitGalaxy(ngal)
         self.galaxy = self._InitNone(galkeys)
         self.galaxyrule = self._InitRule(self.galaxy)
 
         for i in range(ncomp):
-            #self.component[i] = self._InitSersicComponent(ngal)
             self.component[i] = self._InitNone(compkeys)
             self.componentrule[i] = self._InitRule(self.component[i])
 
@@ -50,8 +48,7 @@ class nComponentSersic(object):
         if rule==None:
             raise Exception('must give a rule')
 
-        ruleset = self.componentrule[component]
-        ruleset[key] = rule
+        self.componentrule[component][key] = rule
 
 
     def GalaxyRule(self, key=None, rule=None):
@@ -397,6 +394,7 @@ class nComponentSersic(object):
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
 
 
+    '''
     def GetPSizes(self, BalrogSetup, wcs):
         psizes = np.zeros(self.ngal)
         athresh = np.zeros(self.ngal)
@@ -452,10 +450,10 @@ class nComponentSersic(object):
 
         alias_thresh = BalrogSetup.fluxthresh / total_flux
         return psize, alias_thresh
-          
+    '''
 
 
-    def GetPSFConvolved(self, psfmodel, i, wcs, gsparams):
+    def GetConvolved(self, psfmodel, i, wcs, gsparams):
         
         for j in range(len(self.component)):
             n = float(self.component[j]['sersicindex'][i])
@@ -465,7 +463,6 @@ class nComponentSersic(object):
             beta = self.component[j]['beta'][i]*galsim.degrees 
             intrinsic_shear = galsim.Shear(q=q, beta=beta )
 
-            #sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux)
             sersicObj = galsim.Sersic(n=n, half_light_radius=reff, flux=flux, gsparams=gsparams)
             sersicObj.applyShear(intrinsic_shear)
 
@@ -491,7 +488,6 @@ class nComponentSersic(object):
         #combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
         combinedObj.applyShift(dx*localscale, dy*localscale)
 
-        #psf = psfmodel.getPSF(pos)
         psf = psfmodel.getPSF(pos, gsparams=gsparams)
         psf.setFlux(1.)
         psf_centroid = psf.centroid()
@@ -499,14 +495,13 @@ class nComponentSersic(object):
         combinedObj = galsim.Convolve([psf,combinedObj])
 
         #pix = galsim.Box(width=local.dudx, height=local.dvdy, gsparams=gsparams)
-        #pix = galsim.Box(width=local.dudx, height=local.dvdy)
-        #pix = galsim.Pixel(scale=localscale)
         pix = galsim.Pixel(scale=localscale, gsparams=gsparams)
         combinedObj = galsim.Convolve([pix,combinedObj])
         
         return combinedObj
 
 
+'''
 def b_n_estimate(n):
     order0 = 2*n - 1.0/3.0
     order1 = 4.0 / (405.0 * n)
@@ -515,6 +510,7 @@ def b_n_estimate(n):
     order4 = -2194697.0 / (30690717750 * n*n*n*n)
     sum = order0  + order1 + order2 + order3 + order4
     return sum
+'''
 
 
 class Rule(object):

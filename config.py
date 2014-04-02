@@ -71,8 +71,7 @@ def SimulationRules(args, rules, sampled):
     rules.g2 = 0
     rules.magnification = np.ones(args.ngal)
     
-    # Being precise, halflightradius is along the major axis (this is what sextractor measurses...I think)
-    rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
+    # Being precise, halflightradius is along the major axis
     rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
     #rules.magnitude = Catalog(cat,ext,args.mag)
     rules.magnitude = 14
@@ -84,18 +83,18 @@ def SimulationRules(args, rules, sampled):
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y], kwargs={'xmax':args.xmax, 'ymax':args.ymax})
 
 
+### Adjust the galsim GSParams
+def GalsimParams(args, gsparams, galaxies):
+    gsparams.alias_threshold = 1e-3
+    #gsparams.alias_threshold = Function( function=StupidSize, args=[galaxies.halflightradius] )
+
+
 
 # These are extra configurations to give to sextractor which will override the ones in the config file
 # Each dictionary keyword can be one of the sextractor config file keywords
 def SextractorConfigs(args, config):
     config['CHECKIMAGE_TYPE'] = 'NONE'
 
-
-def GalsimParams(args, gsparams, galaxies):
-    #gsparams.alias_threshold = 1e-5
-    gsparams.alias_threshold = Function( function=StupidSize, args=[galaxies.halflightradius[0]] )
-    #gsparams.alias_threshold = Function( function=rand, args=[1e-5, 1e-3, args.ngal] )
-    #gsparams = galsim.GSParams(alias_threshold=1e-12, maxk_threshkold=1e-5, kvalue_accuracy=1e-7, maximum_fft_size=8280)
 
 
 # Extra functions the user has defined. Could be used with sampling type Function

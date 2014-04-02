@@ -146,25 +146,21 @@ def WritePsf(BalrogSetup, psfin, psfout):
 
 def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs, gspcatalog):
     #psizes, athresh = simulatedgals.GetPSizes(BalrogSetup, wcs)
-    athresh = None
 
     t0 = datetime.datetime.now()
     rt = long( t0.microsecond )
 
     simulatedgals.galaxy['flux_noised'] = np.copy(simulatedgals.galaxy['x'])
     simulatedgals.galaxy['flux_noiseless'] = np.copy(simulatedgals.galaxy['x'])
-    simulatedgals.galaxy['flux_sum'] = np.copy(simulatedgals.galaxy['x'])
     for i in range(BalrogSetup.ngal):
 
         #postageStampSize = int(psizes[i])
-        #gsparams = galsim.GSParams(alias_threshold=BalrogSetup.alias_threshold)
-         
         d = {}
         for key in gspcatalog.galaxy.keys():
             if gspcatalog.galaxy[key]!=None:
                 d[key] = gspcatalog.galaxy[key][i]
         gsparams = galsim.GSParams(**d)
-        combinedObjConv = simulatedgals.GetPSFConvolved(psfmodel, i, wcs, gsparams)
+        combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams)
 
         ix = int(simulatedgals.galaxy['x'][i])
         iy = int(simulatedgals.galaxy['y'][i])
@@ -174,7 +170,6 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         smallImage.setCenter(ix,iy)
         smallImage.wcs = bigImage.wcs
         smallImage = combinedObjConv.draw(image=smallImage)
-        #print smallImage.xmax
         '''
        
         pos = galsim.PositionD(simulatedgals.galaxy['x'][i], simulatedgals.galaxy['y'][i])
@@ -182,9 +177,6 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         localscale = np.sqrt(local.dudx * local.dvdy)
         smallImage = combinedObjConv.draw(scale=localscale)
         smallImage.setCenter(ix,iy)
-        #print smallImage.added_flux
-        #print smallImage.xmax
-        #smallImage.wcs = bigImage.wcs
 
         t1 = datetime.datetime.now()
         dt = t1 - t0
@@ -192,16 +184,9 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         bounds = smallImage.bounds & bigImage.bounds
         simulatedgals.galaxy['flux_noiseless'][i] = smallImage.added_flux 
-        #flux_sum = np.sum(smallImage[bounds].array.flatten())
-        flux_sum = np.sum(smallImage.array.flatten())
-        simulatedgals.galaxy['flux_sum'][i] = flux_sum
-
         smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(micro)))
-        #flux_noised = np.sum(smallImage[bounds].array.flatten())
         flux_noised = np.sum(smallImage.array.flatten())
         simulatedgals.galaxy['flux_noised'][i] = flux_noised
-        #simulatedgals.galaxy['flux_noised'][i] = smallImage.added_flux
-
         bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
 
@@ -395,18 +380,36 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
     return rules, ExtraSexConfig
 
 
-class Result4GSP:
+class Result4GSP(object):
     def __init__(self, cat):
-        for key in cat.galaxy.keys():
-            exec 'self.%s = cat.galaxy["%s"]' %(key,key)
+        super(Result4GSP, self).__setattr__('galkeys', cat.galaxy.keys())
+        for key in self.galkeys:
+            super(Result4GSP, self).__setattr__(key, cat.galaxy[key])
+    
+        super(Result4GSP, self).__setattr__('compkeys', cat.component[0].keys())
 
-        for i in range(len(cat.component)):
-            for key in cat.component[i].keys():
-                if i==0:
-                    exec 'self.%s = [cat.component[%i]["%s"]]' %(key,i,key)
-                else:
-                    exec 'self.%s.append(cat.component[%i]["%s"])' %(key,i,key)
+        if len(cat.component)>1:
+            for key in self.compkeys:
+                super(Result4GSP, self).__setattr__(key, [None]*len(cat.component))
+            for i in range(len(cat.component)):
+                for key in self.compkeys:
+                    exec 'self.%s[%i] = cat.component[%i]["%s"]' %(key,i,i,key)
+        else:
+            for key in self.compkeys:
+                super(Result4GSP, self).__setattr__(key, cat.component[0][key])
 
+
+    def __getattr__(self, name):
+        raise SampledAttributeError(401, name)
+    
+    def __getitem__(self, index):
+        raise SampledIndexingError(402)
+
+    def __setitem__(self, index, value):
+        raise SampledIndexingError(402)
+
+    def __setattr__(self, name, value):
+        raise SampledAssignmentError(403, name)
 
 
 def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts):
@@ -850,7 +853,7 @@ def CmdlineListOrdered():
             "config",
             "imagein", "imageext", "weightin", "weightext", "psfin", 
             "xmin", "xmax", "ymin", "ymax",
-            "ngal", "seed", "gain", "zeropoint","fluxthresh", 
+            "ngal", "seed", "gain", "zeropoint", 
             "stdverbosity", "logverbosity", "debug", 
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noempty", "sexemptyparam", "noassoc", "catfitstype"]
     return args
@@ -1102,7 +1105,6 @@ def DefaultArgs(parser):
     parser.add_argument( "-gain", "--gain", help="Gain, needed for adding noise. Can be a float or a keyword from the image header. (Default reads image header keyword 'GAIN'. If that fails, default is set to 1)", default='GAIN')
     parser.add_argument( "-zp", "--zeropoint", help="Zeropoint used to convert simulated magnitude to flux. Sextractor runs with this zeropoint. Can be a float or a keyword from the image header. (Default looks for keyword 'SEXMGZPT'. If given keyword is not found, zeropoint defaults to 30.)", default='SEXMGZPT')
     parser.add_argument( "-s", "--seed", help="Seed for random number generation when simulating galaxies. This does not apply to noise realizations, which are always random.", type=int, default=None)
-    parser.add_argument( "-ft", "--fluxthresh", help="Flux value where to cutoff the postage stamp", type=float, default=0.01)
 
     # Other Balrog stuff
     parser.add_argument( "-c", "--clean", help="Delete output image files", action="store_true")
