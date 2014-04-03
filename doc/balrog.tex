@@ -1,16 +1,17 @@
 \documentclass[12pt]{book}
 
 \usepackage{amsfonts,amsmath,amssymb,gensymb,color,soul,graphicx,titlesec,tabu,longtable,array,natbib}
-\usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta}]{hyperref}
+\usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta and Huff}]{hyperref}
 \usepackage[margin=1in]{geometry}
 \usepackage[singlelinecheck=false]{caption}
+\usepackage[nodayofweek]{datetime}
 \usepackage{title,optstable,config,outtable,todonotes}
 \bibliographystyle{mn2e_adsurl}
 
 
 \renewcommand*\chapterautorefname{Chapter}
 \renewcommand*\sectionautorefname{Section}
-\renewcommand*\subsectionautorefname{Sectiggon}
+\renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
 
 \newcommand{\py}{Python}
@@ -32,6 +33,9 @@
 
 \renewcommand\footnoterule{}
 %\widowpenalty=10000
+
+\newdateformat{mydate}{\twodigit{\THEDAY}{ }\monthname[\THEMONTH] \THEYEAR}
+\newcommand{\ericdate}{\mydate\today}
 
 
 \def\aj{AJ}%
@@ -417,6 +421,16 @@ What is \balrog{} good for?
 Installation is a bitch. Let your system administrator worry about it. 
 But if you have to do it, here are some steps that \emph{might} work...
 
+\balrog{} consists of two depencies: \galsim{} and \sex{}.
+\balrog{} itself is written entirely in \py{} and will run out of the box if  
+\emph{sufficiently recent} versions of \galsim{} and \sex{} have already been installed.
+As of the writing of this documentation,
+\footnote{\label{foot:date}\ericdate}
+\balrog{} requires the latest version of \galsim{}, which is version \texttt{1.1}.
+We have not thoroughly tested what constitues a \emph{recent enough} version of \sex{}.
+The oldest version we have successfully tested against is \texttt{2.17.0}.
+\balrog{} and \galsim{} both exist as repositories on GitHub.
+
 
 \chapter{Quick Start}
 \label{sec:quick}
@@ -517,7 +531,7 @@ brief help strings, run:
 of the native options and \autoref{sec:user}
 explains how to create custom options.
 
-\subsection{Built-in Options}
+\section{Built-in Options}
 \label{sec:builtin}
 
 \balrog{} includes a number of built-in optional arguments for each run, defining a
@@ -534,7 +548,7 @@ trading clarity for brevity.
 
 \optstab{}
 
-\subsection{User-defined Options}
+\section{User-defined Options}
 \label{sec:user}
 
 Within the \config{} file, user's are able to
