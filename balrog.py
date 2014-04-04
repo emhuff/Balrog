@@ -160,7 +160,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             if gspcatalog.galaxy[key]!=None:
                 d[key] = gspcatalog.galaxy[key][i]
         gsparams = galsim.GSParams(**d)
-        combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams)
+        combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
 
         ix = int(simulatedgals.galaxy['x'][i])
         iy = int(simulatedgals.galaxy['y'][i])
@@ -175,7 +175,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         pos = galsim.PositionD(simulatedgals.galaxy['x'][i], simulatedgals.galaxy['y'][i])
         local = wcs.local(image_pos=pos)
         localscale = np.sqrt(local.dudx * local.dvdy)
-        smallImage = combinedObjConv.draw(scale=localscale)
+        #smallImage = combinedObjConv.draw(scale=localscale)
+        smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
         smallImage.setCenter(ix,iy)
 
         t1 = datetime.datetime.now()

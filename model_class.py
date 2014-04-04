@@ -453,7 +453,7 @@ class nComponentSersic(object):
     '''
 
 
-    def GetConvolved(self, psfmodel, i, wcs, gsparams):
+    def GetConvolved(self, psfmodel, i, wcs, gsparams, BalrogSetup):
         
         for j in range(len(self.component)):
             n = float(self.component[j]['sersicindex'][i])
@@ -492,11 +492,24 @@ class nComponentSersic(object):
         psf.setFlux(1.)
         psf_centroid = psf.centroid()
         psf.applyShift(-psf_centroid.x, -psf_centroid.y)
-        combinedObj = galsim.Convolve([psf,combinedObj])
+        #psf.applyShift(psf_centroid.x, psf_centroid.y)
 
         #pix = galsim.Box(width=local.dudx, height=local.dvdy, gsparams=gsparams)
         pix = galsim.Pixel(scale=localscale, gsparams=gsparams)
-        combinedObj = galsim.Convolve([pix,combinedObj])
+
+        combinedObj = galsim.Convolve([psf,pix,combinedObj])
+
+        '''
+        f1 = os.path.join(BalrogSetup.outdir,'balrog_image','obj%i.fits'%i)
+        i1 = combinedObj.draw(scale=localscale)
+        galsim.fits.write(image=i1, file_name=f1)
+
+        f2 = os.path.join(BalrogSetup.outdir,'balrog_image','psf%i.fits'%i)
+        c = galsim.Convolve([psf,pix])
+        c.applyShift(dx*localscale, dy*localscale)
+        i2 = c.draw(scale=localscale)
+        galsim.fits.write(image=i2, file_name=f2)
+        '''
         
         return combinedObj
 
