@@ -354,6 +354,79 @@ For the case described here, there is no benefit to dedicate the additional time
 
 What is \balrog{} good for?
 
+No astronomical imaging survey is perfectly homogenous. Variations in
+image quality and depth are a necessary result from any multi-epoch
+measurement, even without variations in weather, sky brightness, or
+telescope properties that can drive inhomogeneities within a single
+epoch [REF: e.g. Holmes, Hogg, \& Rix 2012]. Effective use of imaging
+data requires a good model for what happens to the data during
+processing, but the process of creating a catalog from an image
+generally is generally nonlinear\footnote{Thresholding does this, and
+  no matter what else you do, all catalog-making requires
+  thresholding.}, and the actual relationship between the resulting
+data products and the world of forms can be quite difficult to model
+analytically or even heuristically [e.g., SDSS sky subtraction, see
+REF:Aihara paper, or any deblending algorithm ever].
+
+Quantatively, what's missing is the likelihood function:
+\begin{equation}
+L = p( {\rm Catalog} | {\rm world\: of\: forms})
+\end{equation}.
+for a given data reduction and catalog-making recipe. This would be
+necessary for a fully Bayesian imaging analysis (which is probably presently impractical
+for any large imaging survey), but even for a catalog of
+point estimates of object properties, $L$ is necessary to characterize
+the noise and bias of the estimators.
+
+We provide three examples of contemporary relevance below. For each of
+these, we provide example pseudocode that shows how to compute the
+quantity of interest using \balrog{}.
+
+\subsection{Completeness}
+The most common first step in any procedure (REF: SExtractor, PHOTO, maybe THELI?) for
+creating a catalog from an image is a matched filtering of the image
+followed by a thresholding. Typically, the filter is chosen to be
+similar (in the broadest sense of similarity) to the expected image
+psf [REF: Photo-lite, SEXtractor, etc.]. The resulting detection map
+is thresholded, and the pixels that exceed the threshold become the
+focus of subsequent analysis.
+
+For a surface-brightness profile of the same shape as the filter, the
+matched filter corresponds to the optimal\footnote{Really optimal, in
+  the sense that it saturates the Cramer-Rao bound, and so a
+  lower-variance unbiased estimator is mathematically impossible.}
+measurement of the flux of an object at that position, so thresholding
+the detection map corresponds to an actual flux limit. For other
+surface-brightness profiles, however, this is not true, and any
+catalog-making process that begins with this step cannot be said to be
+``magnitude-limited'' or ``flux-limited''. This is a problem, because
+the completeness of most astronomical imaging is very frequently
+characterized by a single number, corresponding to the magnitude of
+the faintest object in the catalog; occasionally, conscientious
+authors will note a significance level (corresponding to the
+threshold) or that the quoted limiting magnitude is appropriate
+for either point-sources or galaxies. 
+
+The most secure way to deal with this problem is to compute the
+probability of detection for the ensemble of sources that will be
+subjected to analysis. \balrog{} makes this step straightforward: by
+embedding a catalog of objects in the real images, and then re-running
+the catalog-making pipeline, it is easy to then determine, by
+sampling, the detection probability for any objects of interest as a
+function of their underlying properties.
+
+
+
+\subsection{Clustering}
+TODO: Detection probability as it varies across the sky, its effects
+on correlation functions, and how to use \balrog{} to find this out.
+
+\subsection{Optimization}
+TODO: Demonstrate what you can do if you know the measurement
+covariance matrix.
+
+
+
 
 \chapter{Installation}
 \label{sec:install}
