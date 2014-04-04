@@ -329,7 +329,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
 
 def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog):
     if BalrogSetup.subsample:
-        WriteImages(BalrogSetup, bigImage, subWeight, nosim=True)
+        WriteImages(BalrogSetup, bigImage, subweight, nosim=True)
     else:
         if os.path.lexists(BalrogSetup.nosim_imageout):
             subprocess.call( ['rm', BalrogSetup.nosim_imageout] )
