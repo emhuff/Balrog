@@ -23,8 +23,7 @@
 \newcommand{\inline}{\\[0.4cm]}
 \newcommand{\bcmd}[1]{\texttt{\% runbalrog #1}}
 \newcommand{\sersic}{S\'{e}rsic}
-\newcommand\note[3]{\todo[color=#1, inline, size=\small]{#2: #3}}
-\newcommand\notesuchyta[1]{\note{red!50}{EDS}{#1}}
+
 
 
 \titleformat{\chapter}[hang]
@@ -212,7 +211,7 @@ Algorithmically, this is the only change applied to the input by the entire \bal
 The weight map and PSF remain unchanged.
 Conceptually, the bulk of the undertaking goes into simulationg the galaxies.
 
-\notesuchyta{Is it worth adding some kind of support to generate the \psfex{} model? This introduces some issues doing so, but it might be worthwhile.}
+\hl{Is it worth adding some kind of support to generate the PSF model? This introduces some issues doing so, but it might be worthwhile.}
 
 \section{Simulated Galaxies}
 \label{sec:galsim}
@@ -457,7 +456,7 @@ These two examples are designed to demonstrate the range of statements available
 \section{Output}
 \label{sec:output}
 
-\notesuchyta{I might expand this section.}
+\hl{I might expand this section.}
 
 All \balrog{} output is saved in subdirectories under the directory chosen by command line option \opt{outdir}.
 This directory has defaulted to \texttt{\$INSTALLDIR/default\_example/output} for the example run.
@@ -513,7 +512,7 @@ what it means, including its default.
 Abbreviations for each option also exist,
 trading clarity for brevity.
 
-\notesuchyta{We should decide what the best name for everything is, bot the full name and abbreviation.}
+\hl{We should decide what the best name for everything is, bot the full name and abbreviation.}
 
 \optstab{}
 
@@ -779,7 +778,7 @@ Therefore, the Gaussian PSF will not move the threshold originally located at $r
 by a distance of more than $r_p$.
 
 
-\notesuchyta{The fiducial seeing should probably be made an adjustable parameter. I didn't do that thus far just not to make another command line argument.}
+\hl{The fiducial seeing should probably be made an adjustable parameter. I didn't do that thus far just not to make another command line argument.}
 
 
 \bibliography{references}
