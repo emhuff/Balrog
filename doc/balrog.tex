@@ -19,7 +19,7 @@
 \newcommand{\balrog}{\textsc{Balrog}}
 \newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\psfex}{\textsc{PSFEx}}
-\newcommand{\opt}[1]{\texttt{--#1}}
+\newcommand{\opt}[1]{{\texttt{-}\texttt{-#1}}}
 \newcommand{\inline}{\\[0.4cm]}
 \newcommand{\bcmd}[1]{\texttt{\% runbalrog #1}}
 \newcommand{\sersic}{S\'{e}rsic}
@@ -204,7 +204,7 @@ Thus, generating \psfex{} models constitues a prerequisite users must complete p
 \balrog{} simulations incorporate \galsim{}'s WCS features, and hence
 the software requires each image contain sa WCS solution. \balrog{} reads this solution from the image's header.
 If no WCS exists in the header, the pipeline enforces a fiducial WCS with a constant pixel scale of 
-0.263~arcsec/pixel.\footnote{0.263~arcsec/pixel is the fiducial pixel scale fore DECam.}ß
+0.263~arcsec/pixel.\footnote{0.263~arcsec/pixel is the fiducial pixel scale fore DECam.}
 \balrog{} supports subsampling the input images if desired, meaning galaxies will only be
 inserted into a portion of the image.
 Once galaxies are simulated, the input image's flux values change by adding the galaxies on top of the original images. 
@@ -393,7 +393,8 @@ slightly more detailed installation instructions.
 One item not explictly stated in the installation notes is that \sex{} requires the ATLAS\footnote{\url{http://math-atlas.sourceforge.net/}}
 linear algebra package as a dependency.
 \sex{} will not install properly unless ATLAS is installed. 
-The ATLAS website includes an extensive \href{http://math-atlas.sourceforge.net/atlas_install/}{installation guide}.
+The ATLAS website includes the requisite source code and
+an extensive \href{http://math-atlas.sourceforge.net/atlas_install/}{installation guide}.
 Once ATLAS builds and installs, the \sex{} installation steps should be straightforward to follow and complete.
 
 
@@ -434,12 +435,12 @@ The command line arguments can be printed, along with brief help strings by runn
 \bcmd{\opt{help}}
 \inline
 Furthermore, a complete description of \balrog{}'s command line arguments can be found in \autoref{sec:cmdline}.
-Each comes with a default \balrog{} will assume if the user does not supply one.
 In brief, the command line parameters are used to specify input images and their properties, as well as configuration
 files to use with \sex{}, and a few other variables every \balrog{} run will need to define. 
+Each built-in option comes with a default \balrog{} will assume if the user does not supply one.
 The default example's image data, weight map, and PSF live in \texttt{\$INSTALLDIR/default\_example/}.
 The \sex{} configuration files live in \texttt{\$INSTALLDIR/astro\_config}. 
-Command line argument names and default file names are intended to be transparent.
+All command line argument names and default file names are intended to be transparent.
 
 In order to flexibly define how galaxies will be simulated, \balrog{} accepts defined blocks of \py{} code
 within the file specified by command line option \opt{config}.
@@ -455,6 +456,8 @@ These two examples are designed to demonstrate the range of statements available
 
 \section{Output}
 \label{sec:output}
+
+\notesuchyta{I might expand this section.}
 
 All \balrog{} output is saved in subdirectories under the directory chosen by command line option \opt{outdir}.
 This directory has defaulted to \texttt{\$INSTALLDIR/default\_example/output} for the example run.
@@ -510,6 +513,7 @@ what it means, including its default.
 Abbreviations for each option also exist,
 trading clarity for brevity.
 
+\notesuchyta{We should decide what the best name for everything is, bot the full name and abbreviation.}
 
 \optstab{}
 
