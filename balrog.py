@@ -291,17 +291,19 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
    
 
 def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
-
+    afile = None
     if nosim:
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
         weightout = BalrogSetup.nosim_weightout
-        afile = BalrogSetup.assoc_nosimfile
+        if not BalrogSetup.noassoc:
+            afile = BalrogSetup.assoc_nosimfile
     else:
         catalogmeasured = BalrogSetup.catalogmeasured
         imageout = BalrogSetup.imageout
         weightout = BalrogSetup.weightout
-        afile = BalrogSetup.assoc_simfile
+        if not BalrogSetup.noassoc:
+            afile = BalrogSetup.assoc_simfile
 
     if not BalrogSetup.noassoc:
         WriteCatalog(catalog, BalrogSetup, txt=afile, fits=False)
