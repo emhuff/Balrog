@@ -131,7 +131,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False):
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psfin, BalrogSetup.psfout)
-        opts.psf_written = True
+        BalrogSetup.psf_written = True
 
 
 def WritePsf(BalrogSetup, psfin, psfout):
@@ -291,17 +291,19 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
    
 
 def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
-
+    afile = None
     if nosim:
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
         weightout = BalrogSetup.nosim_weightout
-        afile = BalrogSetup.assoc_nosimfile
+        if not BalrogSetup.noassoc:
+            afile = BalrogSetup.assoc_nosimfile
     else:
         catalogmeasured = BalrogSetup.catalogmeasured
         imageout = BalrogSetup.imageout
         weightout = BalrogSetup.weightout
-        afile = BalrogSetup.assoc_simfile
+        if not BalrogSetup.noassoc:
+            afile = BalrogSetup.assoc_simfile
 
     if not BalrogSetup.noassoc:
         WriteCatalog(catalog, BalrogSetup, txt=afile, fits=False)
@@ -329,7 +331,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
 
 def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog):
     if BalrogSetup.subsample:
-        WriteImages(BalrogSetup, bigImage, subWeight, nosim=True)
+        WriteImages(BalrogSetup, bigImage, subweight, nosim=True)
     else:
         if os.path.lexists(BalrogSetup.nosim_imageout):
             subprocess.call( ['rm', BalrogSetup.nosim_imageout] )

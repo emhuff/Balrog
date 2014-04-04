@@ -71,7 +71,8 @@ def SimulationRules(args, rules, sampled):
     
     # Being precise, halflightradius is along the major axis
     rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
-    rules.magnitude = Catalog(cat,ext,args.mag)
+    #rules.magnitude = Catalog(cat,ext,args.mag)
+    rules.magnitude = 18
     rules.sersicindex = Catalog(cat,ext,args.sersicindex)
 
     rules.beta = Function(function=rand, args=[-90, 90, args.ngal])
