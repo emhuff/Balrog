@@ -13,7 +13,6 @@
 \renewcommand*\sectionautorefname{Section}
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
-
 \newcommand{\py}{Python}
 \newcommand{\galsim}{GalSim}
 \newcommand{\balrog}{\textsc{Balrog}}
@@ -23,20 +22,17 @@
 \newcommand{\inline}{\\[0.4cm]}
 \newcommand{\bcmd}[1]{\texttt{\% runbalrog #1}}
 \newcommand{\sersic}{S\'{e}rsic}
-
 \newcommand\note[3]{\todo[color=#1, inline, size=\small]{#2: #3}}
 \newcommand\notesuchyta[1]{\note{red!50}{EDS}{#1}}
+
 
 \titleformat{\chapter}[hang]
 {\normalfont\huge\bfseries}{\thechapter.}{1em}{}
 \titlespacing*{\chapter}{0pt}{0pt}{25pt}
-
-\renewcommand\footnoterule{}
-%\widowpenalty=10000
-
 \newdateformat{mydate}{\twodigit{\THEDAY}{ }\monthname[\THEMONTH] \THEYEAR}
 \newcommand{\ericdate}{\mydate\today}
-
+\renewcommand\footnoterule{}
+%\widowpenalty=10000
 
 \begin{document}
 
