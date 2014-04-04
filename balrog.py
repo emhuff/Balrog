@@ -131,7 +131,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False):
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psfin, BalrogSetup.psfout)
-        opts.psf_written = True
+        BalrogSetup.psf_written = True
 
 
 def WritePsf(BalrogSetup, psfin, psfout):
