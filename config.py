@@ -31,7 +31,7 @@ def CustomParseArgs(args):
     if args.catalogsample==None:
         args.catalogsample = os.path.join(thisdir, 'cosmos.fits')
     if args.mag==None:
-        args.mag = '%sMAG' %(args.band.upper())
+        args.mag = 'MAPP_%s_SUBARU' %(args.band.upper())
     
 
 ### Each galaxy has a single {x, y, g1, g2, magnification}.
