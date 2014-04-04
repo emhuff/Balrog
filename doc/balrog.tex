@@ -9,7 +9,7 @@
 \bibliographystyle{mn2e_adsurl}
 
 
-\renewcommand*\chapterautorefname{Chapter}
+\renewcommand*\chapterautorefname{Section}
 \renewcommand*\sectionautorefname{Section}
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
@@ -344,7 +344,7 @@ or alternatively the so-called
 text. We only make remarks about a few of the most pertinent features to be aware of within \balrog{}.
 
 \sex{} runs are configured via roughly a handful of files. 
-In this scope, the two relevant ones are what we will call
+In this scope, the two most relevant ones are what we will call
 the \emph{config file}, often denoted with a \texttt{.sex} extension,
 and the \emph{param file}, often denoted with a \texttt{.param} extension.
 In \balrog{}'s default files shipped with the software, the \sex{} config
@@ -357,8 +357,8 @@ and the background subtraction strategy.
 The param file is a list of keywords.
 Each keyword is a measurment \sex{} will make for every extracted object.
 
-It is the param file which controls whether or not \sex{} will performmodel fits to the galaxies. 
-How do to this is documented practically nowhere, but has been passed down by word of mouth in the Astronomy community. 
+It is the param file which controls whether or not \sex{} will perform model fits to the galaxies. 
+How do to this is rather scarely documented, but has been passed down by word of mouth in the Astronomy community. 
 We will make a small aside to elaborate more thoroughly.
 \sex{} includes up to two possible types of models to fit.
 One, denoted by the key \texttt{DISK}, is a model with fixed \sersic{} index of $n=1$,
@@ -376,14 +376,12 @@ The disk model fits the scale radius, as opposed to the half light radius.
 See the \texttt{bulge+disk.param} file included with \balrog{} for the \sex{} names of all the paramters.
 The meanings of the names are human readable.
 
-\notesuchyta{I shold probably say something more like ``scarcely documented'', rather than ``practically nowhere'', but the way it is now better represents my true feelings.}
-
 Returning to \balrog{}, the default behavior is to run \sex{} in \emph{association mode}.
 For those unfamilar with the terminology, association mode means
 \sex{} will only make possible measurements at a predefined list of coordinates.
 Here, the list is given as the simulated galaxies' locations. 
-Hence, \sex{} is effectively aware of where in the image the galaxies live.
-If it finds an object at one of the this coordinates, it extracts it;
+Hence, \sex{} is effectively aware of where in the image the simulated galaxies live.
+If it finds an object at one of the these coordinates, it extracts it;
 but it does not extract objects anwhere else.
 This bypasses the need to extract every single object in the image. 
 Namely, it  selects against the objects unrelated to the simulated galaxies that 
@@ -418,18 +416,42 @@ What is \balrog{} good for?
 \chapter{Installation}
 \label{sec:install}
 
-Installation is a bitch. Let your system administrator worry about it. 
-But if you have to do it, here are some steps that \emph{might} work...
-
 \balrog{} consists of two depencies: \galsim{} and \sex{}.
 \balrog{} itself is written entirely in \py{} and will run out of the box if  
 \emph{sufficiently recent} versions of \galsim{} and \sex{} have already been installed.
-As of the writing of this documentation,
-\footnote{\label{foot:date}\ericdate}
+As of the writing of this documentation,\footnote{\label{foot:date}\ericdate} 
 \balrog{} requires the latest version of \galsim{}, which is version \texttt{1.1}.
 We have not thoroughly tested what constitues a \emph{recent enough} version of \sex{}.
-The oldest version we have successfully tested against is \texttt{2.17.0}.
-\balrog{} and \galsim{} both exist as repositories on GitHub.
+What we are able to say is that the oldest version we have successfully tested against is \texttt{2.17.0}.
+\balrog{} and \galsim{} both exist as repositories on GitHub and can be downloaded 
+from the command line.
+\inline
+\texttt{\% git clone https://github.com/emhuff/Balrog.git} \\
+\texttt{\% git clone https://github.com/GalSim-developers/GalSim.git}
+\inline
+This should automatically check out the master branch of each.
+Master is the only supported branch for \balrog{}. 
+The master branch of \galsim{} will always be a version $\geq$ \texttt{1.1}.
+\sex{} is packaged as a tarball, which can be downloaded 
+from its \href{https://www.astromatic.net/software/sextractor}{official website}.
+We recommend choosing the most recent version.
+
+The \galsim{} documentation includes an extensive
+\href{https://github.com/GalSim-developers/GalSim/blob/releases/1.0/INSTALL.md}{installation guide},
+with many helpful hints and links to \texttt{FAQ} pages. 
+We refer \balrog{} users to this guide for how to install \galsim{}.
+The \galsim{} team deserves a big thanks for the utility of their installation notes.
+The \balrog{} authors are far from accomplished system adminstrators, 
+but we both were independently successful installing \galsim{} on our systems by following these notes.
+
+Section 3 of the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual}
+contains a brief section explaining how to install the software. The code itself also includes a file called \texttt{INSTALL}, with
+slightly more detailed installation instructions.
+One item not explictly stated in the installation notes is that \sex{} requires the ATLAS\footnote{\url{http://math-atlas.sourceforge.net/}}
+linear algebra package as a dependency.
+\sex{} will not install properly unless ATLAS is installed. 
+The ATLAS website includes an extensive \href{http://math-atlas.sourceforge.net/atlas_install/}{installation guide}.
+Once ATLAS builds and installs, the \sex{} installation steps should be straightforward to follow and complete.
 
 
 \chapter{Quick Start}
