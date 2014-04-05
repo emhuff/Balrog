@@ -1,6 +1,7 @@
 \documentclass[12pt]{book}
 
-\usepackage{amsfonts,amsmath,amssymb,gensymb,color,soul,graphicx,titlesec,tabu,longtable,array,natbib}
+\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib}
+\usepackage[usenames,dvipsnames]{color}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta and Huff}]{hyperref}
 \usepackage[T1]{fontenc}
 \usepackage[margin=1in]{geometry}
@@ -548,43 +549,60 @@ arguments were parsed, \sex{}'s command line output, and any \balrog{} specific 
 \end{table}
 
 
-\chapter{Command Line Options}
+\chapter{Command Line Arguments}
 \label{sec:cmdline}
 
-\balrog{} runs can be configured via command line options.
-Two types of options exist. First are the built-in
-ones, native to \balrog{}. In addition, \balrog{}
-supports a mechanism for users to define their
-own command line options.
-To print a list of all \balrog{}'s command line options,
-both native and user-defined, along with
-brief help strings, run:
+\balrog{} runs can be configured via command line arguments.
+Two categories exist. 
+First are the built-in ones, native to \balrog{}. 
+In addition, \balrog{} supports a mechanism for users to define their own command line arguments.
+This section is subdivided into two segments, one for each of the categories.
+\autoref{sec:builtin} enumerates all the available options built-in to \balrog{},
+and \autoref{sec:user} explains how to add custom ones on top of those.
+To print a summary of \balrog{}'s command line environment, 
+including what has been added by the user, run the following command.
 \inline
 \bcmd{\opt{help}}
 \inline
-\autoref{sec:builtin} further details each
-of the native options and \autoref{sec:user}
-explains how to create custom options.
+This prints the names of each parameter, along with available help strings.
+The help strings are intended to be a useful quick reference tool,
+but in order to preserve suitable readability from the command line, 
+they do not necessarily spell out every possible detail users may wish to know.
+Accordingly, we include a more comprehensive complement within this section.
 
-\section{Built-in Options}
+
+\section{Built-In Command Line Environment}
 \label{sec:builtin}
 
-\balrog{} includes a number of built-in optional arguments for each run, defining a
-variety of parameters such as the input image,
-the number of galaxies to simulate, the flux calibration, etc.
-Any options which are not specified assume a default value.
-The options are intended to be named intuitvely in order
-to faciltate ease of use. 
-\autoref{tab:opts} lists each option, with a description of 
-what it means, including its default.
-Abbreviations for each option also exist,
-trading clarity for brevity.
+Without further ado, let us direct the attention to to \autoref{tab:opts}.
+It is a fairly sizeable table containing an entry for each of \balrog{}'s command line arguments.
+\autoref{tab:opts} is the core substance of this section,
+and is intended to be more or less readable on it own, apart from the text of the document.
+Ergo, we refrain from copying every detail from \autoref{tab:opts} into the text, 
+preferring the orderly organization and conceptual clarity
+of the table over something which would require many more words to describe in paragraph form.
+However, we will make a few general comments to put \autoref{tab:opts} into better context.
 
-\hl{We should decide what the best name for everything is, both the full name and abbreviation.}
+Each command line argument can be specified either with its full name or an abbreviated form, e.g. \opt{imagein} vs. \opt{ii}.
+The full names attempt to be as intuitive as possible while maintaining a reasonbly small number of characters.
+The abbreviatons trade clarity for brevity for those who prefer compactness. 
+Any parameter that  is left out of a user's \balrog{} call assumes a default value in the code.
+Each of these defaults is listed in \autoref{tab:opts}. 
+In a few cases, the default values are conditionally defined, meaning \balrog{} will select one out of
+two possible defaults depending on how the run has been configured.
+\autoref{tab:opts} utilizes pseudocode to explain the behavior of how these defaults are ultimately chosen.
+When \balrog{} parses the user's command line, it performs a number of checks, 
+thereby enforcing proper data types, file existence, etc.
+Warnings or errors are reaised as needed.
+\autoref{tab:opts} has been group into subcategories of similar parameters.
+The divisions do not matter per se; they are merely an organizational guide.
+However, because \balrog{} contains quite a few possible arguments to adjust,
+we find them to be a useful aid in adding to tractability.
+
 
 \optstab{}
 
-\section{User-defined Options}
+\section{User-Defined Command Line Environment}
 \label{sec:user}
 
 Within the \config{} file, user's are able to
