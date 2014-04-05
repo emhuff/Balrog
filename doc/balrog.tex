@@ -16,6 +16,7 @@
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
 \newcommand{\py}{Python}
+\newcommand{\pyconfig}{\texttt{pyconfig}}
 \newcommand{\galsim}{GalSim}
 \newcommand{\balrog}{\textsc{Balrog}}
 \newcommand{\sex}{\textsc{SExtractor}}
@@ -108,10 +109,10 @@ Until now, we have been rather vague about practical applications for \balrog{}.
 Beyond, the remainder of the document concerns how to configure and run \balrog{}.
 \autoref{sec:quick} presents an approach to hit the ground running and quickly get
 started with some key features of \balrog{}.
-\autoref{sec:quick} is followed by a number of more comprehensive sections,
-which spell out all the usage details.
-\autoref{sec:cmdline} covers command line arguments, and
-\autoref{sec:simrules} establishes how to simulate galaxies within the \balrog{} framework.
+The following sections build upon \autoref{sec:quick} by more comprehensively spelling out all the usage details.
+\autoref{sec:cmdline} covers \balrog{}'s built-in command line arguments.
+\autoref{sec:pyconfig} treats the file we refer to as \balrog{}'s \pyconfig{} file, which is responsible for a number of customizations,
+including user-defined command line arguments and how the simulated galaxies' properties are generated.
 The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
 \autoref{sec:debug} offers some debugging hints.
 
@@ -151,7 +152,7 @@ The following paragraphs comment further.
 \label{fig:flowchart}
 \end{figure}
 
-The \balrog{}  pipeline begins by opening a log file and parsing the command line options.
+The \balrog{}  pipeline begins by opening a log file and parsing the command line parameters.
 The code enforces a number of rules on the user's configurations.
 If any errors or warnings occur they are directed to the log file. 
 Errors are raised when users make a syntax error and \balrog{} cannot continue.
@@ -491,35 +492,36 @@ Thus, this inital call is as simple as:
 Referring to \autoref{tab:def}, \texttt{runbalrog} is equivalent to an alias to the file
 \texttt{balrog.py} located within the installation directory, labelled like an environment variable as \texttt{\$INSTALLDIR}. We will use these conventions
 throughout the documentation. \autoref{sec:input} briefly addresses
-the input which was read in for the \texttt{runbalrog} command and \autoref{sec:output} introduces the output
+the input which was read in for the example \texttt{runbalrog} command and \autoref{sec:output} introduces the output
 generated during the run.
 
 \section{Input}
 \label{sec:input}
 
 \balrog{}'s input comes in two forms, command line arguments and \py{} statements.
-The command line arguments can be printed, along with brief help strings by running:
+To explore the command line arguments one can run the following command.
 \inline
 \bcmd{\opt{help}}
 \inline
-Furthermore, a complete description of \balrog{}'s command line arguments can be found in \autoref{sec:cmdline}.
-In brief, the command line parameters are used to specify input images and their properties, as well as configuration
+For extended help, the command line arguments built-in to \balrog{} are detailed further in \autoref{sec:cmdline}.
+In brief, they are used to specify input images and their properties, as well as configuration
 files to use with \sex{}, and a few other variables every \balrog{} run will need to define. 
-Each built-in option comes with a default \balrog{} will assume if the user does not supply one.
+Each comes with a default \balrog{} will assume if the user does not supply one.
 The default example's image data, weight map, and PSF live in \texttt{\$INSTALLDIR/default\_example/}.
-The \sex{} configuration files live in \texttt{\$INSTALLDIR/astro\_config}. 
-All command line argument names and default file names are intended to be transparent.
+The \sex{} configuration files live in 
+\\ \texttt{\$INSTALLDIR/astro\_config/}. 
+All default command line argument names and file names are intended to be transparent.
 
-In order to flexibly define how galaxies will be simulated, \balrog{} accepts defined blocks of \py{} code
-within the file specified by command line option \opt{config}.
-The example's \opt{config} defaults to \texttt{\$INSTALLDIR/config.py}.
-Included within this \balrog{} configuration file is support for implementing custom user-defined functions 
-and command line arguments.
+In order to flexibly handle how galaxies will be simulated, \balrog{} accepts defined blocks of \py{} code
+within the file specified by command line argument \opt{pyconfig}.
+The example's \opt{pyconfig} defaults to \texttt{\$INSTALLDIR/config.py}.
+Included within this file is support for implementing custom user-defined functions 
+and command line arguments in order to generate simulated galaxies.
 The core functions defined in the file have a strictly
-structured syntax which will be fully described in \autoref{sec:cmdline} and \autoref{sec:simrules}. The syntax is designed to be as \py esque as possible, so
+structured syntax which will be fully described in \autoref{sec:pyconfig}. The syntax is designed to be as \py esque as possible, so
 many users will likely be able to extrapolate directly from the examples without reading lengthy documentation. The file also
 includes comment lines as a guide. A slightly more sophisticated configuration file can be found in \texttt{\$INSTALLDIR/config2.py}.
-These two examples are designed to demonstrate the range of statements available to \balrog{}'s \py{} configuration files.
+These two examples are designed to demonstrate the range of statements available to \balrog{}'s \pyconfig{} file.
 
 
 \section{Output}
@@ -527,7 +529,7 @@ These two examples are designed to demonstrate the range of statements available
 
 \hl{I might expand this section.}
 
-All \balrog{} output is saved in subdirectories under the directory chosen by command line option \opt{outdir}.
+All \balrog{} output is saved in subdirectories under the directory chosen by command line argument \opt{outdir}.
 This directory has defaulted to \texttt{\$INSTALLDIR/default\_example/output} for the example run.
 The complete set of output generated by \balrog{} is detailed in \autoref{sec:out};
 most relevant for getting started are the \texttt{balrog\_cat} subdirectory and the \texttt{balrog\_log} subdirectory.
@@ -549,33 +551,29 @@ arguments were parsed, \sex{}'s command line output, and any \balrog{} specific 
 \end{table}
 
 
-\chapter{Command Line Arguments}
+\chapter{Native Command Line Arguments}
 \label{sec:cmdline}
 
 \balrog{} runs can be configured via command line arguments.
-Two categories exist. 
-First are the built-in ones, native to \balrog{}. 
-In addition, \balrog{} supports a mechanism for users to define their own command line arguments.
-This section is subdivided into two segments, one for each of the categories.
-\autoref{sec:builtin} enumerates all the available options built-in to \balrog{},
-and \autoref{sec:user} explains how to add custom ones on top of those.
-To print a summary of \balrog{}'s command line environment, 
-including what has been added by the user, run the following command.
+Two categories of arguments exist. 
+First are the built-in ones, native to \balrog{}.
+These constitute the focus of this section.
+In addition, \balrog{} also supports a mechanism for users to define their own command line arguments.
+However, because the functionality is drawn from what we have deemed the \pyconfig{} file,
+its treatment is saved for \autoref{sec:user}.
+To generate a summary of \balrog{}'s command line environment, run the following command.
 \inline
 \bcmd{\opt{help}}
 \inline
-This prints the names of each parameter, along with available help strings.
-The help strings are intended to be a useful quick reference tool,
+This prints a listing of all the command line arguments (including those defined by the user) 
+along with their available help strings.
+The built-in arguments' help strings are intended to be a useful quick reference tool,
 but in order to preserve suitable readability from the command line, 
 they do not necessarily spell out every possible detail users may wish to know.
-Accordingly, we include a more comprehensive complement within this section.
+Accordingly, we include a more extensive supplement within this section.
 
-
-\section{Built-In Command Line Environment}
-\label{sec:builtin}
-
-Without further ado, let us direct the attention to to \autoref{tab:opts}.
-It is a fairly sizeable table containing an entry for each of \balrog{}'s command line arguments.
+We direct the reader's attention to \autoref{tab:opts}.
+It is a comprehensive listing, containing an entry for each of \balrog{}'s command line arguments.
 \autoref{tab:opts} is the core substance of this section,
 and is intended to be more or less readable on it own, apart from the text of the document.
 Ergo, we refrain from copying every detail from \autoref{tab:opts} into the text, 
@@ -593,8 +591,8 @@ two possible defaults depending on how the run has been configured.
 \autoref{tab:opts} utilizes pseudocode to explain the behavior of how these defaults are ultimately chosen.
 When \balrog{} parses the user's command line, it performs a number of checks, 
 thereby enforcing proper data types, file existence, etc.
-Warnings or errors are reaised as needed.
-\autoref{tab:opts} has been group into subcategories of similar parameters.
+Warnings or errors are raised as needed.
+\autoref{tab:opts} has been grouped into subcategories of similar parameters.
 The divisions do not matter per se; they are merely an organizational guide.
 However, because \balrog{} contains quite a few possible arguments to adjust,
 we find them to be a useful aid in adding to tractability.
@@ -602,11 +600,17 @@ we find them to be a useful aid in adding to tractability.
 
 \optstab{}
 
+
+
+\chapter{\balrog{}'s \pyconfig{} File}
+\label{sec:pyconfig}
+
+
 \section{User-Defined Command Line Environment}
 \label{sec:user}
 
-Within the \config{} file, user's are able to
-define their own command line options. This occurs
+Within the \pyconfig{} file, user's are able to
+define their own command line arguments. This occurs
 within the function \argsfunc{}. Passed
 to \argsfunc{}  as an argument is \argsparser{},
 an object made by \texttt{python}'s
@@ -628,11 +632,11 @@ sample simulated galaxy parameter distriubtions from", type=str, default=None)}
 \addtocounter{table}{-1}
 
 
-User-defined options are parsed within the function \parsefunc{},
-also part of \config{}.
+User-defined agruments are parsed within the function \parsefunc{},
+also part of \pyconfig{}.
 Passed as an argument to \parsefunc{} is \parseargs{}, equivalent
 to an object returned by \texttt{parser.parse\_args()}. Each one of the user's 
-command line options becomes an attribute of \parseargs{}. 
+command line agruments becomes an attribute of \parseargs{}. 
 A simple version of \parsefunc{} has been included below.
 
 \setlength{\tabcolsep}{0pt}
@@ -651,10 +655,10 @@ simulation scenarios. These parameters are available to the user
 when setting up the galaxy simulations. How to define these simulations is described in
 \autoref{sec:simrules} below.
 
-\chapter{Defining How to Simulate Galaxies}
+\section{Defining How to Simulate Galaxies}
 \label{sec:simrules}
 
-Defining how galaxies should be simulated is controlled within \config{}
+Defining how galaxies should be simulated is controlled within \pyconfig{}
 in the function \simfunc{}. Passed into the function are three
 arguments: \simargs{}, \simrules{}, and \simsamp{}.
 \simargs{} refers to the parsed command line arguments,
@@ -776,7 +780,7 @@ by the user.
 \label{sec:out}
 Each \balrog{} run generates a number of output files. 
 These are organized into a fixed directory structure.
-Users indicate the \opt{outdir} command line option, and
+Users indicate the \opt{outdir} command line argument, and
 the remainder of the naming scheme occurs automatically,
 placing files in subdirectories under \opt{outdir}.
 Four subdirectories are written, labelled accoring to what
