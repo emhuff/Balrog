@@ -25,7 +25,6 @@
 \newcommand{\sersic}{S\'{e}rsic}
 
 
-
 \titleformat{\chapter}[hang]
 {\normalfont\huge\bfseries}{\thechapter.}{1em}{}
 \titlespacing*{\chapter}{0pt}{0pt}{25pt}
@@ -33,6 +32,7 @@
 \newcommand{\ericdate}{\mydate\today}
 \renewcommand\footnoterule{}
 %\widowpenalty=10000
+
 
 \begin{document}
 
@@ -89,12 +89,14 @@ Users are encouraged to use and inspect the default example runs
 to become more familiar with the \balrog{} environment.
 To preserve an intuitive feel, \balrog{}'s simulation framework mimics ordinary \py{} syntax. 
 Where necessary, files and directories are given understandable names.
-Numerous errors and warning are handled, printing useful messages
+Numerous errors and warnings are handled, printing useful messages
 about why the exception was raised.
 Log files are automatically written, useful for follow-up degugging
 in the cases where exceptions do occur. User configurations are copied into
 the output directory, owing to the consideration that every run should be
 reproducible from the output.
+
+\hl{Nothing has been mentioned about the Cosmos catalog yet. I need to figure out where to put that in.}
 
 In this brief introduction, we have merely scratched the surface explaining \balrog{}'s
 uses and capabilites. The remainder of the documentation elaborates further.
@@ -120,20 +122,16 @@ The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
 The purpose of this section is to characterize the algorithm in full.
 The focus here is methodology, not usage instructions. 
 The text is organized as follows.
-To begin, the workflow of the pipeline as a whole is described in \autoref{sec:workflow}.
+To begin, the workflow of the pipeline as a whole is described.
 This is then subdivided into three sections to be expanded further,
-with links to the extended sections inside \autoref{sec:workflow}.
+with links to the extended sections where relevant.
 In \autoref{sec:data}, \balrog{}'s required input data is discussed.
 In \autoref{sec:galsim}, properties of the simulated galaxies are described,
 with a brief conceptual overview of how the properties can be generated
 and comments regarding the steps implemented in \galsim{}.
 Finally, \balrog{}'s image source detection and measurement is considered in \autoref{sec:processing}.
 
-
-\section{Workflow}
-\label{sec:workflow}
-
-To open this section, we preseent \autoref{fig:flowchart} as a complement to the text,
+We preseent \autoref{fig:flowchart} as a complement to the text,
 and as a guide for what is to come.
 The figure is a flowchart visually representing \balrog{}.
 Roughly speaking, the text steps throgh this flowchart from left to right.
@@ -165,7 +163,7 @@ Next \balrog{} interprets how the user wants to generate their simulated galaxie
 To summarize, each galaxy is composed of one or more \sersic{} profiles.
 The user's directives are executed, and  a truth catalog of the galaxy parameters is written.
 
-The code reads in the imaging data into which the simulated galaxies will be drawn.
+The code then reads in the imaging data into which the simulated galaxies will be drawn.
 Refer to \autoref{sec:data} to define what is required of the imaging data in this context.
 By default, \sex{} is run over the input image. Please note, at this point no simulated
 galaxies have been inserted. However, this command is potentially useful
@@ -352,8 +350,6 @@ For the case described here, there is no benefit to dedicate the additional time
 \chapter{What Is \balrog{} Good For?}
 \label{sec:motivation}
 
-What is \balrog{} good for?
-
 No astronomical imaging survey is perfectly homogenous. Variations in
 image quality and depth are a necessary result from any multi-epoch
 measurement, even without variations in weather, sky brightness, or
@@ -382,7 +378,7 @@ We provide three examples of contemporary relevance below. For each of
 these, we provide example pseudocode that shows how to compute the
 quantity of interest using \balrog{}.
 
-\subsection{Completeness}
+\section{Completeness}
 The most common first step in any procedure (REF: SExtractor, PHOTO, maybe THELI?) for
 creating a catalog from an image is a matched filtering of the image
 followed by a thresholding. Typically, the filter is chosen to be
@@ -416,12 +412,11 @@ sampling, the detection probability for any objects of interest as a
 function of their underlying properties.
 
 
-
-\subsection{Clustering}
+\section{Clustering}
 TODO: Detection probability as it varies across the sky, its effects
 on correlation functions, and how to use \balrog{} to find this out.
 
-\subsection{Optimization}
+\section{Optimization}
 TODO: Demonstrate what you can do if you know the measurement
 covariance matrix.
 
