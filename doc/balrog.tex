@@ -1,6 +1,6 @@
 \documentclass[12pt]{book}
 
-\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib}
+\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib,listings}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta and Huff}]{hyperref}
 \usepackage[T1]{fontenc}
@@ -15,20 +15,26 @@
 \renewcommand*\sectionautorefname{Section}
 \renewcommand*\subsectionautorefname{Section}
 \renewcommand*\subsubsectionautorefname{Section}
+
+
+\lstset{aboveskip=15pt,belowskip=15pt,showstringspaces=false,basicstyle=\ttfamily,columns=fullflexible,escapeinside={*}{*}}
+\newcommand{\codett}[1]{\lstinline{#1}}
+\lstnewenvironment{code}{}{}
+
 \newcommand{\py}{Python}
-\newcommand{\pyconfig}{\texttt{pyconfig}}
+\newcommand{\pyconfig}{\codett{pyconfig}}
 \newcommand{\galsim}{GalSim}
 \newcommand{\balrog}{\textsc{Balrog}}
 \newcommand{\sex}{\textsc{SExtractor}}
 \newcommand{\psfex}{\textsc{PSFEx}}
-\newcommand{\opt}[1]{{\texttt{-}\texttt{-#1}}}
-\newcommand{\inline}{\\[0.4cm]}
-\newcommand{\bcmd}[1]{\texttt{\% runbalrog #1}}
+\newcommand{\opt}[1]{\codett{--#1}}
+\newcommand{\bcmd}{\% runbalrog}
 \newcommand{\sersic}{S\'{e}rsic}
 
 
 \titleformat{\chapter}[hang]
 {\normalfont\huge\bfseries}{\thechapter.}{1em}{}
+%\titlespacing*{\chapter}{0pt}{25pt}{25pt}
 \titlespacing*{\chapter}{0pt}{0pt}{25pt}
 \newdateformat{mydate}{\twodigit{\THEDAY}{ }\monthname[\THEMONTH] \THEYEAR}
 \newcommand{\ericdate}{\mydate\today}
@@ -44,11 +50,14 @@
 \balrogtitlepage
 \tableofcontents
 
-
+%\renewcommand{\cleardoublepage}{}
+%\renewcommand{\clearpage}{}
 \chapter{Introduction}
 \label{sec:intro}
 \setlength{\parskip}{0pt}
 \renewcommand\footnoterule{\kern-3pt \hrule width 2in \kern 2.6pt}
+\lstset{language=Python}
+
 
 \balrog{} is a package of \py{} code, intended for use
 with astronomical imaging data. 
@@ -397,32 +406,34 @@ covariance matrix.
 \balrog{} itself is written entirely in \py{} and will run out of the box if  
 \emph{sufficiently recent} versions of \galsim{} and \sex{} have already been installed.
 As of the writing of this documentation,\footnote{\label{foot:date}\ericdate} 
-\balrog{} requires the latest version of \galsim{}, which is version \texttt{1.1}.
+\balrog{} requires the latest version of \galsim{}, which is version \codett{1.1}.
 We have not thoroughly tested what constitues a \emph{recent enough} version of \sex{}.
-What we are able to say is that the oldest version we have successfully tested against is \texttt{2.17.0}.
+What we are able to say is that the oldest version we have successfully tested against is \codett{2.17.0}.
 \balrog{} and \galsim{} both exist as repositories on GitHub and can be downloaded 
 from the command line.
-\inline
-\texttt{\% git clone https://github.com/emhuff/Balrog.git} \\
-\texttt{\% git clone https://github.com/GalSim-developers/GalSim.git}
-\inline
-This should automatically check out the master branch of each.
+
+\begin{code}
+% git clone https://github.com/emhuff/Balrog.git
+% git clone https://github.com/GalSim-developers/GalSim.git
+\end{code}
+
+\noindent This should automatically check out the master branch of each.
 Master is the only supported branch for \balrog{}. 
-The master branch of \galsim{} will always be a version $\geq$ \texttt{1.1}.
+The master branch of \galsim{} will always be a version $\geq$ \codett{1.1}.
 \sex{} is packaged as a tarball, which can be downloaded 
 from its \href{https://www.astromatic.net/software/sextractor}{official website}.
 We recommend choosing the most recent version.
 
 The \galsim{} documentation includes an extensive
 \href{https://github.com/GalSim-developers/GalSim/blob/releases/1.0/INSTALL.md}{installation guide},
-with many helpful hints and links to \texttt{FAQ} pages. 
+with many helpful hints and links to \codett{FAQ} pages. 
 We refer \balrog{} users to this guide for how to install \galsim{}.
 The \galsim{} team deserves a big thanks for the utility of their installation notes.
 The \balrog{} authors are far from accomplished system adminstrators, 
 but we both were independently successful installing \galsim{} on our systems by following these notes.
 
 Section 3 of the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual}
-contains a brief section explaining how to install the software. The code itself also includes a file called \texttt{INSTALL}, with
+contains a brief section explaining how to install the software. The code itself also includes a file called \codett{INSTALL}, with
 slightly more detailed installation instructions.
 One item not explictly stated in the installation notes is that \sex{} requires the ATLAS\footnote{\url{http://math-atlas.sourceforge.net/}}
 linear algebra package as a dependency.
@@ -431,12 +442,14 @@ The ATLAS website includes the requisite source code and
 an extensive \href{http://math-atlas.sourceforge.net/atlas_install/}{installation guide}.
 Once ATLAS builds and installs, the \sex{} installation steps should be straightforward to follow and complete.
 
-To test the \balrog{} installation, change directories to the directory git cloned for \balrog{}.
-The directory contains a file called \texttt{\balrog.py}. Run the file from the command line:
-\inline
-\texttt{\% ./balrog.py \opt{fulltraceback}}
-\inline
-If installation was successful, this will run without printing any error messages.
+To test the \balrog{} installation, change directories to the directory \codett{git} cloned for \balrog{}.
+The directory contains a file called \codett{./balrog.py}. Run the file from the command line:
+
+\begin{code}
+% ./balrog.py --fulltraceback
+\end{code}
+
+\noindent If installation was successful, this will run without printing any error messages.
 
 \chapter{Quick Start}
 \label{sec:quick}
@@ -460,17 +473,17 @@ and \autoref{sec:quicksex} narrorws the focus \sex{} alone.
 
 Throughout the current section, we will supplement the discourse with concrete example calls users can run.
 In order to enable copying and pasting the commands into the user's terminal and running them verbatim,
-users should create an alias to the \balrog{} excutable \py{} file, \texttt{balrog.py}. 
+users should create an alias to the \balrog{} excutable \py{} file, \codett{balrog.py}. 
 This file is found in the directory which was pulled from GitHub during installation,
-which we will refer to as \texttt{\$INSTALLDIR} for convenience.
+which we will refer to as \codett{\$INSTALLDIR} for convenience.
 Adopting this convention, the alias statment looks as follows:
-\inline
-\texttt{\% alias runbalrog=`\$INSTALLDIR/balrog.py'}
-\inline
-For convenient reference in later sections, we have effectively 
+
+\begin{code}
+% alias runbalrog=`$INSTALLDIR/balrog.py'
+\end{code}
+
+\noindent For convenient reference in later sections, we have effectively 
 abbreviated what we have just defined in \autoref{tab:def}.
-
-
 
 The fastest way to get started understanding how to configure and use \balrog{} is to
 run it using the example files which come packaged with the software, and then examine the input
@@ -479,14 +492,18 @@ and output of the run.
 file is called without any command line arguments, it will run over
 the example files, filling in defaults as necessary. 
 Thus, this initial call is as simple as:
-\inline
-\bcmd{}
-\inline 
-The rest of the examples here build off this call by adding additional configurations via command line arguments.
+
+\begin{code}
+*\bcmd{}*
+\end{code}
+
+\noindent The rest of the examples here build off this call by adding additional configurations via command line arguments.
 To explore the command line arguments, one can run the following command to print a useful summary:
-\inline
-\bcmd{\opt{help}}
-\inline
+
+\begin{code}
+*\bcmd{}* --help
+\end{code}
+
 For more extended help, the command line arguments built-in to \balrog{} are detailed further in \autoref{sec:cmdline}.
 In brief, they are used to specify input images and their properties, as well as configuration
 files to use with \sex{}, and a few other variables every \balrog{} run will need to define. 
@@ -494,42 +511,46 @@ Each comes with a default \balrog{} will assume if the user does not supply one.
 The default example's image data (\opt{image}), 
 weight map (\opt{weight}), 
 and PSF (\opt{psfin})
-live in \texttt{\$INSTALLDIR/default\_example/}.
+live in {\ttfamily \$INSTALLDIR/default\_example/}.
 The \sex{} configuration files live in 
-\texttt{\$INSTALLDIR/astro\_config/}. 
+{\ttfamily \$INSTALLDIR/astro\_config/}. 
 File names are intended to be reasonably transparent.
 \balrog{} can be told to print messages more verbosely, 
 and it is also instructive to repeat the example \balrog{} call in verbose mode.
-\inline
-\bcmd{\opt{stdverbosity} v}
-\inline
-While the original call ran without printing anything, this one will write out some messages
+
+\begin{code}
+*\bcmd{}* --stdverbosity v
+\end{code}
+
+\noindent While the original call ran without printing anything, this one will write out some messages
 relevant to \balrog{} filling in defaults for parameters.
 Such messages can be helpful for users to recognize 
 if they are not in fact using the files they think they are using.
 Closely related to \opt{stdverbosity} is \opt{logverbosity}.
-While \opt{stdverbosity} is for \texttt{stdout}/\texttt{stderr},
+While \opt{stdverbosity} is for \codett{stdout}/\codett{stderr},
 \opt{logverbosity} dictates the level of messaging logged to file.
 Run the the previous command, but now flag the logging to verbose:
-\inline
-\bcmd{\opt{stdverbosity} v \opt{logverbosity} v}
-\inline
-Opening the file found in \texttt{\$INSTALLDIR/default\_example/output/balrog\_log/run.log.txt}
+
+\begin{code}
+*\bcmd* --stdverbosity v --logverbosity v
+\end{code}
+
+\noindent Opening the file found in \codett{\$INSTALLDIR/default\_example/output/balrog\_log/run.log.txt}
 should contain exactly the same statements printed to the command line.
 Saving output to file is useful when attempting to debug runs after-the-fact.
 Some debugging hints are offered in \autoref{sec:debug}.
 Had any \balrog{} runtime errors occurred during the run,
-\texttt{run.log.txt} is the file they would be logged to.
-Additionally, \balrog{} logs the exact value of each command line argument  in \texttt{args.log.txt}
-and directs all \sex{}'s \texttt{stdout} to \texttt{sex.log.txt}.
+\codett{run.log.txt} is the file they would be logged to.
+Additionally, \balrog{} logs the exact value of each command line argument  in \codett{args.log.txt}
+and directs all \sex{}'s \codett{stdout} to \codett{sex.log.txt}.
 
 \begin{table}[t!]
 \caption{Definitions used throughout this manual.}
 \label{tab:def}
 \begin{tabular}{l l}
 \underline{\textbf{Name}} & \underline{\textbf{Meaning}} \\
-\texttt{\$INSTALLDIR} & Directory where \balrog{} was installed \\
-\texttt{runbalrog} & \texttt{\$INSTALLDIR/balrog.py} \\
+\codett{\$INSTALLDIR} & Directory \codett{git} clones for \balrog{}, i.e. where \balrog{} is installed \\
+\codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\
 \end{tabular}
 \end{table}
 
@@ -545,31 +566,31 @@ The core functions defined in \pyconfig{} files have a strictly
 structured syntax which will be fully described in \autoref{sec:pyconfig}. 
 The syntax is designed to be as natively \py esque as possible, so
 many users will likely be able to extrapolate directly from examples without reading lengthy documentation. 
-In the current \texttt{runbalrog} examples, \opt{pyconfig} defaults to \texttt{\$INSTALLDIR/config.py}.
+In the current \codett{runbalrog} examples, \opt{pyconfig} defaults to \codett{\$INSTALLDIR/config.py}.
 This file builds galaxies as single component \sersic{} objects.
 As an instructive guide, the file includes descriptive comment lines explaining what the different functions are used to do.
 Rather than copying the comments into this document, we encourge user to open the \pyconfig{} file themselves.
 Reading through the file itself is a more efficient method to quickly get started than
 reading through anything else we could write here.
-A slightly more sophisticated \pyconfig{} file can be found in \texttt{\$INSTALLDIR/config2.py}.
+A slightly more sophisticated \pyconfig{} file can be found in \codett{\$INSTALLDIR/config2.py}.
 This generates galaxies with both a bulge and a disk component.
 Together, these two examples are designed to demonstrate the range of statements available to 
 \balrog{}'s \pyconfig{} file.
 
 All \balrog{} output is saved in subdirectories under the directory chosen by command line argument \opt{outdir}.
-This directory has defaulted to \texttt{\$INSTALLDIR/default\_example/output} for the example run.
+This directory has defaulted to \codett{\$INSTALLDIR/default\_example/output} for the example run.
 The complete set of output generated by \balrog{} is detailed in \autoref{sec:out}.
 In brief there are four subdirectories:
-\texttt{balrog\_log}, \texttt{balrog\_image}, \texttt{balrog\_cat}, and \texttt{balrog\_sexconfig}.
-We have already noted three log files written to \texttt{balrog\_log}. In addition, an explicit copy of 
+\codett{balrog\_log}, \codett{balrog\_image}, \codett{balrog\_cat}, and \codett{balrog\_sexconfig}.
+We have already noted three log files written to \codett{balrog\_log}. In addition, an explicit copy of 
 the user's \pyconfig{} file is also written there.
-\texttt{balrog\_image} includes a copy of any image \balrog{} either used or generated.
-Ones with \texttt{.sim} in their file names include the simulated galaxies, and ones with \texttt{.nosim} do not.
-\texttt{balrog\_cat} contains \texttt{example.truthcat.sim.fits}, the truth parameters assigned to simulated galaxies,
+\codett{balrog\_image} includes a copy of any image \balrog{} either used or generated.
+Ones with \codett{.sim} in their file names include the simulated galaxies, and ones with \codett{.nosim} do not.
+\codett{balrog\_cat} contains \codett{example.truthcat.sim.fits}, the truth parameters assigned to simulated galaxies,
 as well as the \sex{} catalogs \balrog{} generates.
-Again, files including the simulated galaxies contain a \texttt{.sim} in their names.
-and the ones containing a \texttt{.nosim} do not.
-\texttt{balrog\_sexconfig} copies the files \balrog{} used for configuring \sex{}.
+Again, files including the simulated galaxies contain a \codett{.sim} in their names.
+and the ones containing a \codett{.nosim} do not.
+\codett{balrog\_sexconfig} copies the files \balrog{} used for configuring \sex{}.
 When running \balrog{} over files other than the defaults, 
 the output file names are automatically generated based on the input file names.
 It may seem that a single run produces a substantial amount of output, but the idea
@@ -591,38 +612,38 @@ or alternatively the so-called
 \sex{} runs are configured via roughly a handful of files. 
 In this scope, the two most relevant ones are given by command line arguments \opt{sexconfig}
 and \opt{sexparam}. 
-\texttt{sexparam} files are often denoted with a \texttt{.param} extension in their file names,
-while \texttt{sexconfig} files are often denoted with a \texttt{.sex} extension in their file names.
-In the example files shipped with \balrog{}, the \texttt{sexconfig}
-file is suffixed with a \texttt{.config} extension for consistency with our terminology.
-\texttt{sexconfig} is allowed to specify any of the arguments which can
+\codett{sexparam} files are often denoted with a \codett{.param} extension in their file names,
+while \codett{sexconfig} files are often denoted with a \codett{.sex} extension in their file names.
+In the example files shipped with \balrog{}, the \codett{sexconfig}
+file is suffixed with a \codett{.config} extension for consistency with our terminology.
+\codett{sexconfig} is allowed to specify any of the arguments which can
 also be given as command line arguments to \sex{}.
 These set conditions such as the detection thresholds,
 the aperture sizes for photometry, the magnitude zeropoint,
 and the background subtraction strategy.
-The \texttt{sexparam} file is a list of keywords.
+The \codett{sexparam} file is a list of keywords.
 Each keyword is a measurment \sex{} will make for every extracted object, which will therefore
 appear as a column in the output catalog.
 
-It is \texttt{sexparam} which controls whether or not \sex{} will perform model fits to the galaxies. 
+It is \codett{sexparam} which controls whether or not \sex{} will perform model fits to the galaxies. 
 How do to this is rather scarely documented, but has been passed down by word of mouth in the Astronomy community. 
 We consider it worthwhile to elaborate in writing.
 \sex{} includes up to two possible types of models to fit.
-One, denoted by the key \texttt{DISK}, is a model with fixed \sersic{} index of $n=1$,
+One, denoted by the key \codett{DISK}, is a model with fixed \sersic{} index of $n=1$,
 i.e. an exponential.
-The other, denoted by the key \texttt{SPHEROID}, is a model with a free \sersic{} index.
+The other, denoted by the key \codett{SPHEROID}, is a model with a free \sersic{} index.
 \sex{} can fit either of these independently or both simultaneously.
-Each model written into and uncommented from the \texttt{sexparam} file is fit,
-meaning if just the \texttt{DISK} key is present a disk only model with $n=1$ is fit;
-if just the \texttt{SPHEROID} key is present a bulge only model with free $n$ is fit;
-and if both \texttt{DISK} and \texttt{SPHEROID} keys are present both the
+Each model written into and uncommented from the \codett{sexparam} file is fit,
+meaning if just the \codett{DISK} key is present a disk only model with $n=1$ is fit;
+if just the \codett{SPHEROID} key is present a bulge only model with free $n$ is fit;
+and if both \codett{DISK} and \codett{SPHEROID} keys are present both the
 disk and bulge are fit simultaneously, which is of course different than fitting them independently.
 Each model can fit for the flux, magnitude, axis ratio, and orientation angle of the model.
 The spheroid model also fits the sersic index and half light radius.
 The disk model fits the scale radius, as opposed to the half light radius.
-Open the \texttt{bulge+disk.param} file included with \balrog{} in the \texttt{astro\_config} directory
+Open the \codett{bulge+disk.param} file included with \balrog{} in the \codett{astro\_config} directory
 for the \sex{} names of all the parameters.
-The meanings of the \texttt{DISK} and \texttt{SPHEROID} names are human understandable.
+The meanings of the \codett{DISK} and \codett{SPHEROID} names are human understandable.
 
 
 \chapter{Native Command Line Arguments}
@@ -635,10 +656,12 @@ These constitute the focus of this section.
 In addition, \balrog{} also supports a mechanism for users to define their own command line arguments.
 However, because the functionality is drawn from what we have deemed the \pyconfig{} file,
 its treatment is saved for \autoref{sec:user}.
-To generate a summary of \balrog{}'s command line environment, run the following command.
-\inline
-\bcmd{\opt{help}}
-\inline
+To generate a summary of \balrog{}'s command line environment, run the following command,
+where \codett{runbalrog} is defined in \autoref{tab:def}.
+
+\begin{code}
+*\bcmd* --help
+\end{code}
 This prints a listing of all the command line arguments (including those defined by the user), 
 along with their available help strings.
 The built-in arguments' help strings are intended to be a useful quick reference tool,
@@ -671,63 +694,123 @@ The divisions do not matter per se; they are merely an organizational guide.
 However, because \balrog{} contains quite a few possible arguments to adjust,
 we find them to be a useful aid in adding to tractability.
 
-
 \optstab{}
-
 
 
 \chapter{\balrog{}'s \pyconfig{} File}
 \label{sec:pyconfig}
 
+As introduced in previous sections, \balrog{}'s \pyconfig{} file is a configuration file for \balrog{} made up of \py{} statements.
+Relying on the ease and simplicity of writing \py{} code, this file is what contributes a large portion of \balrog{}'s flexibility.
+The authors cannot natviely build-in to \balrog{} all the features every user would like to see.
+Thus, we attempt to build an enviroment which makes it easy for users to fold in additional content themselves.
+The \pyconfig{} file plays a significant role in \balrog{}, and hence we will take care to provide adequate documentation.
+
+As far as general comments go, we remark that the \pyconfig{} file makes use of five core functions called:
+\argsfunc, \parsefunc, \simfunc,  \gspfunc, and \sexfunc.
+\balrog{} checks for functions of exactly these names.
+If one of the function does not exist,
+\balrog{} continues by skipping the portion of the code where the function would have been called.
+An omission should not cause the \balrog{} run to fail; however, some level of flexibility will have been lost.
+We issue warning messages to alert the user when one or more of the functions are missing.
+
+Each of the five core functions in \pyconfig{} will be described further in what follows.
+However, it is also important to keep in mind their overall workflow on a more conceptual level.
+Algorithmically, what occurs is users create command line arguments then parse them appropriately.
+These arguments, as well as the one \balrog{} relies on natively, are then made available to 
+functions which implement \py{} statments to define how \balrog{}'s galaxies are simulated.
+We have included some convenience features to ease the simulation specfications,
+including support for users to write their own functions to do so.
+Within the \pyconfig{} environment, it is also possible to override some \sex{} configurations if desired,
+implementing a certain level of \py{} control of \sex{}.
+
+In the remainder of \autoref{sec:pyconfig} we concentrate on \pyconfig{}'s usage, with a focus on elucidating its syntax.
+\autoref{sec:user} explains how custom command line arguments are added to \balrog{} using \pyconfig{}.
+\autoref{sec:simrules} illustrates how \pyconfig{} specifies the process of generating simulated galaxy properties and images.
+\autoref{sec:sexoverride} describes how \pyconfig{} can be used to override \sex{} settings in \opt{sexconfig}.
+As an aid to the text, while reading this section, 
+we strongly encourage users to open one of the example \pyconfig{} files shipped with \balrog{},
+\codett{\$INSTALLDIR/config.py} or \codett{\$INSTALLDIR/config2.py}.
+As mentioned in \autoref{tab:def}, \codett{\$INSTALLDIR} is the directory where \balrog{} is installed.
 
 \section{User-Defined Command Line Environment}
 \label{sec:user}
 
-Within the \pyconfig{} file, user's are able to
-define their own command line arguments. This occurs
-within the function \argsfunc{}. Passed
-to \argsfunc{}  as an argument is \argsparser{},
-an object made by \texttt{python}'s
-\texttt{argparse.ArgumentParser()}. Arguments
+Within the \pyconfig{} file, the definitions for custom command line arguments occur inside the \argsfunc{} function.
+Passed to \argsfunc{}  as a function argument is \argsparser{},
+an object made by \codett{python}'s
+\codett{argparse.ArgumentParser()}. Arguments
 can be added to parser according to the usual
-\texttt{argparse} syntax.
-For those unfamilar with \texttt{argparse},
+\codett{argparse} syntax.
+For those unfamilar with \codett{argparse},
 \href{http://docs.python.org/2/howto/argparse.html}{this tutorial}
 contains many useful examples. A simple example of
 \argsfunc{} is copied below.
 
-\setlength{\tabcolsep}{0pt}
-\begin{longtabu*} to \linewidth {l X}
-\multicolumn{2}{l}{\texttt{def CustomArgs(parser):}}\\
-\hspace{20pt} \texttt{parser.add\_argument(} & \texttt{"-cs", "--catalogsample", help="Catalog used to
-sample simulated galaxy parameter distriubtions from", type=str, default=None)}
-\end{longtabu*}
-\setlength{\tabcolsep}{6pt}
-\addtocounter{table}{-1}
+\begin{code}
+def CustomArgs(parser):
+    parser.add_argument( "-cs", "--catalogsample", help="Catalog used 
+                            to sample simulated galaxy parameter 
+                            distriubtions from",  
+                            type=str, default=None )
+\end{code}
 
+\noindent Users are allowed to add arguments by any names except those already defined as native \balrog{} command line arguments.
+Adding two arguments of the same name in the \codett{ArgumentParser} class raises an exception.
+The utility of adding custom command line arguments is that the values given to the arguments
+are made available to the other core functions in \pyconfig{}.
 
-User-defined agruments are parsed within the function \parsefunc{},
-also part of \pyconfig{}.
-Passed as an argument to \parsefunc{} is \parseargs{}, equivalent
-to an object returned by \texttt{parser.parse\_args()}. Each one of the user's 
-command line agruments becomes an attribute of \parseargs{}. 
-A simple version of \parsefunc{} has been included below.
+The user-defined arguments are parsed within \parsefunc{}.
+When this function is called, 
+\balrog{} has already grabbed any of the user's custom arguments from the command line,
+and saved them into an objects called \parseargs{}.
+\parseargs{} is passed as the single function argument to \parsefunc{}.
+It is equivalent to an object returned by \codett{parser.parse\_args()};
+each one of the user's command line arguments becomes an attribute of \parseargs{}. 
+\parsefunc{} allows users to apply any \py{} operations they so desire to their arguments.
+A simple version of \parsefunc{} has been included below:
 
-\setlength{\tabcolsep}{0pt}
-\begin{longtabu*} to \linewidth {X}
-\texttt{def CustomParseArgs(args):}\\
-\hspace{20pt} \texttt{thisdir = os.path.dirname( os.path.realpath(\_\_file\_\_) )} \\
-\hspace{20pt} \texttt{if args.catalogsample==None:} \\
-\hspace{40pt} \texttt{args.catalogsample = os.path.join(thisdir, 'cosmos.fits')}
-\end{longtabu*}
-\setlength{\tabcolsep}{6pt}
-\addtocounter{table}{-1}
+\begin{code}
+def CustomParseArgs(args):
+    thisdir = os.path.dirname( os.path.realpath(__file__) )
+    if args.catalogsample==None:
+        args.catalogsample = os.path.join(thisdir, `cosmos.fits')
+\end{code}
 
-\noindent The ability to define and parse one's own command line arguments is intended to make
-\balrog{} flexible to conveniently running a wide variety of different
-simulation scenarios. These parameters are available to the user 
-when setting up the galaxy simulations. How to define these simulations is described in
-\autoref{sec:simrules} below.
+\noindent As the example demonstrates, one feature of the \parsefunc{} is a convenient
+way for users to effectively define new defaults for \balrog{} using
+commonly-known ordinary python syntax.
+More generally, different \balrog{} runs are now capable of recognizing and appropriately parsing
+completely different sets of input parameters. 
+
+Returning to \parseargs{},
+the object not only contains an attribute for each of the user's customly defined arguments,
+its attributes also include each of the native \balrog{} arguments.
+When \parsefunc{} is called, the built-in arguments have already been parsed,
+so arguments which were left out of the command line call have assumed their defaults.
+Inside \pyconfig{}, users are allowed to modify the attributes of \parseargs{} derived from bult-in \balrog{} arguments, 
+if they so desire.
+However, in order to prevent changes from potentially causing unhandled exceptions later in \balrog{},
+any modifications will not propogate outside the \pyconfig{} file.
+\balrog{}'s native arguments will behave according to how they were specified at the command line.
+Thus, allowing changes to the native attributes is more of a local convenience than anything else.
+
+\parseargs{} will be given as a function argument to the \simfunc{}, \gspfunc, and \sexfunc{} functions.
+Changes within these functions to  \parseargs{} attributes, both those derived from native or custom arguments,
+are also effectively \emph{local only}.
+Modification made in one of the functions do not propogate outside that function.
+It has been written this way so users do not need to consider the order in which the three functions execute
+in order to know excatly what \parseargs{} they are using in each function.
+The behavior is consistent with including the \parsefunc{} in the first place.
+The only place to make persisting changes to \parseargs{} is \parsefunc{}.
+\hl{I need to incorporate the new args behavior into the code.}
+
+Please note, no parsing of any kind can be done inside \argsfunc{}.
+\argsfunc{} is for definitions only.
+It informs \balrog{} what it should be looking for when it receives a command line.
+No values have yet been assigned to any of the defined parameters when \argsfunc{} exits.
+\parsefunc{} on the other hand tells \balrog{} what do once it has actually recieved the command line
+and has saved each of the parameters into an attribute of \parseargs{}.
 
 \section{Defining How to Simulate Galaxies}
 \label{sec:simrules}
@@ -755,35 +838,39 @@ for these different galaxy characteristics. Users overwrite
 each of \simrules{}'s attributes to define their simulations.
 For example the statement to set each galaxy's magnification
 to 1 would read:
-\inline
-\texttt{magnification = 1}
-\inline
-\simrules{} has 11 attributes in total, whose names are intended to be simple to understand.
+
+\begin{code}
+rules.magnification = 1
+\end{code}
+
+\noindent \simrules{} has 11 attributes in total, whose names are intended to be simple to understand.
 These are printed and desribed in \autoref{tab:attr} below.
 
 \vspace{10pt}
 \begin{longtabu} to \linewidth {l l}
 \caption{Attributes of the rules defining the simulated galxies.} \label{tab:attr}\\
 \underline{\textbf{Attribute}} & \underline{\textbf{Meaning}} \\
-\texttt{rules.x} & Galaxy centroid $x$-coordinate [pixels], first pixel = 1\\
-\texttt{rules.y} & Galaxy centroid $y$-coordinate [pixels], first pixel = 1\\
-\texttt{rules.g1} & Reduced shear, $g_1$ component \\
-\texttt{rules.g2} & Reduded shear, $g_2$ component \\
-\texttt{rules.magnification} & Magnification, $1 + \kappa$ \\
-\texttt{rules.nProfiles} & Number of superimposed \sersic{} profiles \\
-\texttt{rules.sersicindex} & \sersic{} index \\
-\texttt{rules.halflightradus} & \sersic{} half light radius \\
-\texttt{rules.magnitude} & Galaxy brightness in magnitudes \\
-\texttt{rules.axisratio} & Minor to major axis ratio, $b/a$ \\
-\texttt{rules.beta} & Orientaiton angle of major axis (measured from $x$-axis)
+\codett{rules.x} & Galaxy centroid $x$-coordinate [pixels], first pixel = 1\\
+\codett{rules.y} & Galaxy centroid $y$-coordinate [pixels], first pixel = 1\\
+\codett{rules.g1} & Reduced shear, $g_1$ component \\
+\codett{rules.g2} & Reduded shear, $g_2$ component \\
+\codett{rules.magnification} & Magnification, $1 + \kappa$ \\
+\codett{rules.nProfiles} & Number of superimposed \sersic{} profiles \\
+\codett{rules.sersicindex} & \sersic{} index \\
+\codett{rules.halflightradus} & \sersic{} half light radius \\
+\codett{rules.magnitude} & Galaxy brightness in magnitudes \\
+\codett{rules.axisratio} & Minor to major axis ratio, $b/a$ \\
+\codett{rules.beta} & Orientaiton angle of major axis (measured from $x$-axis)
 \end{longtabu}
 
-\noindent \texttt{rules.sersicindex}, \texttt{rules.halflightradius}, \texttt{rules.magnitude}, \texttt{rules.axisratio},
-and \texttt{rules.beta} must be arrays, whose length is equal to \texttt{rules.nProfiles}. For example, simulating
+\noindent \codett{rules.sersicindex}, \codett{rules.halflightradius}, \codett{rules.magnitude}, \codett{rules.axisratio},
+and \codett{rules.beta} must be arrays, whose length is equal to \codett{rules.nProfiles}. For example, simulating
 galaxies with both an expontential and a de Vaucouleurs component would read:
-\inline
-\texttt{rules.nProfiles} = 2 \\
-\texttt{rules.sersicindex = [1,4]}
+
+\begin{code}
+rules.nProfiles = 2 
+rules.sersicindex = [1,4]
+\end{code}
 
 Simulation rules can assume four types. The first is a constant, meaning each of the 
 galaxies in the simulated galaxy sample
@@ -793,16 +880,16 @@ Simulated galaxy $i$ for the chosen parameter then assumes the value in element 
 the array.
 Additionally, sampling can be drawn from a catlog. Multiple
 parameters selected from the same data table are automatically jointly sampled.
-Finally a function can be used. Users write their own \texttt{python} function,
+Finally a function can be used. Users write their own \codett{python} function,
 then feed this function and its necessary arguments as the arguments to
-\balrog{}'s \texttt{Function} command. The defined function must return an
+\balrog{}'s \codett{Function} command. The defined function must return an
 array equal in length to the number of simulated galaxies. Like the array
 sampling type, galaxy $i$ will use element $i$ of the returned array.
 Currently only positional arguments are supported within the user-defined
 functions, but support for keyword arguments will be added.
-\texttt{Function} affords both flexiblity and convenience when deciding
+\codett{Function} affords both flexiblity and convenience when deciding
 how to sample the simulated galaxies. See \config{} for examples
-using \texttt{Function} as well as other sampling types.
+using \codett{Function} as well as other sampling types.
 One simple example of how to implement each of the four different 
 types is shown in \autoref{tab:simtype}.
 
@@ -811,37 +898,37 @@ types is shown in \autoref{tab:simtype}.
 \begin{longtabu} to \linewidth {p{1in} l X}
 \caption{Syntax examples for each of the simulation types \balrog{} understands.} \label{tab:simtype} \\
 \underline{\textbf{Type}} & \multicolumn{2}{l}{\underline{\textbf{Example}}} \\
-Constant & \multicolumn{2}{l}{\texttt{rules.g1 = 0}} \\
-Array & \texttt{rules.axisratio = [} & \texttt{np.ones(args.ngal)/np.arange(1,args.ngal+1), sampled.axisratio[0]]} \\
-Catalog & \texttt{rules.magnitude = [} & \texttt{Catalog(`cosmos.fits', 0, `IMAG'), Catalog(`cosmos.fits', 0, `IMAG')]} \\
-Function & \multicolumn{2}{l}{\texttt{rules.g2 = Function(function=NFW2, args=(sampled.x,sampled.y))}}
+Constant & \multicolumn{2}{l}{\codett{rules.g1 = 0}} \\
+Array & \codett{rules.axisratio = [} & \codett{np.ones(args.ngal)/np.arange(1,args.ngal+1), sampled.axisratio[0]]} \\
+Catalog & \codett{rules.magnitude = [} & \codett{Catalog(`cosmos.fits', 0, `IMAG'), Catalog(`cosmos.fits', 0, `IMAG')]} \\
+Function & \multicolumn{2}{l}{\codett{rules.g2 = Function(function=NFW2, args=(sampled.x,sampled.y))}}
 \end{longtabu}
 \setlength{\tabcolsep}{6pt}
 
 The second and fourth examples in \autoref{tab:simtype} makes use of \simsamp{}, the third argument
 passed to \simfunc{}. \simsamp{} is an object allowing users to refer to the properties of
 the simulated galaxies after they have been sampled. Referring to the second example above,
-the first element of \texttt{rules.axisratio} is an array decreasing incrementally from 1 to 0.
-The second elemment of \texttt{rules.axisratio} then says to use whatever the sampled values of
- the first element turn out to be. Here, this equates to setting the second element of \texttt{rules.axisratio}
- to the same array as the first element of \texttt{rules.axisratio}, so the use of \simsamp{} is not 
- really necessary. However, return to the fourth example in \autoref{tab:simtype}. Image \texttt{NFW2}
- as a function which takes two arguments, \texttt{x} and \texttt{y}, which returns the $g_2$ component
+the first element of \codett{rules.axisratio} is an array decreasing incrementally from 1 to 0.
+The second elemment of \codett{rules.axisratio} then says to use whatever the sampled values of
+ the first element turn out to be. Here, this equates to setting the second element of \codett{rules.axisratio}
+ to the same array as the first element of \codett{rules.axisratio}, so the use of \simsamp{} is not 
+ really necessary. However, return to the fourth example in \autoref{tab:simtype}. Image \codett{NFW2}
+ as a function which takes two arguments, \codett{x} and \codett{y}, which returns the $g_2$ component
  of shear at position ($x$,$y$) from an NFW halo with mass $10^{15} M_{\odot}$ whose center lies at (0,0).
- Now image \texttt{sampled.x} and \texttt{sampled.y} were sampled randomly:
+ Now image \codett{sampled.x} and \codett{sampled.y} were sampled randomly:
  
  \setlength{\tabcolsep}{0pt}
 \begin{longtabu} to \linewidth {X}
-\texttt{def Random(minimum, maximum, size):} \\
-\hspace{20pt}  \texttt{return np.random.uniform(minimum, maximum, size)}\\
+\codett{def Random(minimum, maximum, size):} \\
+\hspace{20pt}  \codett{return np.random.uniform(minimum, maximum, size)}\\
 \\
-\texttt{rules.x = Random(args.xmin, args.xmax, args.ngal)} \\
-\texttt{rules.y = Random(args.ymin, args.ymax, args.ngal)}
+\codett{rules.x = Random(args.xmin, args.xmax, args.ngal)} \\
+\codett{rules.y = Random(args.ymin, args.ymax, args.ngal)}
 \end{longtabu}
 \setlength{\tabcolsep}{6pt}
 \addtocounter{table}{-1}
  
-\noindent \texttt{sampled.x} and \texttt{sampled.y} now represent the values
+\noindent \codett{sampled.x} and \codett{sampled.y} now represent the values
 for $x$ and $y$ after the random sampling has occurred. 
 Along these lines, \balrog{} can build-up simulations with fairly little recoding between completely
 different types of simulations.
@@ -849,6 +936,10 @@ different types of simulations.
 in the proper order and will throw an error if something ambiguous was defined
 by the user.
 
+\section{\sex{} Something}
+\label{sec:sexoverride}
+
+Overriding...
 
 \chapter{Output}
 \label{sec:out}
@@ -863,16 +954,16 @@ lists the contents of each of these subdirectories,
 giving a brief desription of each file. Depending on how
 \balrog{} was configured, not necessarily every file
 in \autoref{tab:out} will be present in every run.
-The \texttt{*} symbol in \autoref{tab:out} will be replaced with
+The \codett{*} symbol in \autoref{tab:out} will be replaced with
 the base name of the input image file. For example,
-if the input image is named \texttt{example.fits},
-\texttt{*} will be replaced with \texttt{example}.
-If the input file name does not end with the \texttt{.fits}
+if the input image is named \codett{example.fits},
+\codett{*} will be replaced with \codett{example}.
+If the input file name does not end with the \codett{.fits}
 extension, the file name itself is used as the base name.
 This does not include any diretories preceeding the file name.
 For example, if the input image was given as
-\texttt{/Users/somebody/home/image.f}, the
-base name would be \texttt{image}.
+\codett{/Users/somebody/home/image.f}, the
+base name would be \codett{image}.
 
 \outtab{}
 
@@ -894,7 +985,7 @@ must fall below $I_t$ before drawing the postage stamp boundaries.
 airing on the side of making size estimages larger than perhaps strictly required.
 To begin, let us assume the simulated galaxies are composed of a single \sersic{} profile.
 We will generalize to multiple superimposed profiles to follow.
-First a \galsim{} \texttt{Sersic} object is obstantiated.
+First a \galsim{} \codett{Sersic} object is obstantiated.
 Such objects within \galsim{} are all initally circularly symmetric. 
 The galaxy is then stretched according to its minor to major axis ratio, $\beta$.
 $\beta$'s major axis direction is taken to be along the $x$-axis.
