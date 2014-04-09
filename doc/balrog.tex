@@ -58,7 +58,7 @@ basicstyle=\ttfamily\selectfont
 
 \setlength{\floatsep}{35pt plus 1.0pt minus 2.0pt}
 \setlength{\textfloatsep}{25pt plus 1.0pt minus 2.0pt}
-%\setlength{\intextsep}{25pt plus 1.0pt minus 2.0pt}
+\setlength{\intextsep}{35pt plus 1.0pt minus 2.0pt}
 
 
 \begin{document}
@@ -712,8 +712,52 @@ The divisions do not matter per se; they are merely an organizational guide.
 However, because \balrog{} contains quite a few possible arguments to adjust,
 we find them to be a useful aid in adding to tractability.
 
-\newpage
+\opt{sexconfig} and \opt{sexparam} require a bit more explanation than is practical
+within the space of \autoref{tab:opts}
+First, not every keyword-value pair in \opt{sexconfig} is relevant during \balrog{} runs.
+Please note, we are not trying to say these settings have zero or very little effect on \sex{}.
+What we mean is that their values within \opt{sexconfig} will be ignored by \balrog{}, because
+the values are deduced directly from \balrog{}'s command line, and then 
+given as \sex{} command line arguments, which override the \codett{sexconfig} file.
+These amount to what has been written into \autoref{tab:b2s}.
+\autoref{tab:b2s} notes that the \opt{sexconfig} and \opt{sexparm} given to \balrog{}
+are not necessarily exactly the ones used when running \sex{}.
+This is to account for the syntax differnce between running with association mode on or off.
+If association mode is on, a \codett{sexparam} file must be written with the proper \codett{ASSOC\_VECTOR} line.
+\balrog{} does so, and then uses the file. Settings in \codett{sexparam} files cannot be overridden from \sex{}'s command line.
+If association mode is turned off \balrog{} must make sure that no \codett{ASSOC\_*} keywords exist in the \codett{sexconfig} file,
+and writes one out where this is the case for usage downstream. To the best of the authors' knowledge,
+settings like \codett{ASSOC\_*} present in a \codett{sexconfig} file cannot be removed entirely via command line overriding.
+Striclty speaking, there is not a problem if \codett{ASSOC\_VECTOR} is present in the \codett{sexparam} file with association
+mode off, but \balrog{} will write and use ones assuredly without it in order to avoid unnecessary warnings.
+We emphasize, no loss generality has been lost for running \sex{}.
+We have just automated the process of creating an on/off switch for association mode, and moved some
+configurations to \balrog{}'s command line because other \balrog{} functionality besides \sex{} depends on them as well.
+At any rate, \balrog{}'s output logs will allow users to read off exactly how their \sex{} commands were called (c.f. \autoref{sec:out}).
+
+%\newpage
 \optstab{}
+
+\begin{table}[h]
+\caption{Translation between \balrog{} command line argument names and \sex{} command line argument names.} \label{tab:b2s}
+\begin{tabular}{l l l} \toprule
+
+\textbf{\balrog{}} & & \textbf{\sex{}} \\ \midrule \midrule \\
+\multicolumn{2}{c}{\dfill} & Explit \hspace{0.3cm} \dfill \\
+\opt{imagein} & $\rightarrow$ & \codett{IMAGE} \\
+\opt{weightin} &  $\rightarrow$ & \codett{WEIGHT\_IMAGE}\\
+\opt{sexnnw} & $\rightarrow$ & \codett{STARNNW\_NAME} \\
+\opt{sexconv} & $\rightarrow$ & \codett{FILTER\_NAME} \\
+\opt{zeropoint} & $\rightarrow$ & \codett{MAG\_ZEROPOINT} \\
+\opt{psfin} & $\rightarrow$ & \codett{PSF\_NAME} \\
+\opt{catfitstype} & $\rightarrow$ & \codett{CATALOG\_TYPE} \\
+\opt{outdir} & $\rightarrow$ & \codett{CATALOG\_NAME} \\ \\
+
+\multicolumn{3}{c}{\dfill - - - - Possibly Modified To Account For Association Mode - - - - \dfill} \\
+\opt{sexconfig} & $\rightarrow$  &\codett{c} \\
+\opt{sexparam} & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ \bottomrule
+\end{tabular}
+\end{table}
 
 
 \chapter{\balrog{}'s \texttt{pyconfig} File}
@@ -883,6 +927,7 @@ We will return to handling two or more in a few paragraphs.
 \textbf{Type} & \textbf{Example} \\ \midrule
 Constant & \codett{rules.g1 = 0} \\
 Array & \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)} \\
+(Sampled  & \codett{rules.y = sampled.x}) \\
 Catalog & \codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=1, col=`IMAG')} \\
 Function & \codett{rules.y = Function(function=rand,} \\
  & \hspace{1.55in} \codett{args=[args.xmin,args.xmax,args.ngal])} \\ \bottomrule
@@ -891,7 +936,7 @@ Function & \codett{rules.y = Function(function=rand,} \\
 
 Users overwrite
 each of the \simrules{} object's attributes to define their simulations.
-Assignments can assume four types of statements. 
+Assignments can assume four (or possibly five depending how categorized) types of statements. 
 The syntax for each is designed to be straightforward, intuitive, and \py{}esque.
 For quick reference, an example of each is included in \autoref{tab:simtype}.
 The first type of rule assignment is a constant, meaning each of the galaxies in the simulated galaxy sample
@@ -934,10 +979,12 @@ We will make further statements regarding slightly more sophisticated usage
 of \codett{Function}, but it is useful to consider a few other points first.
 
 Let us now return to the \simsamp{} object which is passed to \simfunc{} as an argument.
-\simsamp{} can be used in conjuction with \simrules{} to define one parameter's rule in terms of another's.
+\simsamp{} is used in conjuction with \simrules{} to define one parameter's rule in terms of another's.
 Conceptually speaking, \simsamp{} can be thought of an object whose attributes are arrays that 
 have been set equal to the simulated galaxy parameters post sampling.
-Consider the following code sample:
+One might consider \simsamp{} its own sampling type, but at the same time, its also functionally equivalent to an array.
+This is why a Sampled type has been added as a fifth entry in \autoref{tab:simtype}, in parentheses directly under the Array line.
+To better understand \simsamp{}, consider the following code sample:
 
 \begin{code}
 def SimulationRules(args, rules, sampled):
@@ -1095,16 +1142,65 @@ representive of the proper usage.
 
 \simfunc{} is written to be handle errors.
 When users try to enter a sampling specification that \balrog{} does not understand an exception is raised.
-These exceptions cause \balrog{} to terminate.
+Exceptions are also raised if users attempt to reassign attributes of \simsamp{} or 
+access an attribute of \simrules{} or \simsamp{} which does not actually exist.
+The mentioned exceptions cause \balrog{} to terminate.
 The logic is that any \balrog{} \pyconfig{} syntax errors are treated like ordinary \py{} syntax
 errors and thus force the execution thread to exit.
 The traceback will include line numbers for where the process was terminated.
 
+The final consideration to make about generating simulated galaxies is the function \gspfunc{}.
+This function is passed three arguments: \codett{args}, \codett{gsparams}, and \codett{galaxies}.
+\codett{args} is the same parsed command line argument object as passed given to \simfunc{}.
+Likewise, \codett{galaxies} is the same object as \codett{sampled}.
+It has just been renamed for clarity.
+\codett{gsparams} is an object which populates each galaxy's \galsim{} \codett{GSParams}.
+\codett{gsparams} has an attribute for each \codett{GSParam}, 
+and the attributes behave essentially the same as the non-\sersic{} components of \simrules{}.
+Each attribute of \codett{gsparams} can take on the same four (five) sampling types as \simrules{}:
+a constant, array, (\codett{galaxies} attribute--not particularly useful here on its own but could be
+inside \codett{Function}), \codett{Catalog}, or \codett{Function},
+where all the same functionality applies to \codett{Function} as above.
 
-\section{\sex{} Something}
+Understanding all the \codett{GSParams} is a fairly technical subject, so we
+refer users who need to adjust them to 
+\galsim{}'s \href{http://galsim-developers.github.io/GalSim/structgalsim\_1\_1\_g\_s\_params.html}{GSParams reference page}
+for the complete details.
+In the context of \balrog{} these parameters are relevant for drawing the galaxies into postage stamp images.
+\codett{alias\_threshold}, for example, determines what maximum fraction of the galaxy's flux may be lost outside the boundaries
+of the postage stamp when determining how large of a postage stamp is needed for drawing the galaxies.
+Convolution with the PSF and pixel response function is done in Fourier Space.
+\codett{maxk\_theshold} determines the maximum $k$ used in FFTs such that $k$-values must fall below \codett{maxk\_threshold}
+before cutting off the FFT. We will mention, there are also parameters for setting target accuracies.
+Each \codett{GSParam} has a built-in \galsim{} default. Any attribute not explictly
+assigned in \gspfunc{} uses this default.
+In most cases, the defaults work well enough. The exception is when very bright objects ($\sim$~15 mag, depending on the calibration)
+are being drawn, and even a small percentage of the flux totals to a signifcant number of ADU.
+If you think there might be an issue visually inspect the image into which the simulated galaxies have been drawn (c.f. \autoref{sec:out})
+for signs of aliasing.
+
+\hl{Do we want a table of these? I can easily get the defaults, but as far as I can find, they're not even
+on the Galsim help page. Maybe make an appendix table? It doesn't really hurt putting them in, it just might
+be a bit confusing/overwhelming to some people.}
+
+
+\section{\sex{} Configuration Overrides}
 \label{sec:sexoverride}
 
-Overriding...
+The final of the core functions in \pyconfig{} which we are yet to discuss in detail is \sexfunc{}.
+This function is very simple. It is passed two arguments: \codett{args} and \codett{config}.
+As was the case in \simfunc{} and \gspfunc{}, \codett{args} contains the parsed command line arguments.
+\codett{config} is a dictionary. Users are free to add to the dictionary the keyword-value pairs
+that a \codett{sexconfig} file understands. These will then override what was given in \opt{sexconfig}
+by giving them as command line parameters to \sex{}.
+This effectively allows users to do anything from the \balrog{} command line they could do from the \sex{} command line.
+While none of the keywords will cause an error in \sexfunc{}, 
+the same issue discussed in \autoref{sec:cmdline} applies here.
+A dozen or so of the keywords will not actually overwrite anything.
+Namely, each of the \sex{} parameters in the right-hand column of \autoref{tab:b2s} cannot explicitly be overridden via \codett{config}.
+To ensure proper implementation of \sex{}'s association mode, no \codett{ASSOC\_*} keywords added to \codett{config}
+would have any effect either.
+
 
 \chapter{Output}
 \label{sec:out}
