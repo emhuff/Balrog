@@ -1,6 +1,6 @@
 \documentclass[12pt]{book}
 
-\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib,listings}
+\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib,listings,booktabs,hhline}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta and Huff}]{hyperref}
 \usepackage[T1]{fontenc}
@@ -17,7 +17,18 @@
 \renewcommand*\subsubsectionautorefname{Section}
 
 
-\lstset{aboveskip=15pt,belowskip=15pt,showstringspaces=false,basicstyle=\ttfamily,columns=fullflexible,escapeinside={*}{*}}
+\definecolor{grey}{rgb}{0.95,0.95,0.95}
+\lstset{
+aboveskip=15pt,
+belowskip=15pt,
+language=Python,
+showstringspaces=false,
+basicstyle=\ttfamily\fontsize{11}{13}\selectfont,
+columns=fullflexible,
+escapeinside={?}{?},
+frame=tb,
+breaklines=true,
+backgroundcolor=\color{grey}}
 \newcommand{\codett}[1]{\lstinline{#1}}
 \lstnewenvironment{code}{}{}
 
@@ -32,20 +43,22 @@
 \newcommand{\sersic}{S\'{e}rsic}
 
 
-\titleformat{\chapter}[hang]
-{\normalfont\huge\bfseries}{\thechapter.}{1em}{}
+\titleformat{\chapter}[hang]{\normalfont\huge\bfseries}{\thechapter.}{1em}{}
 %\titlespacing*{\chapter}{0pt}{25pt}{25pt}
 \titlespacing*{\chapter}{0pt}{0pt}{25pt}
+
 \newdateformat{mydate}{\twodigit{\THEDAY}{ }\monthname[\THEMONTH] \THEYEAR}
 \newcommand{\ericdate}{\mydate\today}
-\renewcommand\footnoterule{}
 %\widowpenalty=10000
+
+\setlength{\floatsep}{35pt plus 1.0pt minus 2.0pt}
+\setlength{\textfloatsep}{25pt plus 1.0pt minus 2.0pt}
+%\setlength{\intextsep}{25pt plus 1.0pt minus 2.0pt}
 
 
 \begin{document}
 
-%\setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt}
-\setlength{\intextsep}{25pt plus 1.0pt minus 2.0pt}
+\renewcommand\footnoterule{}
 \let\cleardoublepage\clearpage
 \balrogtitlepage
 \tableofcontents
@@ -56,7 +69,6 @@
 \label{sec:intro}
 \setlength{\parskip}{0pt}
 \renewcommand\footnoterule{\kern-3pt \hrule width 2in \kern 2.6pt}
-\lstset{language=Python}
 
 
 \balrog{} is a package of \py{} code, intended for use
@@ -238,7 +250,7 @@ By effectively adding together these \sersic{} objects, \balrog{} allows galaxie
 \sersic{} components as desired. Each of these components has its own \sersic{} index, half light radius, flux,
 minor to major axis ratio, and orientation angle. The half light radius is measured along
 the major axis, and the orienation angle is measured as the major axis' counter-clockwise rotation
-away from the $x$-direction. 
+away from the $\hat{x}$-direction. 
 Flux values are generated as magnitudes, then converted to ADU levels 
 using the image's zeropoint.
 In addtion to its \sersic{} components, each galaxy
@@ -494,17 +506,17 @@ the example files, filling in defaults as necessary.
 Thus, this initial call is as simple as:
 
 \begin{code}
-*\bcmd{}*
+?\bcmd{}?
 \end{code}
 
 \noindent The rest of the examples here build off this call by adding additional configurations via command line arguments.
 To explore the command line arguments, one can run the following command to print a useful summary:
 
 \begin{code}
-*\bcmd{}* --help
+?\bcmd{}? --help
 \end{code}
 
-For more extended help, the command line arguments built-in to \balrog{} are detailed further in \autoref{sec:cmdline}.
+\noindent For more extended help, the command line arguments built-in to \balrog{} are detailed further in \autoref{sec:cmdline}.
 In brief, they are used to specify input images and their properties, as well as configuration
 files to use with \sex{}, and a few other variables every \balrog{} run will need to define. 
 Each comes with a default \balrog{} will assume if the user does not supply one.
@@ -519,7 +531,7 @@ File names are intended to be reasonably transparent.
 and it is also instructive to repeat the example \balrog{} call in verbose mode.
 
 \begin{code}
-*\bcmd{}* --stdverbosity v
+?\bcmd{}? --stdverbosity v
 \end{code}
 
 \noindent While the original call ran without printing anything, this one will write out some messages
@@ -532,7 +544,7 @@ While \opt{stdverbosity} is for \codett{stdout}/\codett{stderr},
 Run the the previous command, but now flag the logging to verbose:
 
 \begin{code}
-*\bcmd* --stdverbosity v --logverbosity v
+?\bcmd? --stdverbosity v --logverbosity v
 \end{code}
 
 \noindent Opening the file found in \codett{\$INSTALLDIR/default\_example/output/balrog\_log/run.log.txt}
@@ -544,13 +556,14 @@ Had any \balrog{} runtime errors occurred during the run,
 Additionally, \balrog{} logs the exact value of each command line argument  in \codett{args.log.txt}
 and directs all \sex{}'s \codett{stdout} to \codett{sex.log.txt}.
 
-\begin{table}[t!]
+\begin{table}
 \caption{Definitions used throughout this manual.}
 \label{tab:def}
 \begin{tabular}{l l}
-\underline{\textbf{Name}} & \underline{\textbf{Meaning}} \\
+\toprule
+\textbf{Name} & \textbf{Meaning} \\ \midrule \midrule
 \codett{\$INSTALLDIR} & Directory \codett{git} clones for \balrog{}, i.e. where \balrog{} is installed \\
-\codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\
+\codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\ \bottomrule
 \end{tabular}
 \end{table}
 
@@ -660,7 +673,7 @@ To generate a summary of \balrog{}'s command line environment, run the following
 where \codett{runbalrog} is defined in \autoref{tab:def}.
 
 \begin{code}
-*\bcmd* --help
+?\bcmd? --help
 \end{code}
 This prints a listing of all the command line arguments (including those defined by the user), 
 along with their available help strings.
@@ -694,16 +707,17 @@ The divisions do not matter per se; they are merely an organizational guide.
 However, because \balrog{} contains quite a few possible arguments to adjust,
 we find them to be a useful aid in adding to tractability.
 
+\newpage
 \optstab{}
 
 
-\chapter{\balrog{}'s \pyconfig{} File}
+\chapter{\balrog{}'s \texttt{pyconfig} File}
 \label{sec:pyconfig}
 
 As introduced in previous sections, \balrog{}'s \pyconfig{} file is a configuration file for \balrog{} made up of \py{} statements.
 Relying on the ease and simplicity of writing \py{} code, this file is what contributes a large portion of \balrog{}'s flexibility.
 The authors cannot natviely build-in to \balrog{} all the features every user would like to see.
-Thus, we attempt to build an enviroment which makes it easy for users to fold in additional content themselves.
+Thus, we attempt to create an enviroment which makes it easy for users to fold in additional content themselves.
 The \pyconfig{} file plays a significant role in \balrog{}, and hence we will take care to provide adequate documentation.
 
 As far as general comments go, we remark that the \pyconfig{} file makes use of five core functions called:
@@ -719,16 +733,16 @@ However, it is also important to keep in mind their overall workflow on a more c
 Algorithmically, what occurs is users create command line arguments then parse them appropriately.
 These arguments, as well as the one \balrog{} relies on natively, are then made available to 
 functions which implement \py{} statments to define how \balrog{}'s galaxies are simulated.
-We have included some convenience features to ease the simulation specfications,
+We have included some convenience features to coordinate the coding of the simulation specfications,
 including support for users to write their own functions to do so.
 Within the \pyconfig{} environment, it is also possible to override some \sex{} configurations if desired,
 implementing a certain level of \py{} control of \sex{}.
 
-In the remainder of \autoref{sec:pyconfig} we concentrate on \pyconfig{}'s usage, with a focus on elucidating its syntax.
-\autoref{sec:user} explains how custom command line arguments are added to \balrog{} using \pyconfig{}.
-\autoref{sec:simrules} illustrates how \pyconfig{} specifies the process of generating simulated galaxy properties and images.
-\autoref{sec:sexoverride} describes how \pyconfig{} can be used to override \sex{} settings in \opt{sexconfig}.
-As an aid to the text, while reading this section, 
+In the remainder of \autoref{sec:pyconfig} we concentrate on \pyconfig{}'s usage, with a particular focus on elucidating its syntax.
+\autoref{sec:user} treats user-defined command line arguments within \pyconfig{} and 
+\autoref{sec:simrules} illustrates how \pyconfig{} specifies simulated galaxy generation.
+\autoref{sec:sexoverride} describes the way in which \pyconfig{} can be used to override \sex{} settings in \opt{sexconfig}.
+As an aid while reading this section, 
 we strongly encourage users to open one of the example \pyconfig{} files shipped with \balrog{},
 \codett{\$INSTALLDIR/config.py} or \codett{\$INSTALLDIR/config2.py}.
 As mentioned in \autoref{tab:def}, \codett{\$INSTALLDIR} is the directory where \balrog{} is installed.
@@ -749,10 +763,7 @@ contains many useful examples. A simple example of
 
 \begin{code}
 def CustomArgs(parser):
-    parser.add_argument( "-cs", "--catalogsample", help="Catalog used 
-                            to sample simulated galaxy parameter 
-                            distriubtions from",  
-                            type=str, default=None )
+    parser.add_argument( "-cs", "--catalogsample", help="Catalog used to sample simulated galaxy parameter distriubtions from", type=str, default=None )
 \end{code}
 
 \noindent Users are allowed to add arguments by any names except those already defined as native \balrog{} command line arguments.
@@ -763,7 +774,7 @@ are made available to the other core functions in \pyconfig{}.
 The user-defined arguments are parsed within \parsefunc{}.
 When this function is called, 
 \balrog{} has already grabbed any of the user's custom arguments from the command line,
-and saved them into an objects called \parseargs{}.
+and saved them into an object called \parseargs{}.
 \parseargs{} is passed as the single function argument to \parsefunc{}.
 It is equivalent to an object returned by \codett{parser.parse\_args()};
 each one of the user's command line arguments becomes an attribute of \parseargs{}. 
@@ -796,10 +807,10 @@ any modifications will not propogate outside the \pyconfig{} file.
 Thus, allowing changes to the native attributes is more of a local convenience than anything else.
 
 \parseargs{} will be given as a function argument to the \simfunc{}, \gspfunc, and \sexfunc{} functions.
-Changes within these functions to  \parseargs{} attributes, both those derived from native or custom arguments,
+Changes within these functions to \parseargs{}'s attributes, both those derived from native or custom arguments,
 are also effectively \emph{local only}.
-Modification made in one of the functions do not propogate outside that function.
-It has been written this way so users do not need to consider the order in which the three functions execute
+Modifications made in one of the functions do not propogate outside that function.
+The code has been written this way so users do not need to consider the order in which the three functions execute
 in order to know excatly what \parseargs{} they are using in each function.
 The behavior is consistent with including the \parsefunc{} in the first place.
 The only place to make persisting changes to \parseargs{} is \parsefunc{}.
@@ -815,118 +826,158 @@ and has saved each of the parameters into an attribute of \parseargs{}.
 \section{Defining How to Simulate Galaxies}
 \label{sec:simrules}
 
-Defining how galaxies should be simulated is controlled within \pyconfig{}
-in the function \simfunc{}. Passed into the function are three
-arguments: \simargs{}, \simrules{}, and \simsamp{}.
-\simargs{} refers to the parsed command line arguments,
-both native \balrog{} and user-defined.
-\simrules{} is an object whose components are overwritten
+Deciding how the simulated galaxy properties should be sampled occurs inside the function \simfunc{}.
+Passed into the \simfunc{} are three arguments: \simargs{}, \simrules{}, and \simsamp{}.
+As discussed in \autoref{sec:user},
+\simargs{} refers to the parsed command line arguments, both native \balrog{} and user-defined.
+\simrules{} is an object whose attributes are overwritten
 in order to specify how simulated galaxies are sampled.
 \simsamp{} gives access to simulated galaxy parameters
 after they have been sampled. \simrules{} and \simsamp{}
 will become clearer to follow.
 
-\balrog{} simulates galaxies as $N$ component \sersic{} profiles, 
-where $N$ ranges from 1 to as many as desired. Associated
-with each of these components are five attributes: a \sersic{} index,
-half light radius, magnitude, axis ratio ($b/a$), and orientation
-angle ($\beta$). In addition, each simulated galaxy has five attributes
-common among each \sersic{} profile: $x$ and $y$-coordinates,
-two components of reduced shear ($g_1$, $g_2$), and magnification.
-\simfunc{}'s argument \simrules{} is comprised of attributes
-for these different galaxy characteristics. Users overwrite
-each of \simrules{}'s attributes to define their simulations.
-For example the statement to set each galaxy's magnification
-to 1 would read:
+\autoref{sec:galsim} laid out the parameters which characterize each simulated galaxy.
+Briefly recapitulating, each galaxy is made up of one or \sersic{} profiles.
+Each \sersic{} profile is composed of five components: 
+\sersic{} index, half light radius, brightness magnitude, minor to major axis ratio, 
+and orientation angle counter-clockwise from the $\hat{x}$-direction ($\beta$).
+Furthermore, a simulated galaxy also shares fives additional parameters among each \sersic{} profile:
+two centroid position coordinates, $(x,y)$, two reduced shear coordinates $(g_1,g_2)$, and magnification.
+This totals ten ``\emph{variables}'' which fully specify the galaxy.
+\simrules{} and \simsamp{} are each composed of ten attributes,
+matching these same ten variables.
+The attribute names for \simrules{} and \simsamp{} have been transparently chosen.
+Nevertheless, for completeness the names and meanings are fully specified in \autoref{tab:attr}.
+\autoref{tab:attr} uses \simrules{} as the concrete example.
+The attribute names of \simsamp{} are identical. 
+
+
+\begin{table}
+\caption{Attributes of the \simrules{} object defining the simulated galaxies.} \label{tab:attr}
+\begin{tabular}{l l}
+\hline
+\textbf{Attribute} & \textbf{Meaning} \\ \hline
+\rules{x} & Galaxy centroid $x$-coordinate [pixels], $x \in \left[1,N_{cols} \right]$\\
+\rules{y} & Galaxy centroid $y$-coordinate [pixels], $y \in \left[1,N_{rows} \right]$\\
+\rules{g1} & Reduced shear, $g_1$ component \\
+\rules{g2} & Reduded shear, $g_2$ component \\
+\rules{magnification} & Magnification, $1 + \kappa$ \\
+\rules{sersicindex} & \sersic{} index \\
+\rules{halflightradus} & \sersic{} half light radius [arcsec] \\
+\rules{magnitude} & Galaxy brightness [mag] \\
+\rules{axisratio} & Minor to major axis ratio \\
+\rules{beta} & Orientaiton angle of major axis (measured from $x$-axis) [degrees] \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table} 
+\caption{Syntax examples for each of the simulation types \balrog{} understands.} \label{tab:simtype}
+\begin{tabular} {l l}
+\hline
+\textbf{Type} & \textbf{Example} \\ \hline
+Constant & \codett{rules.g1 = 0} \\
+Array & \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)} \\
+Catalog & \codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=0, col=`IMAG')} \\
+Function & \codett{rules.y = Function(function=rand,} \\
+ & \hspace{1.55in} \codett{args=[args.xmin,args.xmax,args.ngal])} \\ \hline
+\end{tabular}
+\end{table}
+
+Users overwrite
+each of the \simrules{} object's attributes to define their simulations.
+Assignments can assume four types of statements. 
+The syntax for each is designed to be straightforward, intuitive, and \py{}esque.
+For quick reference, an example of each is included in \autoref{tab:simtype}.
+The first type of rule assignment is a constant, meaning each of the galaxies in the simulated galaxy sample
+will have the same value for the selected parameter, e.g. \codett{rules.g1 = 0}.
+Second, rule types can also be given as an array, equal in length to the number of simulated galaxies. 
+Simulated galaxy $i$ for the chosen parameter then assumes the value in element $i$ of the array.
+The example in \autoref{tab:simtype} is given as \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)},
+meaning galaxies will be evenly spaced along the $x$-axis across the image.
+The third sampling type for \simrules{} is drawing from a catalog. 
+This makes use of a function \balrog{} has defined called \codett{Catalog}. 
+Calls to \codett{Catalog} require three arguments: \codett{file}, \codett{ext}, and \codett{col}.
+\codett{file} is the file path to a FITS file;
+\codett{ext} identifies which extension contains the data table to use; and
+\codett{col} is the name of the column to draw from.
+If \codett{Catalog} is used multiple times,
+multiple columns selected from the same data table are automatically jointly sampled.
+An example call to \codett{Catalog} looks like: 
+\codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=0, col=`IMAG')}.
+Last but not least, the fourth assignable sampling type to \simrules{} is a function. 
+Users write their own function according to usual \py{} syntax,
+then feed this function and its necessary arguments as the arguments to
+\balrog{}'s \codett{Function} command. 
+The one requirement of sampling functions is they must return an array equal in 
+length to the number of simulated galaxies.
+Like the array sampling type, galaxy $i$ will use element $i$ of the returned array as its truth parameter.
+Here, we provide an example code snippet, illustrative of how one could place the simulated galaxies at random image positions. 
 
 \begin{code}
-rules.magnification = 1
+def rand(minimum, maximum, ngal):
+    return np.random.uniform( minimum, maximum, ngal )
+
+def SimulationRules(args, rules, sampled):
+    rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
+    rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
 \end{code}
 
-\noindent \simrules{} has 11 attributes in total, whose names are intended to be simple to understand.
-These are printed and desribed in \autoref{tab:attr} below.
+\noindent \codett{Function} affords a great deal of flexiblity toward
+simulating a wide variety of different scenarios.
+We will make further statements regarding slightly more sophisticated usage
+of \codett{Function}, but it is useful to consider a few other points first.
 
-\vspace{10pt}
-\begin{longtabu} to \linewidth {l l}
-\caption{Attributes of the rules defining the simulated galxies.} \label{tab:attr}\\
-\underline{\textbf{Attribute}} & \underline{\textbf{Meaning}} \\
-\codett{rules.x} & Galaxy centroid $x$-coordinate [pixels], first pixel = 1\\
-\codett{rules.y} & Galaxy centroid $y$-coordinate [pixels], first pixel = 1\\
-\codett{rules.g1} & Reduced shear, $g_1$ component \\
-\codett{rules.g2} & Reduded shear, $g_2$ component \\
-\codett{rules.magnification} & Magnification, $1 + \kappa$ \\
-\codett{rules.nProfiles} & Number of superimposed \sersic{} profiles \\
-\codett{rules.sersicindex} & \sersic{} index \\
-\codett{rules.halflightradus} & \sersic{} half light radius \\
-\codett{rules.magnitude} & Galaxy brightness in magnitudes \\
-\codett{rules.axisratio} & Minor to major axis ratio, $b/a$ \\
-\codett{rules.beta} & Orientaiton angle of major axis (measured from $x$-axis)
-\end{longtabu}
+Let us now return to the \simsamp{} object which is passed to \simfunc{} as an argument.
+\simsamp{} can be used in conjuction with \simrules{} to define one parameter's rule in terms of another's.
+Conceptually speaking, \simsamp{} can be thought of an object whose attributes are arrays that 
+have been set equal to the simulated galaxy parameters post sampling.
+Consider the following code sample:
 
-\noindent \codett{rules.sersicindex}, \codett{rules.halflightradius}, \codett{rules.magnitude}, \codett{rules.axisratio},
-and \codett{rules.beta} must be arrays, whose length is equal to \codett{rules.nProfiles}. For example, simulating
+\begin{code}
+def SimulationRules(args, rules, sampled):
+    rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
+    rules.y = sampled.x
+\end{code}
+
+\noindent The $x$-coordinates randomly sample, and then each galaxy's $y$-coordinate
+is set equal to exactly the same value as its $x$-coordinate.
+Please note, this is expressly different from the original example where both $x$ and $y$ sampled randomly.
+\simsamp{} can also be used as an argument within the \codett{args} passed to a sampling function,
+as is the case in the proceeding example.
+
+\begin{code}
+def SimulationRules(args, rules, sampled):
+    rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
+    rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
+    rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y,args.xmax, args.ymax])
+
+def SampleFunction(x, y, xmax, ymax):
+    dist = np.sqrt(x*x + y*y)
+    max = np.sqrt(xmax*xmax + ymax*ymax)
+    return dist/max
+\end{code}
+
+\noindent This functionality allows users to have access to the sampled galaxy truth
+information in their functions.
+
+\rules{sersicindex}, \rules{halflightradius}, \rules{magnitude}, \rules{axisratio},
+and rules{beta} must be arrays, whose length is equal to rules{nProfiles}. For example, simulating
 galaxies with both an expontential and a de Vaucouleurs component would read:
 
-\begin{code}
-rules.nProfiles = 2 
-rules.sersicindex = [1,4]
-\end{code}
 
-Simulation rules can assume four types. The first is a constant, meaning each of the 
-galaxies in the simulated galaxy sample
-will have the same value for the selected parameter. 
-Rules can also be assigned as an array, equal in length to the number of simulated galaxies. 
-Simulated galaxy $i$ for the chosen parameter then assumes the value in element $i$ of
-the array.
-Additionally, sampling can be drawn from a catlog. Multiple
-parameters selected from the same data table are automatically jointly sampled.
-Finally a function can be used. Users write their own \codett{python} function,
-then feed this function and its necessary arguments as the arguments to
-\balrog{}'s \codett{Function} command. The defined function must return an
-array equal in length to the number of simulated galaxies. Like the array
-sampling type, galaxy $i$ will use element $i$ of the returned array.
-Currently only positional arguments are supported within the user-defined
-functions, but support for keyword arguments will be added.
-\codett{Function} affords both flexiblity and convenience when deciding
-how to sample the simulated galaxies. See \config{} for examples
-using \codett{Function} as well as other sampling types.
-One simple example of how to implement each of the four different 
-types is shown in \autoref{tab:simtype}.
-
-\vspace{10pt}
-\setlength{\tabcolsep}{0pt}
-\begin{longtabu} to \linewidth {p{1in} l X}
-\caption{Syntax examples for each of the simulation types \balrog{} understands.} \label{tab:simtype} \\
-\underline{\textbf{Type}} & \multicolumn{2}{l}{\underline{\textbf{Example}}} \\
-Constant & \multicolumn{2}{l}{\codett{rules.g1 = 0}} \\
-Array & \codett{rules.axisratio = [} & \codett{np.ones(args.ngal)/np.arange(1,args.ngal+1), sampled.axisratio[0]]} \\
-Catalog & \codett{rules.magnitude = [} & \codett{Catalog(`cosmos.fits', 0, `IMAG'), Catalog(`cosmos.fits', 0, `IMAG')]} \\
-Function & \multicolumn{2}{l}{\codett{rules.g2 = Function(function=NFW2, args=(sampled.x,sampled.y))}}
-\end{longtabu}
-\setlength{\tabcolsep}{6pt}
 
 The second and fourth examples in \autoref{tab:simtype} makes use of \simsamp{}, the third argument
 passed to \simfunc{}. \simsamp{} is an object allowing users to refer to the properties of
 the simulated galaxies after they have been sampled. Referring to the second example above,
-the first element of \codett{rules.axisratio} is an array decreasing incrementally from 1 to 0.
-The second elemment of \codett{rules.axisratio} then says to use whatever the sampled values of
- the first element turn out to be. Here, this equates to setting the second element of \codett{rules.axisratio}
- to the same array as the first element of \codett{rules.axisratio}, so the use of \simsamp{} is not 
+the first element of \rules{axisratio} is an array decreasing incrementally from 1 to 0.
+The second elemment of \rules{axisratio} then says to use whatever the sampled values of
+ the first element turn out to be. Here, this equates to setting the second element of rules{axisratio}
+ to the same array as the first element of \rules{axisratio}, so the use of \simsamp{} is not 
  really necessary. However, return to the fourth example in \autoref{tab:simtype}. Image \codett{NFW2}
  as a function which takes two arguments, \codett{x} and \codett{y}, which returns the $g_2$ component
  of shear at position ($x$,$y$) from an NFW halo with mass $10^{15} M_{\odot}$ whose center lies at (0,0).
  Now image \codett{sampled.x} and \codett{sampled.y} were sampled randomly:
  
- \setlength{\tabcolsep}{0pt}
-\begin{longtabu} to \linewidth {X}
-\codett{def Random(minimum, maximum, size):} \\
-\hspace{20pt}  \codett{return np.random.uniform(minimum, maximum, size)}\\
-\\
-\codett{rules.x = Random(args.xmin, args.xmax, args.ngal)} \\
-\codett{rules.y = Random(args.ymin, args.ymax, args.ngal)}
-\end{longtabu}
-\setlength{\tabcolsep}{6pt}
-\addtocounter{table}{-1}
  
 \noindent \codett{sampled.x} and \codett{sampled.y} now represent the values
 for $x$ and $y$ after the random sampling has occurred. 
@@ -993,14 +1044,14 @@ Next, the galaxy's lensing shear is applied, expressing the magnitude of its red
 \mbox{$g = \sqrt{ g_1^2 + g_2^2}$}
 as an axis ratio
 \mbox{$q = (1-g)/(1+g)$}.
-$q$'s major axis is also taken to be along the $x$-direction.
+$q$'s major axis is also taken to be along the $\hat{x}$-direction.
 Finishing the lensing effects, the galaxy is magnified, changing its area and flux.
 Effectively, the galaxy now exists as an elliptical \sersic{} profile.
 Further refferences to the half light radius will refer to that along the major axis.
 Please note, the intrinsic axis ratio and lensing shear are applied in the same direction. 
 Although the galaxy's simulation specifications need not orient the two identically,
 by adopting the same direction, this step has made the galaxy as stretched as possible.
-Thus the $x$-direction is necessarily the direction of greatest distance for the galaxy's profile to fall below $I_t$,
+Thus the $\hat{x}$-direction is necessarily the direction of greatest distance for the galaxy's profile to fall below $I_t$,
 and in the abscence of PSF distortions, a large enough postage stamp size along the $x$-axis is certainly 
 sufficient in any other direction. Given a \sersic{} surface brightness profile, the distance $r_s$ at which the profile
 falls to $I_t$ is easily computed:

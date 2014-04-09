@@ -1,7 +1,7 @@
 \newcommand{\hsp}{\hspace{17pt}}
 \newcommand{\hspsmall}{\hspace{5pt}}
 \setlength\extrarowheight{3pt}
-\newcommand{\optrow}[4]{\opt{#1} \newline \texttt{-#2} & #3 \newline \textbf{Default}: #4}
+\newcommand{\optrow}[4]{\codett{{-}-#1} \newline \codett{-#2} & #3 \newline \textbf{Default}: #4}
 \newcommand{\dfill}{\leavevmode\xleaders\hbox{- }\hfill\kern0pt}
 \newcommand{\optcat}[1]{\dfill #1 \dfill}
 %\newcommand{\catline}[1]{\multicolumn{2}{c}{\optcat{#1}}}
@@ -18,19 +18,21 @@
 %\taburulecolor{grey}
 \caption{Command line arguments natively built-in to \balrog{}. \hl{We should decide what the best name for everything is, both the full name and abbreviation.}} \label{tab:opts}\\ \hline
 
-\textbf{Argument} & \textbf{Description} \\ \hline  & \\
+& \\[-1em]
+\textbf{Argument} & \textbf{Description} \\[+0.1em] \hhline{|=|=|}
+& \\
 
-\optrow{pyconfig}{cnfg}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). \hl{I need to change the name of this to pyfconfig in the code.} It defines the user's custom command line arguments, determines how to generate simulated galaxies, and allows for overriding specifications in \opt{sexconfig}.}{\texttt{\$INSTALLDIR/config.py}} \llskip
+\optrow{pyconfig}{cnfg}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). \hl{I need to change the name of this to pyfconfig in the code.} It defines the user's custom command line arguments, determines how to generate simulated galaxies, and allows for overriding specifications in \opt{sexconfig}.}{\codett{\$INSTALLDIR/config.py}} \llskip
 
 \catline{Output} \lskip
-\optrow{outdir}{od}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} {\texttt{\$INSTALLDIR/default\_example/output/}} \lskip
-\optrow{clean}{c}{Delete intermediate image files (those in \texttt{\opt{outdir}/balrog\_image}) after catalogs have been written.}{Unflagged, i.e. effectively false} \llskip
+\optrow{outdir}{od}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} {\codett{\$INSTALLDIR/default\_example/output/}} \lskip
+\optrow{clean}{c}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) after catalogs have been written.}{Unflagged, i.e. effectively false} \llskip
 
 \catline{Input Images} \\
 \multicolumn{2}{|c|}{(\small All images must be given in FITS format. No other file types are supported.)} \lskip
-\optrow{imagein}{ii}{Image to insert simulated galaxies into.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \lskip
-\optrow{weightin}{wi}{File containing the weight map associated with \opt{imagein}. This can be a separate file from \opt{imagein} or the same file, where the flux image and weight map live in different extensions.}{\texttt{\$INSTALLDIR/default\_example/input/example.fits}} \lskip
-\optrow{psfin}{pi}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \texttt{.psf} as the extension.}{\texttt{\$INSTALLDIR/default\_example/input/example.psf}} \llskip
+\optrow{imagein}{ii}{Image to insert simulated galaxies into.}{\codett{\$INSTALLDIR/default\_example/input/example.fits}} \lskip
+\optrow{weightin}{wi}{File containing the weight map associated with \opt{imagein}. This can be a separate file from \opt{imagein} or the same file, where the flux image and weight map live in different extensions.}{\codett{\$INSTALLDIR/default\_example/input/example.fits}} \lskip
+\optrow{psfin}{pi}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \codett{.psf} as the extension.}{\codett{\$INSTALLDIR/default\_example/input/example.psf}} \llskip
  
  \catline{\hl{FITS Extensions...I should absorb this into fie.fits[...] syntax.}} \\ 
 & (\small Extension indexing begins at 0.) \lskip
@@ -72,12 +74,12 @@
 \catline{\sex{}} \\
 \multicolumn{2}{|c|}{(\small Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.)} \lskip
 \optrow{sexpath}{spp}{Path to \sex{} executable.}{sex, i.e. system default} \lskip
-\optrow{sexconfig}{sc}{Config file for running \sex{} (c.f. \autoref{sec:processing}).}{\texttt{\$INSTALLDIR/astro\_config/sex.config}} \lskip
-\optrow{sexparam}{sp}{Param file specifying which measurements \sex{} outputs (c.f. \autoref{sec:processing}).}{\texttt{\$INSTALLDIR/astro\_config/bulge.param}. This performs a single S\'{e}rsic profile model fit to each galaxy with free S\'{e}rsic index.} \lskip
-\optrow{sexnnw}{sn}{\sex{} neural network file for star-galaxy separation}{\texttt{\$INSTALLDIR/astro\_config/sex.nnw}} \lskip
-\optrow{sexconv}{sf}{\sex{} filter convolution file when making detections.}{\texttt{\$INSTALLDIR/astro\_config/sex.conv}} \lskip
+\optrow{sexconfig}{sc}{Config file for running \sex{} (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/sex.config}} \lskip
+\optrow{sexparam}{sp}{Param file specifying which measurements \sex{} outputs (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/bulge.param}. This performs a single S\'{e}rsic profile model fit to each galaxy with free S\'{e}rsic index.} \lskip
+\optrow{sexnnw}{sn}{\sex{} neural network file for star-galaxy separation}{\codett{\$INSTALLDIR/astro\_config/sex.nnw}} \lskip
+\optrow{sexconv}{sf}{\sex{} filter convolution file when making detections.}{\codett{\$INSTALLDIR/astro\_config/sex.conv}} \lskip
 \optrow{noassoc}{na}{Do not run \sex{} in association mode (c.f. \autoref{sec:processing}).}{Unflagged, i.e. use association mode.} \lskip
 \optrow{noempty}{ne}{Skip \sex{} run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).}{Unflagged, i.e. perform the \sex{} run} \lskip
-\optrow{sexemptyparam}{sep}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).}{\texttt{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.} \lskip \hline
+\optrow{sexemptyparam}{sep}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.} \lskip \hline
 \end{longtabu}
 }
