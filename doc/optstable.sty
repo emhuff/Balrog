@@ -1,21 +1,16 @@
-\newcommand{\hsp}{\hspace{17pt}}
-\newcommand{\hspsmall}{\hspace{5pt}}
-\setlength\extrarowheight{3pt}
+\newcommand{\hsp}{\hspace{10pt}}
 \newcommand{\optrow}[4]{\codett{{-}-#1} \newline \codett{-#2} & #3 \newline \textbf{Default}: #4}
 \newcommand{\dfill}{\leavevmode\xleaders\hbox{- }\hfill\kern0pt}
 \newcommand{\optcat}[1]{\dfill #1 \dfill}
-%\newcommand{\catline}[1]{\multicolumn{2}{c}{\optcat{#1}}}
 \newcommand{\catline}[1]{\dfill & #1 \hspace{0.1in} \dfill}
 \newcommand{\lskip}{\\ & \\}
 \newcommand{\llskip}{\lskip & \\}
-%\definecolor{grey}{rgb}{0.3,0.3,0.3}
 
 
 \LTcapwidth=\textwidth
 \newcommand{\optstab}{
 \vspace{10pt}
 \begin{longtabu} to \linewidth {| p{1.4in} X|}
-%\taburulecolor{grey}
 \caption{Command line arguments natively built-in to \balrog{}. \hl{We should decide what the best name for everything is, both the full name and abbreviation.}} \label{tab:opts}\\ \hline
 
 & \\[-1em]
@@ -39,9 +34,10 @@
 \optrow{imageext}{ie}{Extension of \opt{imagein} where the image flux data lives.}{0} \lskip 
 \optrow{weightext}{we}{Extension of \opt{weightin} where the weight map data lives.}{\\ 
 & \begin{tabular}[t]{l}
-\hspsmall if \opt{imagein} != \opt{weightin}: \\
-\hsp \opt{weighext} = 0 \\
-\hspsmall else: \\
+\\[-0.6em]
+\codett{if --imagein != --weightin:} \\
+\hsp \codett{--weightext = 0} \\
+else: \\
 \hsp \opt{weightext} = \opt{imageext} + 1
 \end{tabular}} \llskip
  
@@ -57,16 +53,18 @@
 \optrow{ngal}{ngal}{Number of galaxies to simulate.}{40} \lskip
 \optrow{zeropoint}{zp}{Zeropoint for converting sampled simulation magnitudes to simulated fluxes. \sex{} will also apply this zeropoint to magnitudes. \opt{zeropoint} can take two types values: a float explicitly defining the zeropoint, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the default.}{\\
 & \begin{tabular}[t]{l}
-\hspsmall try: \\
+\\[-0.6em]
+try: \\
 \hsp \opt{zeropoint} = \opt{imagein[--imageext].header[`SEXMGZPT']} \\
-\hspsmall except: \\
+except: \\
 \hsp \opt{zeropoint} = 30.0 \\
 \end{tabular}} \lskip
 \optrow{gain}{gain}{Gain [e$^{-}/\text{ADU}$] for adding CCD noise to the simulated galaxies. Refer to \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1\_c\_c\_d\_noise.html}{galsim.CCDNoise documentation} for further details. \opt{gain} can take two types of values: a float explicitly defining the gain, or a string referring to a keword written in the header of \opt{imagein[--imageext]}. If neither of these is successfully found, \balrog{} uses the default.}{\\ 
 & \begin{tabular}[t]{l}
-\hspsmall try: \\
+\\[-0.6em]
+try: \\
 \hsp \opt{gain} = \opt{imagein[--imageext].header[`GAIN']} \\
-\hspsmall except: \\
+except: \\
 \hsp \opt{gain} = 1.0 \\
 \end{tabular}} \lskip
 \optrow{seed}{s}{Seed to give random number generator for any sampling which requires it, except noise realizations which are always different.}{Current time} \llskip

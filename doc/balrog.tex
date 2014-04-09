@@ -17,20 +17,25 @@
 \renewcommand*\subsubsectionautorefname{Section}
 
 
-\definecolor{grey}{rgb}{0.95,0.95,0.95}
+\definecolor{bluegrey}{rgb}{0.92,0.95,0.98}
+\definecolor{pinkgrey}{rgb}{0.95,0.92,0.95}
+
 \lstset{
 aboveskip=15pt,
 belowskip=15pt,
 language=Python,
 showstringspaces=false,
-basicstyle=\ttfamily\fontsize{11}{13}\selectfont,
 columns=fullflexible,
 escapeinside={?}{?},
 frame=tb,
-breaklines=true,
-backgroundcolor=\color{grey}}
+basicstyle=\ttfamily\selectfont
+}
+
 \newcommand{\codett}[1]{\lstinline{#1}}
-\lstnewenvironment{code}{}{}
+\newcommand{\tablett}[1]{\lstset{breaklines=true,basicstyle=\ttfamily\fontsize{11}{13}\selectfont} \lstinline{#1}}
+\lstnewenvironment{code}{\lstset{backgroundcolor=\color{pinkgrey},breaklines=true,breakatwhitespace=true,basicstyle=\ttfamily\fontsize{11}{13}\selectfont}}{}
+\lstnewenvironment{cmdline}{\lstset{backgroundcolor=\color{bluegrey},breaklines=true,breakatwhitespace=true,basicstyle=\ttfamily\fontsize{11}{13}\selectfont}}{}
+%\lstnewenvironment{tablecode}{\lstset{breaklines=true,basicstyle=\ttfamily\selectfont}}{}
 
 \newcommand{\py}{Python}
 \newcommand{\pyconfig}{\codett{pyconfig}}
@@ -424,10 +429,10 @@ What we are able to say is that the oldest version we have successfully tested a
 \balrog{} and \galsim{} both exist as repositories on GitHub and can be downloaded 
 from the command line.
 
-\begin{code}
+\begin{cmdline}
 % git clone https://github.com/emhuff/Balrog.git
 % git clone https://github.com/GalSim-developers/GalSim.git
-\end{code}
+\end{cmdline}
 
 \noindent This should automatically check out the master branch of each.
 Master is the only supported branch for \balrog{}. 
@@ -457,9 +462,9 @@ Once ATLAS builds and installs, the \sex{} installation steps should be straight
 To test the \balrog{} installation, change directories to the directory \codett{git} cloned for \balrog{}.
 The directory contains a file called \codett{./balrog.py}. Run the file from the command line:
 
-\begin{code}
+\begin{cmdline}
 % ./balrog.py --fulltraceback
-\end{code}
+\end{cmdline}
 
 \noindent If installation was successful, this will run without printing any error messages.
 
@@ -490,9 +495,9 @@ This file is found in the directory which was pulled from GitHub during installa
 which we will refer to as \codett{\$INSTALLDIR} for convenience.
 Adopting this convention, the alias statment looks as follows:
 
-\begin{code}
+\begin{cmdline}
 % alias runbalrog=`$INSTALLDIR/balrog.py'
-\end{code}
+\end{cmdline}
 
 \noindent For convenient reference in later sections, we have effectively 
 abbreviated what we have just defined in \autoref{tab:def}.
@@ -505,16 +510,16 @@ file is called without any command line arguments, it will run over
 the example files, filling in defaults as necessary. 
 Thus, this initial call is as simple as:
 
-\begin{code}
+\begin{cmdline}
 ?\bcmd{}?
-\end{code}
+\end{cmdline}
 
 \noindent The rest of the examples here build off this call by adding additional configurations via command line arguments.
 To explore the command line arguments, one can run the following command to print a useful summary:
 
-\begin{code}
+\begin{cmdline}
 ?\bcmd{}? --help
-\end{code}
+\end{cmdline}
 
 \noindent For more extended help, the command line arguments built-in to \balrog{} are detailed further in \autoref{sec:cmdline}.
 In brief, they are used to specify input images and their properties, as well as configuration
@@ -530,9 +535,9 @@ File names are intended to be reasonably transparent.
 \balrog{} can be told to print messages more verbosely, 
 and it is also instructive to repeat the example \balrog{} call in verbose mode.
 
-\begin{code}
+\begin{cmdline}
 ?\bcmd{}? --stdverbosity v
-\end{code}
+\end{cmdline}
 
 \noindent While the original call ran without printing anything, this one will write out some messages
 relevant to \balrog{} filling in defaults for parameters.
@@ -543,9 +548,9 @@ While \opt{stdverbosity} is for \codett{stdout}/\codett{stderr},
 \opt{logverbosity} dictates the level of messaging logged to file.
 Run the the previous command, but now flag the logging to verbose:
 
-\begin{code}
+\begin{cmdline}
 ?\bcmd? --stdverbosity v --logverbosity v
-\end{code}
+\end{cmdline}
 
 \noindent Opening the file found in \codett{\$INSTALLDIR/default\_example/output/balrog\_log/run.log.txt}
 should contain exactly the same statements printed to the command line.
@@ -672,9 +677,9 @@ its treatment is saved for \autoref{sec:user}.
 To generate a summary of \balrog{}'s command line environment, run the following command,
 where \codett{runbalrog} is defined in \autoref{tab:def}.
 
-\begin{code}
+\begin{cmdline}
 ?\bcmd? --help
-\end{code}
+\end{cmdline}
 This prints a listing of all the command line arguments (including those defined by the user), 
 along with their available help strings.
 The built-in arguments' help strings are intended to be a useful quick reference tool,
@@ -836,10 +841,28 @@ in order to specify how simulated galaxies are sampled.
 after they have been sampled. \simrules{} and \simsamp{}
 will become clearer to follow.
 
+\begin{table}
+\caption{Attributes of the \simrules{} object defining the simulated galaxies.} \label{tab:attr}
+\begin{tabular}{l l}
+\toprule
+\textbf{Attribute} & \textbf{Meaning} \\ \midrule
+\rules{x} & Galaxy centroid $x$-coordinate [pixels], $x \in \left[1,N_{cols} \right]$\\
+\rules{y} & Galaxy centroid $y$-coordinate [pixels], $y \in \left[1,N_{rows} \right]$\\
+\rules{g1} & Reduced shear, $g_1$ component \\
+\rules{g2} & Reduded shear, $g_2$ component \\
+\rules{magnification} & Magnification, $1 + \kappa$ \\
+\rules{sersicindex} & \sersic{} index \\
+\rules{halflightradus} & \sersic{} half light radius [arcsec] \\
+\rules{magnitude} & Galaxy brightness [mag] \\
+\rules{axisratio} & Minor to major axis ratio \\
+\rules{beta} & Orientaiton angle of major axis (measured from $x$-axis) [degrees] \\ \bottomrule
+\end{tabular}
+\end{table}
+
 \autoref{sec:galsim} laid out the parameters which characterize each simulated galaxy.
 Briefly recapitulating, each galaxy is made up of one or \sersic{} profiles.
 Each \sersic{} profile is composed of five components: 
-\sersic{} index, half light radius, brightness magnitude, minor to major axis ratio, 
+\sersic{} index ($n$), half light radius, brightness magnitude, minor to major axis ratio, 
 and orientation angle counter-clockwise from the $\hat{x}$-direction ($\beta$).
 Furthermore, a simulated galaxy also shares fives additional parameters among each \sersic{} profile:
 two centroid position coordinates, $(x,y)$, two reduced shear coordinates $(g_1,g_2)$, and magnification.
@@ -850,36 +873,19 @@ The attribute names for \simrules{} and \simsamp{} have been transparently chose
 Nevertheless, for completeness the names and meanings are fully specified in \autoref{tab:attr}.
 \autoref{tab:attr} uses \simrules{} as the concrete example.
 The attribute names of \simsamp{} are identical. 
-
-
-\begin{table}
-\caption{Attributes of the \simrules{} object defining the simulated galaxies.} \label{tab:attr}
-\begin{tabular}{l l}
-\hline
-\textbf{Attribute} & \textbf{Meaning} \\ \hline
-\rules{x} & Galaxy centroid $x$-coordinate [pixels], $x \in \left[1,N_{cols} \right]$\\
-\rules{y} & Galaxy centroid $y$-coordinate [pixels], $y \in \left[1,N_{rows} \right]$\\
-\rules{g1} & Reduced shear, $g_1$ component \\
-\rules{g2} & Reduded shear, $g_2$ component \\
-\rules{magnification} & Magnification, $1 + \kappa$ \\
-\rules{sersicindex} & \sersic{} index \\
-\rules{halflightradus} & \sersic{} half light radius [arcsec] \\
-\rules{magnitude} & Galaxy brightness [mag] \\
-\rules{axisratio} & Minor to major axis ratio \\
-\rules{beta} & Orientaiton angle of major axis (measured from $x$-axis) [degrees] \\ \hline
-\end{tabular}
-\end{table}
+For the time being, we will continue assuming each galaxy has been simulated as a single \sersic{} profile.
+We will return to handling two or more in a few paragraphs.
 
 \begin{table} 
 \caption{Syntax examples for each of the simulation types \balrog{} understands.} \label{tab:simtype}
 \begin{tabular} {l l}
-\hline
-\textbf{Type} & \textbf{Example} \\ \hline
+\toprule
+\textbf{Type} & \textbf{Example} \\ \midrule
 Constant & \codett{rules.g1 = 0} \\
 Array & \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)} \\
-Catalog & \codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=0, col=`IMAG')} \\
+Catalog & \codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=1, col=`IMAG')} \\
 Function & \codett{rules.y = Function(function=rand,} \\
- & \hspace{1.55in} \codett{args=[args.xmin,args.xmax,args.ngal])} \\ \hline
+ & \hspace{1.55in} \codett{args=[args.xmin,args.xmax,args.ngal])} \\ \bottomrule
 \end{tabular}
 \end{table}
 
@@ -903,7 +909,7 @@ Calls to \codett{Catalog} require three arguments: \codett{file}, \codett{ext}, 
 If \codett{Catalog} is used multiple times,
 multiple columns selected from the same data table are automatically jointly sampled.
 An example call to \codett{Catalog} looks like: 
-\codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=0, col=`IMAG')}.
+\codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=1, col=`IMAG')}.
 Last but not least, the fourth assignable sampling type to \simrules{} is a function. 
 Users write their own function according to usual \py{} syntax,
 then feed this function and its necessary arguments as the arguments to
@@ -942,7 +948,7 @@ def SimulationRules(args, rules, sampled):
 \noindent The $x$-coordinates randomly sample, and then each galaxy's $y$-coordinate
 is set equal to exactly the same value as its $x$-coordinate.
 Please note, this is expressly different from the original example where both $x$ and $y$ sampled randomly.
-\simsamp{} can also be used as an argument within the \codett{args} passed to a sampling function,
+\simsamp{} can also be used as an argument within the \simargs{} passed to a sampling function,
 as is the case in the proceeding example.
 
 \begin{code}
@@ -959,33 +965,141 @@ def SampleFunction(x, y, xmax, ymax):
 
 \noindent This functionality allows users to have access to the sampled galaxy truth
 information in their functions.
+This particular example gave each galaxy a position dependent axis ratio.
+As a further eample, one could apply position dependent lensing effects in a similar fashion.
 
-\rules{sersicindex}, \rules{halflightradius}, \rules{magnitude}, \rules{axisratio},
-and rules{beta} must be arrays, whose length is equal to rules{nProfiles}. For example, simulating
-galaxies with both an expontential and a de Vaucouleurs component would read:
+Thus far we have been operating with single component \sersic{} models.
+However, two or more components can be implemented.
+Doing so requires a call to a \balrog{} function called \codett{InitialSersic}
+before any of \codett{rules}'s five \sersic{} attributes 
+(\codett{sersicindex}, \codett{halflightradius}, \codett{magnitude}, \codett{axisratio}, \codett{beta})
+are reassigned.
+\codett{InitialSersic} takes \simrules{} and \simsamp{} as arguments as well as \codett{nProfiles},
+the number of superimposed \sersic{} models, e.g.\\
+\codett{InitializeSersic(rules, sampled, nProfiles=2)}.
+This has recast the \sersic{} components of \codett{rules} and \codett{sampled} as length two list.
+Now the elements of these attributes of \codett{rules} must be updated accordingly,
+using syntax akin to that of any other \py{} list. For example, the following builds
+galaxies as bulge + disk models, using an exponentional disk ($n = 1$) and a de Vaucouleurs bulge ($n = 4$).
+
+\begin{code}
+def SimulationRules(args, rules, sampled):
+    rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
+    rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
+    rules.g1 = 0
+    rules.g2 = 0
+    rules.magnfication = 1
+
+    InitializeSersic(rules, sampled, nProfiles=2)
+    rulex.sersicindex = [1, 4]
+    rules.halflightradius[0] = Catalog(`cosmos.fits',1,`HALF_LIGHT_RADIUS')
+    rules.halflightradius[1] = sampled.halflightradius[0]
+    rules.magnitude[0] = Catalog(`cosmos.fits',1,`IMAG')
+    rules.magnitude[1] = sampled.magnitude[0]
+    rules.beta[0] = Function(function=rand, args=[-90, 90, args.ngal])
+    rules.beta[1] = sampled.beta[0]
+    rules.axisratio[1] = sampled.axisratio[0]
+    rules.axisratio[0] = Function(function=rand, args=[0.05, 1, args.ngal])
+\end{code}
+
+\noindent The example uses bulges and disks with identical half light radii,
+magnitudes, axis ratios, and orientation angles.
+The values for the half light radius and magnitude are sampled from the catalog \codett{cosmos.fits}.
+The axis ratios and orientations angles are random, as are the galaxy positions.
+No lensing is applied.
+We direct the reader's attention to the final two lines.
+Conceptually one would often think of these in the opposite order, but either is permissible 
+and equivalent in \balrog{}.
+Also notice that the \codett{x}, \codett{y}, \codett{g1}, \codett{g2}, and \codett{magnification}
+attributes are unaffected by the \codett{InitializeSersic} statement. These attributes are never lists.
 
 
+All attributes of \simrules{} have a default, which will be used if the attribute is not overwritten.
+Any time a default must be used a warning message is issued.
+The defaults themselves are listed in \autoref{tab:default}.
+Notice that in some cases, the default is to sample from the \codett{cosmos.fits} catalog which
+ships with \balrog{}.
+These should create realistic populations.
+By default a single component \sersic{} model is adopted.
+If the \sersic{} mode is multi-compoents, each element of an attribute's list assumes the default in \autoref{tab:default}.
+Whenever one uses \codett{InitializeSersic}, the \sersic{} attributes 
+are reinitialized to their defaults, so be careful if \codett{InitializeSersic} is called more than once
+in \simfunc{}.
 
-The second and fourth examples in \autoref{tab:simtype} makes use of \simsamp{}, the third argument
-passed to \simfunc{}. \simsamp{} is an object allowing users to refer to the properties of
-the simulated galaxies after they have been sampled. Referring to the second example above,
-the first element of \rules{axisratio} is an array decreasing incrementally from 1 to 0.
-The second elemment of \rules{axisratio} then says to use whatever the sampled values of
- the first element turn out to be. Here, this equates to setting the second element of rules{axisratio}
- to the same array as the first element of \rules{axisratio}, so the use of \simsamp{} is not 
- really necessary. However, return to the fourth example in \autoref{tab:simtype}. Image \codett{NFW2}
- as a function which takes two arguments, \codett{x} and \codett{y}, which returns the $g_2$ component
- of shear at position ($x$,$y$) from an NFW halo with mass $10^{15} M_{\odot}$ whose center lies at (0,0).
- Now image \codett{sampled.x} and \codett{sampled.y} were sampled randomly:
- 
- 
-\noindent \codett{sampled.x} and \codett{sampled.y} now represent the values
-for $x$ and $y$ after the random sampling has occurred. 
-Along these lines, \balrog{} can build-up simulations with fairly little recoding between completely
-different types of simulations.
-\balrog{} makes sure that all the simulation parameters are sampled
-in the proper order and will throw an error if something ambiguous was defined
-by the user.
+\begin{table}
+\caption{\simrules{} defaults.
+\hl{I need to change the defaults for axis ratio and beta.}}  \label{tab:default}
+\begin{tabular}{l l} \toprule
+\textbf{Attribute} & \textbf{Default} \\ \midrule
+\rules{x} & \codett{np.random.uniform(args.xmin, args.xmax, args.ngal)} \\
+\rules{y} & \codett{np.random.uniform(args.ymin, args.ymax, args.ngal)} \\
+\rules{g1} & 0 \\
+\rules{g2} & 0 \\
+\rules{magnification} & 1 \\ \\
+\catline{\sersic{}} \\ 
+\multicolumn{2}{c}{(If \sersic{} attributes are multi-component, each list element uses  this default)} \\ \\
+\rules{sersicindex} & \codett{Catalog(`cosmos.fits',1,`SERSIC_INDEX')} \\
+\rules{halflightradius} & \codett{Catalog(`cosmos.fits',1,`HALF_LIGHT_RADIUS')} \\
+\rules{magnitude} & \codett{Catalog(`cosmos.fits',1,`IMAG')} \\
+\rules{axisratio} & 1 \\
+\rules{beta} & 0 \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Previouly we mentioned we would elaborate further on some finer details of using \codett{Function} to sample.
+We now do so.
+Inside \codett{Function} statements, it is possible to make an element of \simargs{} a \codett{Catalog} statement.
+Here is a concrete example.
+
+\begin{code}
+def SimulationRules(args, rules, sampled):
+    nc = Catalog(file='cosmos.fits',ext=1,col='SERSIC_INDEX')
+    n = Function(function=g, args=[1, 0.05, args.ngal, nc])
+    rules.sersicindex = n
+
+def g(avg, std, ngal, add):
+    gaus = gaussian(avg, std, ngal)
+    return gaus+add
+
+def gaussian(avg, std, ngal):
+    return np.random.normal( avg, std, ngal )
+\end{code}
+
+\noindent An amount which is sampled from the catalog is added to the Gaussian.
+This particular implementation is merely illustrative, not necessarily
+something one would realistically do scientifically.
+If the table given in \codett{Catalog} was also used to sample any other parameters,
+everything is still automatically jointly sampled.
+\codett{Function} can also take other \codett{Function} statments as elements of \simargs{}.
+To demonstrate, we form another example very similar to the previous one.
+
+\begin{code}
+def SimulationRules(args, rules, sampled):
+    ns = Function(function=exact, args=[np.ones(args.ngal)])
+    n = Function(function=g, args=[4, 0.05, args.ngal, ns])
+    rules.sersicindex = n
+
+def exact(item):
+    return item
+
+def g(avg, std, ngal, add):
+    gaus = gaussian(avg, std, ngal)
+    return gaus+add
+
+def gaussian(avg, std, ngal):
+    return np.random.normal( avg, std, ngal )
+\end{code}
+
+\noindent Here, the usage of the \codett{exact} funciton is trivial, but nevertheless
+representive of the proper usage.
+
+\simfunc{} is written to be handle errors.
+When users try to enter a sampling specification that \balrog{} does not understand an exception is raised.
+These exceptions cause \balrog{} to terminate.
+The logic is that any \balrog{} \pyconfig{} syntax errors are treated like ordinary \py{} syntax
+errors and thus force the execution thread to exit.
+The traceback will include line numbers for where the process was terminated.
+
 
 \section{\sex{} Something}
 \label{sec:sexoverride}
