@@ -1,13 +1,17 @@
 \documentclass[12pt]{book}
 
-\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib,listings,booktabs,hhline}
+\usepackage{amsfonts,amsmath,amssymb,gensymb,soul,graphicx,titlesec,tabu,longtable,array,natbib,listings,booktabs,hhline,multirow}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,pdftitle={Balrog},pdfauthor={Suchyta and Huff}]{hyperref}
-\usepackage[T1]{fontenc}
 \usepackage[margin=1in]{geometry}
 \usepackage[singlelinecheck=false]{caption}
 \usepackage[nodayofweek]{datetime}
-\usepackage{title,optstable,config,outtable,journals}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+
+\usepackage{title,newoptstable,config,outtable,journals}
 \bibliographystyle{mn2e_adsurl}
 
 
@@ -565,10 +569,10 @@ and directs all \sex{}'s \codett{stdout} to \codett{sex.log.txt}.
 \caption{Definitions used throughout this manual.}
 \label{tab:def}
 \begin{tabular}{l l}
-\toprule
-\textbf{Name} & \textbf{Meaning} \\ \midrule \midrule
+\toprule \toprule
+\textbf{Name} & \textbf{Meaning} \\ \midrule
 \codett{\$INSTALLDIR} & Directory \codett{git} clones for \balrog{}, i.e. where \balrog{} is installed \\
-\codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\ \bottomrule
+\codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 
@@ -740,9 +744,9 @@ At any rate, \balrog{}'s output logs will allow users to read off exactly how th
 
 \begin{table}[h]
 \caption{Translation between \balrog{} command line argument names and \sex{} command line argument names.} \label{tab:b2s}
-\begin{tabular}{l l l} \toprule
+\begin{tabular}{l l l} \toprule \toprule
 
-\textbf{\balrog{}} & & \textbf{\sex{}} \\ \midrule \midrule \\
+\textbf{\balrog{}} & & \textbf{\sex{}} \\ \midrule \\
 \multicolumn{2}{c}{\dfill} & Explit \hspace{0.3cm} \dfill \\
 \opt{imagein} & $\rightarrow$ & \codett{IMAGE} \\
 \opt{weightin} &  $\rightarrow$ & \codett{WEIGHT\_IMAGE}\\
@@ -755,7 +759,7 @@ At any rate, \balrog{}'s output logs will allow users to read off exactly how th
 
 \multicolumn{3}{c}{\dfill - - - - Possibly Modified To Account For Association Mode - - - - \dfill} \\
 \opt{sexconfig} & $\rightarrow$  &\codett{c} \\
-\opt{sexparam} & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ \bottomrule
+\opt{sexparam} & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 
@@ -888,7 +892,7 @@ will become clearer to follow.
 \begin{table}
 \caption{Attributes of the \simrules{} object defining the simulated galaxies.} \label{tab:attr}
 \begin{tabular}{l l}
-\toprule
+\toprule \toprule
 \textbf{Attribute} & \textbf{Meaning} \\ \midrule
 \rules{x} & Galaxy centroid $x$-coordinate [pixels], $x \in \left[1,N_{cols} \right]$\\
 \rules{y} & Galaxy centroid $y$-coordinate [pixels], $y \in \left[1,N_{rows} \right]$\\
@@ -899,7 +903,7 @@ will become clearer to follow.
 \rules{halflightradus} & \sersic{} half light radius [arcsec] \\
 \rules{magnitude} & Galaxy brightness [mag] \\
 \rules{axisratio} & Minor to major axis ratio \\
-\rules{beta} & Orientaiton angle of major axis (measured from $x$-axis) [degrees] \\ \bottomrule
+\rules{beta} & Orientaiton angle of major axis (measured from $x$-axis) [degrees] \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 
@@ -923,14 +927,14 @@ We will return to handling two or more in a few paragraphs.
 \begin{table} 
 \caption{Syntax examples for each of the simulation types \balrog{} understands.} \label{tab:simtype}
 \begin{tabular} {l l}
-\toprule
+\toprule \toprule
 \textbf{Type} & \textbf{Example} \\ \midrule
 Constant & \codett{rules.g1 = 0} \\
 Array & \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)} \\
 (Sampled  & \codett{rules.y = sampled.x}) \\
 Catalog & \codett{rules.magnitude = Catalog(file=`cosmos.fits', ext=1, col=`IMAG')} \\
 Function & \codett{rules.y = Function(function=rand,} \\
- & \hspace{1.55in} \codett{args=[args.xmin,args.xmax,args.ngal])} \\ \bottomrule
+ & \hspace{1.55in} \codett{args=[args.xmin,args.xmax,args.ngal])} \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 
@@ -1076,7 +1080,7 @@ in \simfunc{}.
 \begin{table}
 \caption{\simrules{} defaults.
 \hl{I need to change the defaults for axis ratio and beta.}}  \label{tab:default}
-\begin{tabular}{l l} \toprule
+\begin{tabular}{l l} \toprule \toprule
 \textbf{Attribute} & \textbf{Default} \\ \midrule
 \rules{x} & \codett{np.random.uniform(args.xmin, args.xmax, args.ngal)} \\
 \rules{y} & \codett{np.random.uniform(args.ymin, args.ymax, args.ngal)} \\
@@ -1089,7 +1093,7 @@ in \simfunc{}.
 \rules{halflightradius} & \codett{Catalog(`cosmos.fits',1,`HALF_LIGHT_RADIUS')} \\
 \rules{magnitude} & \codett{Catalog(`cosmos.fits',1,`IMAG')} \\
 \rules{axisratio} & 1 \\
-\rules{beta} & 0 \\ \bottomrule
+\rules{beta} & 0 \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 

@@ -10,12 +10,14 @@
 \LTcapwidth=\textwidth
 \newcommand{\optstab}{
 \vspace{10pt}
-\begin{longtabu} to \linewidth {| p{1.4in} X|}
-\caption{Command line arguments natively built-in to \balrog{}. \hl{We should decide what the best name for everything is, both the full name and abbreviation.}} \label{tab:opts}\\ \hline
+\begin{longtabu} to \linewidth { p{1.4in} X}
+\caption{Command line arguments natively built-in to \balrog{}. \hl{We should decide what the best name for everything is, both the full name and abbreviation.}} \label{tab:opts}\\ \toprule \toprule %\hhline{|=|=|}
 
-& \\[-1em]
-\textbf{Argument} & \textbf{Description} \\[+0.1em] \hhline{|=|=|}
-& \\
+\textbf{Argument} & \textbf{Description} \\ \midrule \\
+
+\multicolumn{2}{p{\textwidth}}{\textbf{\opt{pyconfig} / \codett{-cnfg}}} \\
+\multicolumn{2}{p{\textwidth}}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). \hl{I need to change the name of this to pyfconfig in the code.} It defines the user's custom command line arguments, determines how to generate simulated galaxies, and allows for overriding specifications in \opt{sexconfig}.} \\
+\multicolumn{2}{p{\textwidth}}{\codett{\$INSTALLDIR/config.py}} \lskip
 
 \optrow{pyconfig}{cnfg}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). \hl{I need to change the name of this to pyfconfig in the code.} It defines the user's custom command line arguments, determines how to generate simulated galaxies, and allows for overriding specifications in \opt{sexconfig}.}{\codett{\$INSTALLDIR/config.py}} \llskip
 
@@ -24,7 +26,7 @@
 \optrow{clean}{c}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) after catalogs have been written.}{Unflagged, i.e. effectively false} \llskip
 
 \catline{Input Images} \\
-\multicolumn{2}{|c|}{(\small All images must be given in FITS format. No other file types are supported.)} \lskip
+\multicolumn{2}{c}{(\small All images must be given in FITS format. No other file types are supported.)} \lskip
 \optrow{imagein}{ii}{Image to insert simulated galaxies into.}{\codett{\$INSTALLDIR/default\_example/input/example.fits}} \lskip
 \optrow{weightin}{wi}{File containing the weight map associated with \opt{imagein}. This can be a separate file from \opt{imagein} or the same file, where the flux image and weight map live in different extensions.}{\codett{\$INSTALLDIR/default\_example/input/example.fits}} \lskip
 \optrow{psfin}{pi}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \codett{.psf} as the extension.}{\codett{\$INSTALLDIR/default\_example/input/example.psf}} \llskip
@@ -42,8 +44,8 @@ else: \\
 \end{tabular}} \llskip
  
 \catline{Subsampling} \\
-\multicolumn{2}{|c|}{(\small Pixel coodinates begin with unit indexing $\implies \left\{ x \in \left[1, N_{\text{cols}} \right],~y \in \left[1, N_{\text{rows}} \right] \right\}$.} \\
-\multicolumn{2}{|c|}{\small When all defaults are maintained, the combined result uses the entire image.)} \lskip
+\multicolumn{2}{c}{(\small Pixel coodinates begin with unit indexing $\implies \left\{ x \in \left[1, N_{\text{cols}} \right],~y \in \left[1, N_{\text{rows}} \right] \right\}$.} \\
+\multicolumn{2}{c}{\small When all defaults are maintained, the combined result uses the entire image.)} \lskip
 \optrow{xmin}{xmin}{Pixel $x$-coordinate for the lower bound of where to place simulated galaxies into \opt{imagein}.}{1} \lskip
 \optrow{xmax}{xmax}{Pixel $x$-coordinate for the upper bound of where to place simulated galaxies into \opt{imagein}.}{$N_{\text{cols}}$} \lskip
 \optrow{ymin}{ymin}{Pixel $y$-coordinate for the lower bound of where to place simulated galaxies into \opt{imagein}.}{1} \lskip
@@ -70,7 +72,7 @@ except: \\
 \optrow{seed}{s}{Seed to give random number generator for any sampling which requires it, except noise realizations which are always different.}{Current time} \llskip
 
 \catline{\sex{}} \\
-\multicolumn{2}{|c|}{(\small Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.)} \lskip
+\multicolumn{2}{c}{(\small Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help.)} \lskip
 \optrow{sexpath}{spp}{Path to \sex{} executable.}{sex, i.e. system default} \lskip
 \optrow{sexconfig}{sc}{Config file for running \sex{} (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/sex.config}} \lskip
 \optrow{sexparam}{sp}{Param file specifying which measurements \sex{} outputs (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/bulge.param}. This performs a single S\'{e}rsic profile model fit to each galaxy with free S\'{e}rsic index.} \lskip
@@ -78,6 +80,6 @@ except: \\
 \optrow{sexconv}{sf}{\sex{} filter convolution file when making detections.}{\codett{\$INSTALLDIR/astro\_config/sex.conv}} \lskip
 \optrow{noassoc}{na}{Do not run \sex{} in association mode (c.f. \autoref{sec:processing}).}{Unflagged, i.e. use association mode.} \lskip
 \optrow{noempty}{ne}{Skip \sex{} run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).}{Unflagged, i.e. perform the \sex{} run} \lskip
-\optrow{sexemptyparam}{sep}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.} \lskip \hline
+\optrow{sexemptyparam}{sep}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.} \lskip \bottomrule \bottomrule %\hhline{|=|=|}
 \end{longtabu}
 }
