@@ -19,14 +19,28 @@
 
 \textbf{Argument} & \textbf{Default}\\ \midrule \\
 
-\tabarg{pyconfig}{cnfg}{\codett{\$INSTALLDIR/config.py}}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). 
-\hl{I need to change the name of this to pyfconfig in the code.} 
-It defines the user's custom command line arguments, determines how to generate simulated galaxies, 
-and allows for overriding specifications in \opt{sexconfig}.} \llskip
-
-\headline{Output} \lskip
-\tabarg{outdir}{od}{\codett{\$INSTALLDIR/default\_example/output/}}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} \lskip
+\headline{Output File Organization} \lskip
+\tabarg{outdir}{od}{\codett{\$INSTALLDIR/default\_example/output/}}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir} (c.f. \autoref{sec:out}).} \lskip
 \tabarg{clean}{c}{Unflagged $\implies$ False}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) after catalogs have been written.} \llskip
+
+\headline{Logging} \\
+\multicolumn{2}{c}{\small
+$\left(
+\begin{tabular}{l l p{3in}}
+\multicolumn{3}{c}{\underline{\opt{stdverbosity}/\opt{logverbosity} options:}} \\
+\codett{q} & Quiet & Errors only \\
+\codett{n} & Normal & Errors and warnings \\
+\codett{v} & Verbose & Errors, warnings, and info statements \\
+\codett{vv} & Very Verbose & Errors, warnings, info, and debug statments. \codett{vv} is not much different from \codett{v}.
+\end{tabular} \right)$} \lskip
+\tabarg{stdverbosity}{sv}{n}{Verbosity level for printing to \codett{stdout}/\codett{stderr}.} \lskip
+\tabarg{logverbosity}{lv}{n}{Verbosity level for logging to \codett{--outdir/balrog\_log/run.log.txt}.} \lskip
+\tabarg{fulltraceback}{ft}{Unflagged $\implies$ False}{Print the entire traceback when an exception forces \balrog to exit. 
+By default, \balrog{} only prints the portion pointing
+to errors in \opt{pyconfig}. Problems in \pyconfig{} might cause issues downstream, and seeing the full traceback could lead to confusion,
+thinking there is a coding error in other \balrog{} files.}
+\llskip
+
 
 \headline{Input Images} \\
 \multicolumn{2}{c}{(\small All images must be given in FITS format. No other file types are supported.)} \lskip
@@ -52,6 +66,10 @@ $\left\{
 \tabarg{ymax}{ymax}{$N_{\text{rows}}$}{Pixel $y$-coordinate for the upper bound of where to place simulated galaxies into \opt{imagein}.} \llskip
 
 \headline{Simulated Galaxy Generation} \lskip
+\tabarg{pyconfig}{cnfg}{\codett{\$INSTALLDIR/config.py}}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). 
+\hl{I need to change the name of this to pyfconfig in the code.} 
+It defines the user's custom command line arguments, determines how to generate simulated galaxies, 
+and allows for overriding specifications in \opt{sexconfig}.} \lskip
 \tabarg{ngal}{ngal}{50}{Number of galaxies to simulate.} \lskip
 \tabarg{zeropoint}{zp}{
 $\left\{
@@ -75,8 +93,10 @@ $\left\{
 \tabarg{sexnnw}{sn}{\codett{\$INSTALLDIR/astro\_config/sex.nnw}}{\sex{} neural network file for star-galaxy separation} \lskip
 \tabarg{sexconv}{sf}{\codett{\$INSTALLDIR/astro\_config/sex.conv}}{\sex{} filter convolution file when making detections.} \lskip
 \tabarg{noassoc}{na}{Unflagged $\implies$ use association mode.}{Do not run \sex{} in association mode (c.f. \autoref{sec:processing}).} \lskip
-\tabarg{noempty}{ne}{Unflagged $\implies$ perform the \sex{} run}{Skip \sex{} run over the original image, prior to any simulation (c.f. \autoref{sec:processing}). \hl{This should probably be called sexnosimparam}} \lskip
-\tabarg{sexemptyparam}{sep}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).} \lskip \bottomrule \bottomrule %\hhline{|=|=|}
+\tabarg{noempty}{ne}{Unflagged $\implies$ perform the \sex{} run}{Skip \sex{} run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).} \lskip
+\tabarg{sexemptyparam}{sep}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}). \hl{This should probably be called sexnosimparam}} \lskip
+\tabarg{catfitstype}{ct}{\codett{ldac}}{Type of FITS catalog file \sex{} writes out. \opt{catfitstype} $\in$ \{\codett{ldac}, \codett{1.0}\}.}\lskip 
+\bottomrule \bottomrule %\hhline{|=|=|}
 
 \end{longtabu}
 \setlength{\extrarowheight}{0pt}
