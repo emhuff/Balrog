@@ -17,25 +17,25 @@
 \begin{longtabu} to \linewidth {l X}
 \caption{Command line arguments natively built-in to \balrog{}. \hl{We should decide what the best name for everything is, both the full name and abbreviation.}} \label{tab:opts}\\ \toprule \toprule %\hhline{|=|=|}
 
-\textbf{Argument} & \textbf{Default}\\ \midrule \\[-1em]
+\textbf{Argument} & \textbf{Default}\\ \midrule \\
 
 \tabarg{pyconfig}{cnfg}{\codett{\$INSTALLDIR/config.py}}{\balrog{}'s \py{} configuration file (c.f. \autoref{sec:pyconfig}). 
 \hl{I need to change the name of this to pyfconfig in the code.} 
 It defines the user's custom command line arguments, determines how to generate simulated galaxies, 
-and allows for overriding specifications in \opt{sexconfig}.} \lskip
+and allows for overriding specifications in \opt{sexconfig}.} \llskip
 
 \headline{Output} \lskip
 \tabarg{outdir}{od}{\codett{\$INSTALLDIR/default\_example/output/}}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.} \lskip
-\tabarg{clean}{c}{Unflagged $\implies$ False}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) after catalogs have been written.} \lskip
+\tabarg{clean}{c}{Unflagged $\implies$ False}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) after catalogs have been written.} \llskip
 
 \headline{Input Images} \\
 \multicolumn{2}{c}{(\small All images must be given in FITS format. No other file types are supported.)} \lskip
 \tabarg{imagein}{ii}{\codett{\$INSTALLDIR/default\_example/input/example.fits}}{Image into which simulated galaxies are drawn.} \lskip
 \tabarg{weightin}{wi}{\codett{\$INSTALLDIR/default\_example/input/example.fits}}{File containing the weight map associated with \opt{imagein}. This can be a separate file from \opt{imagein} or the same file, where the flux image and weight map live in different extensions.}\lskip
-\tabarg{psfin}{pi}{\codett{\$INSTALLDIR/default\_example/input/example.psf}}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \codett{.psf} as the extension.} \lskip \\
+\tabarg{psfin}{pi}{\codett{\$INSTALLDIR/default\_example/input/example.psf}}{File containing the \psfex{} PSF model for \opt{imagein}. This is a FITS file, but the convention uses \codett{.psf} as the extension.} \llskip
 
-\headline{\hl{FITS Extensions...I should absorb this into fie.fits[...] syntax.}} \\ 
-\multicolumn{2}{c}{(\small Extension indexing begins at 0.)} \lskip
+\headline{FITS Extensions \hl{I should absorb this into fie.fits[...] syntax.}} \\ 
+\multicolumn{2}{c}{(\small This is an inteter position, not to be confused with a file name extension. Indexing begins at 0.)} \lskip
 \tabarg{imageext}{ie}{0}{Extension of \opt{imagein} where the image flux data lives.} \lskip 
 \tabarg{weightext}{we}{
 $\left\{
@@ -45,8 +45,7 @@ $\left\{
 \end{tabular} \right.$}{Extension of \opt{weightin} where the weight map data lives.} \llskip
 
 \headline{Subsampling} \\
-\multicolumn{2}{c}{(\small Pixel coodinates begin with unit indexing $\implies \left\{ x \in \left[1, N_{\text{cols}} \right],~y \in \left[1, N_{\text{rows}} \right] \right\}$.}\\
-\multicolumn{2}{c}{\small When all defaults are maintained, the combined result uses the entire image.)} \lskip
+\multicolumn{2}{c}{\small (Maintaining all defaults uses the entire image. $\left\{ x \in \left[1, N_{\text{cols}} \right],~y \in \left[1, N_{\text{rows}} \right] \right\}$)} \lskip
 \tabarg{xmin}{xmin}{1}{Pixel $x$-coordinate for the lower bound of where to place simulated galaxies into \opt{imagein}.} \lskip
 \tabarg{xmax}{xmax}{$N_{\text{cols}}$}{Pixel $x$-coordinate for the upper bound of where to place simulated galaxies into \opt{imagein}.} \lskip
 \tabarg{ymin}{ymin}{1}{Pixel $y$-coordinate for the lower bound of where to place simulated galaxies into \opt{imagein}.} \lskip
@@ -76,7 +75,7 @@ $\left\{
 \tabarg{sexnnw}{sn}{\codett{\$INSTALLDIR/astro\_config/sex.nnw}}{\sex{} neural network file for star-galaxy separation} \lskip
 \tabarg{sexconv}{sf}{\codett{\$INSTALLDIR/astro\_config/sex.conv}}{\sex{} filter convolution file when making detections.} \lskip
 \tabarg{noassoc}{na}{Unflagged $\implies$ use association mode.}{Do not run \sex{} in association mode (c.f. \autoref{sec:processing}).} \lskip
-\tabarg{noempty}{ne}{Unflagged $\implies$ perform the \sex{} run}{Skip \sex{} run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).} \lskip
+\tabarg{noempty}{ne}{Unflagged $\implies$ perform the \sex{} run}{Skip \sex{} run over the original image, prior to any simulation (c.f. \autoref{sec:processing}). \hl{This should probably be called sexnosimparam}} \lskip
 \tabarg{sexemptyparam}{sep}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation (c.f. \autoref{sec:processing}).} \lskip \bottomrule \bottomrule %\hhline{|=|=|}
 
 \end{longtabu}

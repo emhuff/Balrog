@@ -73,7 +73,7 @@ basicstyle=\ttfamily\selectfont
 \tableofcontents
 
 %\renewcommand{\cleardoublepage}{}
-%\renewcommand{\clearpage}{}
+\renewcommand{\clearpage}{}
 \chapter{Introduction}
 \label{sec:intro}
 \setlength{\parskip}{0pt}
@@ -144,7 +144,7 @@ The following sections build upon \autoref{sec:quick} by more comprehensively sp
 \autoref{sec:pyconfig} treats the file we refer to as \balrog{}'s \pyconfig{} file, which is responsible for a number of customizations,
 including user-defined command line arguments and how the simulated galaxies' properties are generated.
 The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
-\autoref{sec:debug} offers some debugging hints.
+%\autoref{sec:debug} offers some debugging hints.
 In general, the separate sections have been written to read fairly independtly,
 so the entire document does not need to be read sequentially for the sections to make sense.
 Our approach is to build up the documentation conceptually and break it into manageably sized divisions.
@@ -559,7 +559,7 @@ Run the the previous command, but now flag the logging to verbose:
 \noindent Opening the file found in \codett{\$INSTALLDIR/default\_example/output/balrog\_log/run.log.txt}
 should contain exactly the same statements printed to the command line.
 Saving output to file is useful when attempting to debug runs after-the-fact.
-Some debugging hints are offered in \autoref{sec:debug}.
+%Some debugging hints are offered in \autoref{sec:debug}.
 Had any \balrog{} runtime errors occurred during the run,
 \codett{run.log.txt} is the file they would be logged to.
 Additionally, \balrog{} logs the exact value of each command line argument  in \codett{args.log.txt}
@@ -716,7 +716,7 @@ The divisions do not matter per se; they are merely an organizational guide.
 However, because \balrog{} contains quite a few possible arguments to adjust,
 we find them to be a useful aid in adding to tractability.
 
-\opt{sexconfig} and \opt{sexparam} require a bit more explanation than is practical
+\opt{sexconfig} and \opt{sexparam}/\opt{sexemptyparam} require a bit more explanation than is practical
 within the space of \autoref{tab:opts}
 First, not every keyword-value pair in \opt{sexconfig} is relevant during \balrog{} runs.
 Please note, we are not trying to say these settings have zero or very little effect on \sex{}.
@@ -724,22 +724,22 @@ What we mean is that their values within \opt{sexconfig} will be ignored by \bal
 the values are deduced directly from \balrog{}'s command line, and then 
 given as \sex{} command line arguments, which override the \codett{sexconfig} file.
 These amount to what has been written into \autoref{tab:b2s}.
-\autoref{tab:b2s} notes that the \opt{sexconfig} and \opt{sexparm} given to \balrog{}
+\autoref{tab:b2s} notes that the \opt{sexconfig} and \opt{sexparam}/\opt{sexemptyparam} given to \balrog{}
 are not necessarily exactly the ones used when running \sex{}.
 This is to account for the syntax differnce between running with association mode on or off.
-If association mode is on, a \codett{sexparam} file must be written with the proper \codett{ASSOC\_VECTOR} line.
+If association mode is on, a \codett{sexparam} file must be written with the proper \codett{VECTOR\_ASSOC} line.
 \balrog{} does so, and then uses the file. Settings in \codett{sexparam} files cannot be overridden from \sex{}'s command line.
 If association mode is turned off \balrog{} must make sure that no \codett{ASSOC\_*} keywords exist in the \codett{sexconfig} file,
 and writes one out where this is the case for usage downstream. To the best of the authors' knowledge,
 settings like \codett{ASSOC\_*} present in a \codett{sexconfig} file cannot be removed entirely via command line overriding.
-Striclty speaking, there is not a problem if \codett{ASSOC\_VECTOR} is present in the \codett{sexparam} file with association
+Striclty speaking, there is not a problem if \codett{VECTOR\_ASSOC} is present in the \codett{sexparam} file with association
 mode off, but \balrog{} will write and use ones assuredly without it in order to avoid unnecessary warnings.
 We emphasize, no loss generality has been lost for running \sex{}.
 We have just automated the process of creating an on/off switch for association mode, and moved some
 configurations to \balrog{}'s command line because other \balrog{} functionality besides \sex{} depends on them as well.
 At any rate, \balrog{}'s output logs will allow users to read off exactly how their \sex{} commands were called (c.f. \autoref{sec:out}).
 
-%\newpage
+\newpage
 \optstab{}
 
 \begin{table}[h]
@@ -759,7 +759,8 @@ At any rate, \balrog{}'s output logs will allow users to read off exactly how th
 
 \multicolumn{3}{c}{\dfill - - - - Possibly Modified To Account For Association Mode - - - - \dfill} \\
 \opt{sexconfig} & $\rightarrow$  &\codett{c} \\
-\opt{sexparam} & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ \\ \bottomrule \bottomrule
+\opt{sexparam}/ & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ 
+\opt{sexemptyparam} & \\ \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 
@@ -1209,96 +1210,261 @@ would have any effect either.
 \chapter{Output}
 \label{sec:out}
 Each \balrog{} run generates a number of output files. 
-These are organized into a fixed directory structure.
+At first, this number may seem larger than was perhaps expected.
+However, we air on the side of writing to disk anything users might possibly want afterward.
+We intend for \balrog{} to be transparent and debuggable.
+All runs should be recreateable from their output files.
+
+The output files are organized into a fixed directory structure.
 Users indicate the \opt{outdir} command line argument, and
 the remainder of the naming scheme occurs automatically,
 placing files in subdirectories under \opt{outdir}.
 Four subdirectories are written, labelled accoring to what
-type of files they contain. \autoref{tab:out}
-lists the contents of each of these subdirectories,
+type of files they contain. 
+Images write to \opt{outdir}\codett{/balrog\_image/}, 
+catalogs go to \opt{outdir}\codett{/balrog\_cat/},
+\sex{} configurations are saved to \opt{outdir}\codett{/balrog\_sexconfig/},
+and log files are directed to \opt{outdir}\codett{/balrog\_log/}.
+\autoref{tab:out} lists the contents of each of these subdirectories,
 giving a brief desription of each file. Depending on how
 \balrog{} was configured, not necessarily every file
 in \autoref{tab:out} will be present in every run.
 The \codett{*} symbol in \autoref{tab:out} will be replaced with
-the base name of the input image file. For example,
-if the input image is named \codett{example.fits},
+the base name of the input image file.
+By base name, we mean \opt{imagein}'s file name, stripping off the \codett{.fits} extentension,
+as well as any proceeding directories locating it on the filesystem.
+For example,
+if the input image is named \codett{/Users/Balrog/example.fits},
 \codett{*} will be replaced with \codett{example}.
 If the input file name does not end with the \codett{.fits}
 extension, the file name itself is used as the base name.
-This does not include any diretories preceeding the file name.
-For example, if the input image was given as
-\codett{/Users/somebody/home/image.f}, the
-base name would be \codett{image}.
+
+The following sections will further examine the contents of 
+all \balrog{}'s output files, building off \autoref{tab:out}.
+Each section discusses one of the output's four subdirectories,
+equivalent to one of the headings in \autoref{tab:out}.
+\autoref{sec:images} briefly addresses the output images,
+while \autoref{sec:catalogs} describes the catalog files \balrog{} saves.
+\autoref{sec:sexfiles} concerns \sex{} files, and
+\autoref{sec:logs} details what exactly \balrog{} logs to file.
+
+\section{Output Images}
+\label{sec:images}
+
+Every successful \balrog{} run saves three, possbily four, files to \codett{balrog\_image/}.
+The \codett{*.nosim.fits} and \codett{*.psf} files are copies of the 
+input image (\opt{imagein}) and the input PSF (\opt{psfin}) respectively.
+If no subsampling was done, \codett{*.nosim.fits} and \codett{*.psf} are actually symbolic links
+to the input files instead of hard copies. Making symbolic links avoids
+writing potentially large files to disk compared to making hard copies.
+\sex{} only operates over full files, so subsampling requires writing new files.
+Subsampling the PSF amounts to appropriately changing the 
+\codett{POLZERO1} and \codett{POLZERO2} header keywords.
+The \codett{*.sim.fits} file is the image the simulated galaxies have been written into.
+If the weight map lives in a separate file from the flux image, it is
+written to \codett{*.weight.sim.fits}. 
+It will also be a symbolic link if no subsampling has occurred.
+\hl{Maybe remove the .sim part?}.
+A \codett{.sim} or \codett{.nosim} qualifier for the weight image is irrelevant
+because the simulation process does not change it.
+When users flag the \opt{clean} option, the three images in \codett{balrog\_image/}
+are deleted upon completion of \balrog{}.
+
+
+\section{Output Catalogs}
+\label{sec:catalogs}
+
+\balrog{} writes up to three catalog files:
+\codett{*.measuredcat.nosim.fits}, \codett{*.measuredcat.sim.fits}, and \codett{*.truthcat.sim.fits}.
+The truth catalog, \codett{*.truthcat.sim.fits}, is always made.
+The catalog contains a column for each of the attributes of listed in \autoref{tab:attr}
+Five of the columns are named exactly as they appear in \autoref{tab:attr}: 
+\codett{x}, \codett{y}, \codett{g1}, \codett{g2}, and \codett{magnification}.
+\codett{sersicindex}, The \codett{halflightradius}, \codett{magnitude}, \codett{axisratio}, and \codett{beta}
+attributes are allowed to exist as array. The truth catalog includes columns for each of these attributes, whose names
+are indexed with respect to how many \sersic{} profiles have been simulated.
+The indexing appears as a \codett{`\_\%i'} appended to the attribute name.
+Indexing begins at zero.
+For example, when simulating a two component \sersic{} object, the truth catalog
+would contain \codett{sersicindex\_0} and \codett{sersicindex\_1} columns.
+A single component model would only include \codett{sersicindex\_0}.
+In the truth catalog, \codett{magnitude} exists as \codett{flux} [ADU] instead
+of explicitly \codett{magnitude} [mag] because flux is what is drawn into the image by \galsim{}.
+The final two columns of \codett{*.truthcat.sim.fits} are \codett{flux\_noiseless} and \codett{flux\_noised}.
+While the \codett{flux\_\%i} keywords are the simulation parameters that were generated for each \sersic{} component,
+\codett{flux\_noised} is the total flux \galsim{} actually drew into the postage stamp,
+and \codett{flux\_noiseless} is the same without any noise.
+Only one \codett{flux\_noiseless} and \codett{flux\_noised} exists per galaxy.
+
+\codett{*.measuredcat.nosim.fits} and \codett{*.measuredcat.sim.fits} are the two \sex{} catalogs.
+\codett{*.measuredcat.sim.fits} indcludes the simulated galaxies and \codett{*.measuredcat.nosim.fits} does not.
+If \opt{noempty} is flagged, there will not be a \codett{.nosim.fits} file.
+When using association mode, the catalogs are made up solely of simulated galaxies, 
+modulo blending effects (c.f \autoref{sec:processing}). Likely all the simulated galaxies will not
+be detected so there usually will not be as many rows as simulated galaxies.
+Furthermore, if association mode was used, \codett{.sim.fits} includes the truth information
+in the \codett{VECTOR\_ASSOC} column. Each row of of \codett{VECTOR\_ASSOC} is an array of truth parameters.
+The catalog's header enumerates exactly what each element of the array means.
+There are keywords \codett{V\%i} and \codett{VUNIT\%i}, which will match the names of the truth catalog's columns.
+These are the ordered values of the \codett{VECTOR\_ASSOC} array along with their units.
+For example, we can print the relevant header information from the deafault example runs in \autoref{sec:quickbalrog}:
+\begin{cmdline}
+% listhead "default_example/output/balrog_cat/example.measuredcat.sim.fits[2]" | grep V | grep " =" 
+TTYPE1  = `VECTOR_ASSOC'       / ASSOCiated parameter vector
+V0      = `g2      '
+VUNIT0  = `none    '
+V1      = `g1      '
+VUNIT1  = `none    '
+V2      = `magnification'
+VUNIT2  = `none    '
+V3      = `flux_noiseless'
+VUNIT3  = `ADU     '
+V4      = `y       '
+VUNIT4  = `pix     '
+V5      = `x       '
+VUNIT5  = `pix     '
+V6      = `flux_noised'
+VUNIT6  = `ADU     '
+V7      = `halflightradius_0'
+VUNIT7  = `arcsec  '
+V8      = `beta_0  '
+VUNIT8  = `deg     '
+V9      = `sersicindex_0'
+VUNIT9  = `none    '
+V10     = `axisratio_0'
+VUNIT10 = `none    '
+V11     = `flux_0  '
+VUNIT11 = `ADU     '
+\end{cmdline}
+Think of \codett{`V'} as shorthand for \codett{`VECTOR'}. The indecies then label the components of this vector.
+Since a truth catalog itself is written by \balrog{} it is not strictly necessary to include the truth
+vector in the measured catalog. However, it is convenient and essentially comes for free with \balrog{}'s
+association mode setup. Although the \codett{.nosim.fits} file includes
+a \codett{VECTOR\_ASSOC} column, it is not particularly useful because the image did not contain any of the simulated galaxies anyway.
+This \codett{VECTOR\_ASSOC} will not hold
+\codett{flux\_noiseless} or \codett{flux\_noised} because they have not yet been generated when \balrog{}
+calls \sex{} here. 
+\hl{Should I get rid of the vector assoc in nosim altogether?}
+
+
+\section{\sex{} Configuration Files}
+\label{sec:sexfiles}
+
+\autoref{tab:out} itself already accounts for many of the details 
+we would like to point out relevant to
+the files in the \codett{balrog\_sexconfig/} directory, so just a few
+additional comments are in order.
+To run \sex{} in association mode, users give \sex{} a list of coordinates to match to,
+which is stored in a \codett{.txt} file.
+This is what \codett{*.assoc.nosim.txt} and \codett{*.assoc.sim.txt} are used for;
+they amount to \codett{txt} file versions of the truth catalog.
+The files given by command line arguments \opt{sexconfig}, \opt{sexparam}, \opt{sexemptyparam}, \opt{sexnnw}, and \opt{sexconv}
+are copied to the output directory to facilitate reproducibility. Users may very well modify 
+the \sex{} configurations files on their filesystem, and even if they do they still have
+copies of how they existed when \balrog{} ran.
+Because \balrog{} automatically accounts for turning \sex{} association mode on and off, 
+\opt{sexconfig} and \opt{sexparam}/\opt{sexemptyparam} may need to be slightly modified, even when allowing for
+\sex{} configuration from the command line (c.f. \autoref{sec:cmdline}).
+\codett{*.measuredcat.nosim.sex.config}, \codett{*.measuredcat.sim.sex.config}, \codett{*.measuredcat.nosim.sex.params}, 
+and \codett{*.measuredcat.sim.sex.params} 
+are the slightly modified versions and are written to the output directory as well.
+Any settings unrelated to association mode remain unchanged.
+
+
+\section{Log Files}
+\label{sec:logs}
+
+\balrog{} saves four files to the \codett{balrog\_sexconfig/} directory.
+The first is an exact copy of the user's \pyconfig{} file.
+Next, as its name would suggest, \codett{run.log.txt} is a \balrog{} \emph{run log}.
+Any errors or warnings \balrog{} raised would be directed to this file.
+The verbosity of the file's messages is dictated by \opt{logverbosity}; see \autoref{tab:opts}
+for the available options. For the most conservative logging, 
+using \opt{logverbosity vv} will print everything \balrog{} has been programmed 
+to possibly log.
+\codett{args.log.txt} logs the command line arguments passed to \balrog{}
+and \codett{sex.log.txt} logs how \sex{} was called, along with the output \sex{} printed.
+\codett{args.log.txt} and \codett{sex.log.txt} include comment lines specifying 
+what is printed in that section.
+The easiest way for users to familiarize themselves with the files' contents is to
+open the files and have a look themselves.
+Quickly summarizing adding a few notes about the run log, \codett{args.log.txt} contains the exact call \balrog{} was
+instantiated with from the command line, the value \balrog{} initially assumed
+for each argument (filling in with defaults where necessary), the final parsed value
+for each argument, and some \emph{pseudo arguments}--parameters \balrog{} deduces from
+the command line arguments. Strictly speaking users should not need to understand the 
+pseudo arguments; nevertheless, they may be illustrative
+for understanding \balrog{}'s workflow or helpful during debugging.
 
 \outtab{}
 
-\chapter{Debugging}
-\label{sec:debug}
-
-Each galaxy is initally simulated within its own image, commonly known as a postage stamp.
-The postage stamp pixel values are then added to the appropriate pixel values in the original input image.
-To avoid losing a significant portion of a galaxies outside the postage stamp boundaries,
-an appropriate postage stamp size must be chosen. 
-Bigger postage stamps exclude less flux.
-However, the dimensions should not become too large because
-larger postage stamps take longer to simulate.
-To designate postage stamp sizes, \balrog{} operates using an adjustable threshold, $I_t$.
-The postage stamp will be chosen such that the galaxy's surface brightness profile
-must fall below $I_t$ before drawing the postage stamp boundaries.
-
-\balrog{} determines its postage stamp sizes conservatively,
-airing on the side of making size estimages larger than perhaps strictly required.
-To begin, let us assume the simulated galaxies are composed of a single \sersic{} profile.
-We will generalize to multiple superimposed profiles to follow.
-First a \galsim{} \codett{Sersic} object is obstantiated.
-Such objects within \galsim{} are all initally circularly symmetric. 
-The galaxy is then stretched according to its minor to major axis ratio, $\beta$.
-$\beta$'s major axis direction is taken to be along the $x$-axis.
-Next, the galaxy's lensing shear is applied, expressing the magnitude of its reduced shear 
-\mbox{$g = \sqrt{ g_1^2 + g_2^2}$}
-as an axis ratio
-\mbox{$q = (1-g)/(1+g)$}.
-$q$'s major axis is also taken to be along the $\hat{x}$-direction.
-Finishing the lensing effects, the galaxy is magnified, changing its area and flux.
-Effectively, the galaxy now exists as an elliptical \sersic{} profile.
-Further refferences to the half light radius will refer to that along the major axis.
-Please note, the intrinsic axis ratio and lensing shear are applied in the same direction. 
-Although the galaxy's simulation specifications need not orient the two identically,
-by adopting the same direction, this step has made the galaxy as stretched as possible.
-Thus the $\hat{x}$-direction is necessarily the direction of greatest distance for the galaxy's profile to fall below $I_t$,
-and in the abscence of PSF distortions, a large enough postage stamp size along the $x$-axis is certainly 
-sufficient in any other direction. Given a \sersic{} surface brightness profile, the distance $r_s$ at which the profile
-falls to $I_t$ is easily computed:
-\begin{align}
-I_t &= I_e \exp \left( -b_n \left[\left( r_s/r_e  \right)^{1/n} -1 \right] \right) \label{eq:sersic} \\
-\implies r_s &= r_e \left[1 - \frac{1}{b_n}  \ln \left(\frac{I_t}{ I_e}\right) \right]^n. \label{eq:rt}
-\end{align}
-$r_e$ is the half light radius along the major axis, 
-$I_e = I\left(r_e\right)$,
-and $b_n$ is a constant determined by the \sersic{} index, $n$.
-
-Including PSF distortions, \autoref{eq:rt} is no longer the end of the story.
-When determining postage stamp sizes, \balrog{} approximates the PSF as a Gaussian.
-The width of the distribution is fixed to a fiducial seeing value of $\sigma = 1.5$ arcsec.
-This PSF generates an additional $r_p$ to be added to $r_s$. 
-Precisely, $r_p$ is computed by scaling the PSF to the surface brightness of
-the galaxy's centroid, $I_0$, and asking for the distance $r_p$ 
-along the major axis where the distribution equals $I_t$.
-\begin{align}
-I_{t} &= \frac{I_0}{\sigma \sqrt{2 \pi}} \exp \left(\frac{ r_p^2}{2 \sigma^2}  \right) \\
-\implies r_p &= \sigma \sqrt{2 \ln \left( \frac{I_0}{I_t}  \right)}.
-\end{align}
-Effectively, what we calculate is the size of the region over which 
-the modelled galaxy's centroid is redistributed because of the PSF assumed,
-drawing the boundaries of the region where the surface brightntess drops below $I_t$.
-Because every position in the modelled galaxy's profile other than the centroid 
-has a surface brightness less than $I_0$,
-the PSF will redistribute the coordinate's light over a smaller region compared to the centroid's.
-Therefore, the Gaussian PSF will not move the threshold originally located at $r_s$ 
-by a distance of more than $r_p$.
-
-
-\hl{The fiducial seeing should probably be made an adjustable parameter. I didn't do that thus far just not to make another command line argument.}
+%\chapter{Debugging}
+%\label{sec:debug}
+%
+%Each galaxy is initally simulated within its own image, commonly known as a postage stamp.
+%The postage stamp pixel values are then added to the appropriate pixel values in the original input image.
+%To avoid losing a significant portion of a galaxies outside the postage stamp boundaries,
+%an appropriate postage stamp size must be chosen. 
+%Bigger postage stamps exclude less flux.
+%However, the dimensions should not become too large because
+%larger postage stamps take longer to simulate.
+%To designate postage stamp sizes, \balrog{} operates using an adjustable threshold, $I_t$.
+%The postage stamp will be chosen such that the galaxy's surface brightness profile
+%must fall below $I_t$ before drawing the postage stamp boundaries.
+%
+%\balrog{} determines its postage stamp sizes conservatively,
+%airing on the side of making size estimages larger than perhaps strictly required.
+%To begin, let us assume the simulated galaxies are composed of a single \sersic{} profile.
+%We will generalize to multiple superimposed profiles to follow.
+%First a \galsim{} \codett{Sersic} object is obstantiated.
+%Such objects within \galsim{} are all initally circularly symmetric. 
+%The galaxy is then stretched according to its minor to major axis ratio, $\beta$.
+%$\beta$'s major axis direction is taken to be along the $x$-axis.
+%Next, the galaxy's lensing shear is applied, expressing the magnitude of its reduced shear 
+%\mbox{$g = \sqrt{ g_1^2 + g_2^2}$}
+%as an axis ratio
+%\mbox{$q = (1-g)/(1+g)$}.
+%$q$'s major axis is also taken to be along the $\hat{x}$-direction.
+%Finishing the lensing effects, the galaxy is magnified, changing its area and flux.
+%Effectively, the galaxy now exists as an elliptical \sersic{} profile.
+%Further refferences to the half light radius will refer to that along the major axis.
+%Please note, the intrinsic axis ratio and lensing shear are applied in the same direction. 
+%Although the galaxy's simulation specifications need not orient the two identically,
+%by adopting the same direction, this step has made the galaxy as stretched as possible.
+%Thus the $\hat{x}$-direction is necessarily the direction of greatest distance for the galaxy's profile to fall below $I_t$,
+%and in the abscence of PSF distortions, a large enough postage stamp size along the $x$-axis is certainly 
+%sufficient in any other direction. Given a \sersic{} surface brightness profile, the distance $r_s$ at which the profile
+%falls to $I_t$ is easily computed:
+%\begin{align}
+%I_t &= I_e \exp \left( -b_n \left[\left( r_s/r_e  \right)^{1/n} -1 \right] \right) \label{eq:sersic} \\
+%\implies r_s &= r_e \left[1 - \frac{1}{b_n}  \ln \left(\frac{I_t}{ I_e}\right) \right]^n. \label{eq:rt}
+%\end{align}
+%$r_e$ is the half light radius along the major axis, 
+%$I_e = I\left(r_e\right)$,
+%and $b_n$ is a constant determined by the \sersic{} index, $n$.
+%
+%Including PSF distortions, \autoref{eq:rt} is no longer the end of the story.
+%When determining postage stamp sizes, \balrog{} approximates the PSF as a Gaussian.
+%The width of the distribution is fixed to a fiducial seeing value of $\sigma = 1.5$ arcsec.
+%This PSF generates an additional $r_p$ to be added to $r_s$. 
+%Precisely, $r_p$ is computed by scaling the PSF to the surface brightness of
+%the galaxy's centroid, $I_0$, and asking for the distance $r_p$ 
+%along the major axis where the distribution equals $I_t$.
+%\begin{align}
+%I_{t} &= \frac{I_0}{\sigma \sqrt{2 \pi}} \exp \left(\frac{ r_p^2}{2 \sigma^2}  \right) \\
+%\implies r_p &= \sigma \sqrt{2 \ln \left( \frac{I_0}{I_t}  \right)}.
+%\end{align}
+%Effectively, what we calculate is the size of the region over which 
+%the modelled galaxy's centroid is redistributed because of the PSF assumed,
+%drawing the boundaries of the region where the surface brightntess drops below $I_t$.
+%Because every position in the modelled galaxy's profile other than the centroid 
+%has a surface brightness less than $I_0$,
+%the PSF will redistribute the coordinate's light over a smaller region compared to the centroid's.
+%Therefore, the Gaussian PSF will not move the threshold originally located at $r_s$ 
+%by a distance of more than $r_p$.
+%
+%
+%\hl{The fiducial seeing should probably be made an adjustable parameter. I didn't do that thus far just not to make another command line argument.}
 
 
 \bibliography{references}
