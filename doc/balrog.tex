@@ -1079,8 +1079,7 @@ are reinitialized to their defaults, so be careful if \codett{InitializeSersic} 
 in \simfunc{}.
 
 \begin{table}
-\caption{\simrules{} defaults.
-\hl{I need to change the defaults for axis ratio and beta.}}  \label{tab:default}
+\caption{\simrules{} defaults.}  \label{tab:default}
 \begin{tabular}{l l} \toprule \toprule
 \textbf{Attribute} & \textbf{Default} \\ \midrule
 \rules{x} & \codett{np.random.uniform(args.xmin, args.xmax, args.ngal)} \\
@@ -1181,12 +1180,9 @@ Each \codett{GSParam} has a built-in \galsim{} default. Any attribute not explic
 assigned in \gspfunc{} uses this default.
 In most cases, the defaults work well enough. The exception is when very bright objects ($\sim$~15 mag, depending on the calibration)
 are being drawn, and even a small percentage of the flux totals to a signifcant number of ADU.
-If you think there might be an issue visually inspect the image into which the simulated galaxies have been drawn (c.f. \autoref{sec:out})
+When one thinks there might be an issue, 
+it is useful to visually inspect the image into which the simulated galaxies have been drawn (c.f. \autoref{sec:out})
 for signs of aliasing.
-
-\hl{Do we want a table of these? I can easily get the defaults, but as far as I can find, they're not even
-on the Galsim help page. Maybe make an appendix table? It doesn't really hurt putting them in, it just might
-be a bit confusing/overwhelming to some people.}
 
 
 \section{\sex{} Configuration Overrides}
