@@ -116,18 +116,18 @@ def ReadImages(BalrogSetup):
 
 
 def WriteImages(BalrogSetup, image, weight, nosim=False):
+    weightout = BalrogSetup.weightout
     if nosim:
         imageout = BalrogSetup.nosim_imageout
-        weightout = BalrogSetup.nosim_weightout
     else:
         imageout = BalrogSetup.imageout
-        weightout = BalrogSetup.weightout
 
-    if weightout==imageout:
+    if BalrogSetup.weightin==BalrogSetup.imagein:
         galsim.fits.writeMulti(image_list=[image,weight], file_name=imageout)
     else:
         galsim.fits.write(image=image, file_name=imageout)
-        galsim.fits.write(image=weight, file_name=weightout)
+        if BalrogSetup.noempty or nosim:
+            galsim.fits.write(image=weight, file_name=weightout)
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psfin, BalrogSetup.psfout)
@@ -293,18 +293,19 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
 
 def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
     afile = None
+    weightout = BalrogSetup.weightout
     if nosim:
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
-        weightout = BalrogSetup.nosim_weightout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_nosimfile
     else:
         catalogmeasured = BalrogSetup.catalogmeasured
         imageout = BalrogSetup.imageout
-        weightout = BalrogSetup.weightout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
+        if BalrogSetup.imagein==BalrogSetup.weightin:
+            weightout = imageout
 
     if not BalrogSetup.noassoc:
         WriteCatalog(catalog, BalrogSetup, txt=afile, fits=False)
@@ -336,22 +337,23 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
     else:
         if os.path.lexists(BalrogSetup.nosim_imageout):
             subprocess.call( ['rm', BalrogSetup.nosim_imageout] )
-        if os.path.lexists(BalrogSetup.nosim_weightout):
-            subprocess.call( ['rm', BalrogSetup.nosim_weightout] )
+        if os.path.lexists(BalrogSetup.weightout):
+            subprocess.call( ['rm', BalrogSetup.weightout] )
         if os.path.lexists(BalrogSetup.psfout):
             subprocess.call( ['rm', BalrogSetup.psfout] )
 
         subprocess.call( ['ln', '-s', BalrogSetup.imagein, BalrogSetup.nosim_imageout] )
         subprocess.call( ['ln', '-s', BalrogSetup.psfin, BalrogSetup.psfout] )
         BalrogSetup.psf_written = True
-        if BalrogSetup.nosim_weightout!=BalrogSetup.nosim_imageout:
-            subprocess.call( ['ln', '-s', BalrogSetup.weightin, BalrogSetup.nosim_weightout] )
+        
+        if BalrogSetup.weightin!=BalrogSetup.imagein:
+            subprocess.call( ['ln', '-s', BalrogSetup.weightin, BalrogSetup.weightout] )
 
     RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=True)
 
 
 def Cleanup(BalrogSetup):
-    files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout, BalrogSetup.nosim_weightout]
+    files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout]
     for file in files:
         if os.path.lexists(file):
             subprocess.call(['rm',file])
@@ -702,10 +704,15 @@ class DerivedArgs():
         #self.logdir = os.path.join(args.outdir, 'balrog_log')
         self.sexdir = os.path.join(args.outdir, 'balrog_sexconfig')
 
+        self.subsample = True
+        if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
+            self.subsample = False
+
+        length = len('.sim.fits')
+        self.outimageext = 0
+        self.outweightext = 1
         self.imageout = DefaultName(args.imagein, '.fits', '.sim.fits', self.imgdir)
-        self.weightout = self.imageout
-        if args.weightin!=args.imagein:
-            self.weightout = DefaultName(args.weightin, '.fits', '.weight.sim.fits', self.imgdir)
+
         self.psfout = DefaultName(args.psfin, '.psf', '.psf', self.imgdir)
         self.catalogtruth = DefaultName(args.imagein, '.fits', '.truthcat.sim.fits', self.catdir)
         self.catalogmeasured = DefaultName(args.imagein, '.fits', '.measuredcat.sim.fits', self.catdir)
@@ -715,11 +722,19 @@ class DerivedArgs():
 
         self.psf_written = False
         self.wcshead = args.imagein
-        length = len('.sim.fits')
         ext = '.nosim.fits'
         self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
-        self.nosim_weightout = '%s%s' %(self.weightout[:-length],ext)
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
+
+
+        if args.imagein==args.weightin:
+            if args.noempty:
+                self.weightout = self.imageout
+            else:
+                self.weightout = self.nosim_imageout
+        else:
+            self.weightout = DefaultName(args.weightin, '.fits', '.weight.fits', self.imgdir)
+            self.outweightext = 0
 
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
@@ -735,18 +750,11 @@ class DerivedArgs():
         if os.path.lexists(args.config):
             self.CopyFile(args.config, known.logdir)
 
-        self.outimageext = 0
-        self.outweightext = 0
-        if self.weightout==self.imageout:
-            self.outweightext = self.outimageext + 1
         if args.catfitstype=='FITS_LDAC':
             self.catext = 2
         elif args.catfitstype=='FITS_1.0':
             self.catext = 1
 
-        self.subsample = True
-        if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.imagein)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.imagein)[args.imageext].header['NAXIS2']:
-            self.subsample = False
          
         self.runlogger = known.logs[0]
         self.runlog = known.runlogfile
