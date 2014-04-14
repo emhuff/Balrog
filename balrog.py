@@ -311,8 +311,8 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
 
     param_file = WriteParamFile(BalrogSetup, catalogmeasured, nosim)
     config_file = BalrogSetup.sexconfig
-    if not BalrogSetup.noassoc:
-        config_file = WriteConfigFile(BalrogSetup, config_file, catalogmeasured)
+    #if not BalrogSetup.noassoc:
+    config_file = WriteConfigFile(BalrogSetup, config_file, catalogmeasured)
 
     eng = sextractor_engine.SextractorEngine()
     for key in ExtraSexConfig.keys():
@@ -422,7 +422,7 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy):
     gsp = SimRules(BalrogSetup.ngal, gkeys, [])
     if config!=None:
         if 'GalsimParams' not in dir(config):
-            BalrogSetup.runlogger.info('The function GalsimParams  was not found in your Balrog python config file: %s. Add this function to manually override the Galsim GSParams.' %BalrogSetup.config)
+            BalrogSetup.runlogger.warning('The function GalsimParams  was not found in your Balrog python config file: %s. Add this function to manually override the Galsim GSParams.' %BalrogSetup.config)
         else:
             s = Result4GSP(simgals)
             config.GalsimParams(cmdline_opts_copy, gsp, s)

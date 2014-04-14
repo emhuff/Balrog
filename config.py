@@ -70,10 +70,12 @@ def SimulationRules(args, rules, sampled):
     rules.magnification = np.ones(args.ngal)
     
     # Being precise, halflightradius is along the major axis
-    rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
+    #rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
+    rules.halflightradius = 1
     #rules.magnitude = Catalog(cat,ext,args.mag)
     rules.magnitude = 18
-    rules.sersicindex = Catalog(cat,ext,args.sersicindex)
+    #rules.sersicindex = Catalog(cat,ext,args.sersicindex)
+    rules.sersicindex = 1
     '''
     rules.halflightradius = 1e-6
     rules.magnitude = 0
@@ -81,9 +83,12 @@ def SimulationRules(args, rules, sampled):
     rules.beta = 0
     rules.axisratio = 1
     '''
+    
+    rules.beta = 0
+    rules.axisratio = 1
 
-    rules.beta = Function(function=rand, args=[-90, 90, args.ngal])
-    rules.axisratio = Function(function=rand, args=[0.05, 1, args.ngal])
+    #rules.beta = Function(function=rand, args=[-90, 90, args.ngal])
+    #rules.axisratio = Function(function=rand, args=[0.05, 1, args.ngal])
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y, args.xmax, args.ymax])
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y], kwargs={'xmax':args.xmax, 'ymax':args.ymax})
 
