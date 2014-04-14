@@ -368,16 +368,18 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
             BalrogSetup.runlogger.warning('The function CustomParseArgs was not found in your Balrog python config file: %s. Will continue without parsing any custom command line arguments.' %BalrogSetup.config)
         else:
             config.CustomParseArgs(cmdline_args_copy)
+        copy1 = copy.copy(cmdline_args_copy)
+        copy2 = copy.copy(cmdline_args_copy)
 
         if 'SimulationRules' not in dir(config):
             BalrogSetup.runlogger.warning('The function SimulationRules was not found in your Balrog python config file: %s. All properties of the simulated galaxies will assume their defaults.' %BalrogSetup.config)
         else:
-            config.SimulationRules(cmdline_args_copy,rules,results)
+            config.SimulationRules(copy1,rules,results)
 
         if 'SextractorConfigs' not in dir(config):
             BalrogSetup.runlogger.info('The function SextractorConfigs  was not found in your Balrog python config file: %s. Add this function to manually override configurations in the sextractor config file.' %BalrogSetup.config)
         else:
-            config.SextractorConfigs(cmdline_args_copy, ExtraSexConfig)
+            config.SextractorConfigs(copy2, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.arglogger, '\n# Final parsed values for each command line option')
     return rules, ExtraSexConfig, cmdline_args_copy
