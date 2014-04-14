@@ -1,0 +1,85 @@
+#
+# Release of the COSMOS Mock Catalogue
+# July 2011
+#
+##########################################
+# PEOPLE
+#
+# Photo-z catalogue from O. Ilbert 
+#
+# Magnitude computation from S. Jouvel
+#
+# Emission line computation from J. Zoubian
+# Spectroscopic data used for it
+#  from the zCOSMOS team (PI S. Lilly), F. Lamareille  
+#
+#
+##########################################
+# SELECTION OF THE CATALOGUE
+#
+# The catalog contain only galaxy matched with ACS data.
+#
+# Total number of objects: 536 983 
+#
+#############################################
+###         HEADER 
+#############################################
+# 
+# Object identification
+#
+# 1		Id			Identifier
+#
+#############################################
+#
+# Best fit obtained with the galaxy templates
+#
+# 2		type			Object type: 1=galaxy ; 2=agn ; 3=star
+# 3		Mod			Best fit template (1->8 Ell-S0, 9->15 Sa-Sc, 16->19 Sd-Sdm,>=20 SB)
+# 4		z			Redshift
+# 5		E(B-V)			Color
+# 6		DMz			Distance modulus (assume lambdaCDM comology with H0=70, om0:0.3, l0=0.7)
+#
+#############################################
+#
+# Physical properties derived from the BC03 best-fit templates at zPDF
+# (Chabrier IMF, templates described in Ilbert et al. 2009, mass function paper).
+# The fit are preformed only with the broad bands and without IR prior to save computational time
+# (different from the mass function paper)
+#
+# 7		MNUV			Absolute magnitudes NUV galex
+# 8		Mstar			log of stellar mass
+#
+#############################################
+#
+# Additional information
+# 
+# 9		half_light_radius	Half light radius in pixel (0.03 arcsec/pix) from Leauthaud et al. 2009
+# 10		ROII			[OII] lines ratio (OII3726/OII3729)
+#
+############################################# 
+#
+# Simulation data
+#
+# 11 [3]	Mapp_*			Apparente magnitude in band *
+# 12 [3]	Ran_*			Apparent magnitude randomized according to the error in band *
+# 13 [3]	Err_*			Errors on magnitude in band *
+#					Computed magnitudes:
+#					U_CFHT
+#					B_subaru,V_subaru,g_subaru,r_subaru,i_subaru,z_subaru,
+#					J_WFCAM,
+#					H_WIRCAM,K_WIRCAM,
+#					F814W (HST),
+#					IRAC_CH1,IRAC_CH2,IRAC_CH3,IRAC_CH4,
+#					FUV,NUV, (galex)
+#
+# 102 [4] 	Lambda_*		Wavelenght of line * (in observer referencial) [Angstrom]
+# 103 [4]	Flux_*			Flux in line * [erg/s/cm2]
+# 104 [4]	Conti_*			Flux in continium under the line * [erg/s/cm2/Hz]
+# 105 [4]	Disp_*			Width of the line (sigma of the Gaussian profile
+#					Computed emission lines:
+#					Balmer Lines (Ly, Hb, Hd, Hg, Ha)
+#					Oxygen Lines (OII, OIIIa, OIIIb)
+#					Nitrogen Line (NII)
+#					Sulfur Lines (SIIa, SIIb)
+#
+# Note: all magnitudes are AB normalized.
