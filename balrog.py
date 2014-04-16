@@ -230,7 +230,7 @@ def WriteParamFile(BalrogSetup, catalogmeasured, nosim):
 
     pfile = DefaultName(catalogmeasured, '.fits', '.sex.params', BalrogSetup.sexdir)
     txt = ParamTxtWithoutAssoc(param_file)
-    if not BalrogSetup.noassoc:
+    if not BalrogSetup.noassoc and not nosim:
         start = 'VECTOR_ASSOC(%i)' %(len(BalrogSetup.assocnames))
         txt = '%s\n%s' %(start,txt)
     stream = open(pfile, 'w')
@@ -261,7 +261,7 @@ def WriteConfigFile(BalrogSetup, config_file, catalogmeasured):
     return cfile
 
 
-def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng):
+def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim):
     eng.Path(BalrogSetup.sexpath)
     eng.config['IMAGE'] = '%s[%i],%s[%s]' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext)
     eng.config['WEIGHT_IMAGE'] = '%s[%i],%s[%i]' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext)
@@ -285,7 +285,8 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
                 y = i
         eng.config['ASSOC_NAME'] = afile
         eng.config['ASSOC_PARAMS'] = '%i,%i' %(x,y)
-        eng.config['ASSOC_DATA'] = ','.join(inds)
+        if not nosim:
+            eng.config['ASSOC_DATA'] = ','.join(inds)
         eng.config['ASSOC_RADIUS'] = '2.0'
         eng.config['ASSOC_TYPE'] = 'NEAREST'
         eng.config['ASSOCSELEC_TYPE'] = 'MATCHED'
@@ -319,7 +320,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
-    AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng)
+    AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
     if nosim:
         msg = '# Running sextractor prior to inserting simulated galaxies\n'
     else:
@@ -327,7 +328,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
     BalrogSetup.sexlogger.info(msg)
     eng.run(logger=BalrogSetup.sexlogger)
 
-    if not BalrogSetup.noassoc:
+    if not BalrogSetup.noassoc and not nosim:
         CopyAssoc(BalrogSetup, catalogmeasured)
 
 
