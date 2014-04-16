@@ -357,19 +357,20 @@ data requires a good model for what happens to the data during
 processing, but the process of creating a catalog from an image
 generally is generally nonlinear\footnote{Thresholding does this, and
   no matter what else you do, all catalog-making requires
-  thresholding.}, and the actual relationship between the resulting
+  thresholding.}, and the relationship between the resulting
 data products and the world of forms can be quite difficult to model
 analytically or even heuristically [e.g., SDSS sky subtraction, see
 REF:Aihara paper, or any deblending algorithm ever].
 
-Quantatively, what's missing is the likelihood function:
+Our preferred method for characterizing this relationship is the
+likelihood function:
 \begin{equation}
 L = p( {\rm Catalog} | {\rm world\: of\: forms})
 \end{equation}.
-for a given data reduction and catalog-making recipe. This would be
+for given data reduction and catalog-making recipes. This would be
 necessary for a fully Bayesian imaging analysis (which is probably presently impractical
 for any large imaging survey), but even for a catalog of
-point estimates of object properties, $L$ is necessary to characterize
+point estimates of object properties, $L$ is useful for characterizing
 the noise and bias of the estimators.
 
 We provide three examples of contemporary relevance below. For each of
@@ -377,13 +378,13 @@ these, we provide example pseudocode that shows how to compute the
 quantity of interest using \balrog{}.
 
 \section{Completeness}
-The most common first step in any procedure (REF: SExtractor, PHOTO, maybe THELI?) for
-creating a catalog from an image is a matched filtering of the image
-followed by a thresholding. Typically, the filter is chosen to be
-similar (in the broadest sense of similarity) to the expected image
-psf [REF: Photo-lite, SEXtractor, etc.]. The resulting detection map
-is thresholded, and the pixels that exceed the threshold become the
-focus of subsequent analysis.
+The most common first step in any procedure (REF: SExtractor, PHOTO,
+maybe THELI?) for creating a catalog from an image is a matched
+filtering of the image followed by a thresholding. Typically, the
+filter is chosen to be similar (in the broadest sense of similarity)
+to the expected image psf [REF: Photo-lite, SEXtractor, etc.]. The
+resulting detection map is thresholded, and the pixels that exceed the
+threshold become the focus of subsequent analysis.
 
 For a surface-brightness profile of the same shape as the filter, the
 matched filter corresponds to the optimal\footnote{Really optimal, in
@@ -394,27 +395,95 @@ the detection map corresponds to an actual flux limit. For other
 surface-brightness profiles, however, this is not true, and any
 catalog-making process that begins with this step cannot be said to be
 ``magnitude-limited'' or ``flux-limited''. This is a problem, because
-the completeness of most astronomical imaging is very frequently
-characterized by a single number, corresponding to the magnitude of
+the completeness of most astronomical imaging is frequently
+characterized with a single number, corresponding to the magnitude of
 the faintest object in the catalog; occasionally, conscientious
-authors will note a significance level (corresponding to the
+authors will record a significance level (corresponding to the
 threshold) or that the quoted limiting magnitude is appropriate
 for either point-sources or galaxies. 
 
-The most secure way to deal with this problem is to compute the
+Our preferred method for describing the survey depth is to compute the
 probability of detection for the ensemble of sources that will be
 subjected to analysis. \balrog{} makes this step straightforward: by
 embedding a catalog of objects in the real images, and then re-running
-the catalog-making pipeline, it is easy to then determine, by
-sampling, the detection probability for any objects of interest as a
-function of their underlying properties.
+the catalog-making pipeline, it is easy to determine the detection
+probability for any objects of interest as a function of their
+underlying properties.
 
 
 \section{Clustering}
-TODO: Detection probability as it varies across the sky, its effects
-on correlation functions, and how to use \balrog{} to find this out.
+Two-point clustering measures are among the most common intermediate
+science products of large astronomical surveys. Variations in the
+effective survey depth across the sky can produce large systematic
+errors in the clustering measures (e.g., [REF:]Ross et al 2012, [REF:]Huterer et
+al 2011). This is universally modeled in such studies  by a window
+function $W(\bar{\theta})$, which is proportional to the probability
+that a galaxy in the sampled population would have been detected at
+the position $\bar{\theta}$.
+
+The observed galaxy overdensity field $\delta_g^{\rm obs} =
+\frac{n_g}{\bar{n}}-1$ is then related to the ``true'' density field
+(for the sample being selected) as:
+\begin{equation}
+\delta_g^{\rm obs}(\bar{\theta}) = \delta_g(\bar{\theta}) W(\bar{\theta})
+\end{equation}
+and the galaxy autocorrelation function $w(\theta)$ is:
+\begin{equation}
+w(|\theta|) = \left<\delta_g (\bar{\theta'}, \delta_g (\bar{\theta'}+\bar{\theta})\right>
+\end{equation}
+Here, the expectation values are meant to signify averaging over
+independent realizations of the universe. Ergodicity allows us to
+replace this with a volume average. If we assume that $W$ is
+independent of the choice of realization, then we can form an unbiased
+(though sub-optimal; see [REF:Landy-Szalay], though the choice is
+irrelevant for this argument) estimator for $w$, $\hat{w}$:
+\begin{equation}
+\hat{w}(\theta) = \frac{\left<\delta_g^{\rm obs}(\bar{\theta}),
+    \delta_g^{\rm obs}(\bar{\theta'}+\bar{\theta})\right>}{|W|^2}.
+\end{equation}
+For high-precision galaxy surveys, however, we cannot ignore the
+dependence of the detection probability $W$ on $\delta_g$. Others have
+presented evidence for that this is significant in Sloan Digital Sky
+Survey imaging [REF: Aihara et al; Ross et al; Huff \& Graves], but
+because of the basic mechanics of detection and catalog-making,
+similar effects are virtually certain to be present in any large
+imaging survey.
+
+To see why this may be important, consider the case where $W$ has a
+linear dependence on $\delta_g$, $W = W_0 + W_1 \delta_g$. If this is
+ignored, and only the static survey window function is known (i.e., we
+assume $W = W_0$) then the estimator $\hat{w}$ is biased:
+\begin{align}
+\hat{w}(\theta) &= \frac{\left<\delta_g^{\rm obs}(\bar{\theta}),
+    \delta_g^{\rm obs}(\bar{\theta'}+\bar{\theta})\right>}{|W_0|^2} \\
+&=
+\left<\delta_g(\bar{\theta}),\delta_g(\bar{\theta'}+\bar{\theta})\right>
++ \frac{W_1}{W_0}\left<\delta_g^2(\bar{\theta}),
+  \delta_g(\bar{\theta'}+\bar{\theta})\right> + \left(\frac{W_1}{W_0}\right)^2\left<\delta_g^2(\bar{\theta}),\delta_g(\bar{\theta'}+\bar{\theta})^2\right>
+\end{align}
+There is no static window function $W_0$, and hence no way to use the
+standard technique (for correlation functions) of cross-correlating
+with random catalogs (i.e., DD/RR-1, or (DD-2DR+RR)/RR, etc.) to
+estimate $w(\theta)$.
+
+We can, however, attempt to re-weight $\delta_g^{\rm obs}$ by an estimate of the
+$\delta$-dependent detection probability, thus keeping the window
+function inside the ensemble-average, and forming a new estimator:
+\begin{equation}
+\hat{w}(\theta) = \left<\frac{\delta_g^{\rm obs}(\bar{\theta})}{W(\bar{\theta}|\delta_g)},\frac{\delta_g^{\rm obs}(\bar{\theta'}+\bar{\theta})}{W(\bar{\theta'}+\bar{\theta}|\delta_g)}\right>
+\end{equation}
+We now show how to use \balrog{} to estimate $W(\bar{\theta}|\delta_g)$.
+
 
 \section{Optimization}
+For gaussian noise with covariance matrix $C$, an observable vector
+$\bar{p}$ (such as measured properties for a single entry in a galaxy
+catalog), and a signal $\bar{s} = \alpha\hat{s}$ (where $\hat{s}$ is a
+unit vector), the maximum-likelihood estimator for $\alpha$ is:
+\begin{equation}
+\alpha = \frac{\bar{x}^T C^{-1} \hat{s}}{\hat{s}^T C^{-1} \hat{s}}
+\end{equation}
+
 TODO: Demonstrate what you can do if you know the measurement
 covariance matrix.
 
