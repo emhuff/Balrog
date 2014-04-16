@@ -21,18 +21,18 @@
 
 \dline{Output Catalogs} \\
 \opt{outdir}\codett{/balrog\_cat/}  \\ \\
-\orow{*.measuredcat.nosim.fits}{\sex{} catalog measured over original image, prior to simulation. Only written if \opt{noempty} is unflagged.} \\ \\
+\orow{*.measuredcat.nosim.fits}{\sex{} catalog measured over original image, prior to simulation. Only written if \opt{nonosim} is unflagged.} \\ \\
 \orow{*.measuredcat.sim.fits}{\sex{} catalog measured over image which includes simulated galaxies.} \\ \\
 \orow{*.truthcat.sim.fits}{Truth catalog of the simulated galaxies' properties.}\\ \\ \\
 
 
 \dline{\sex{} Configuration Files} \\ \\
 \opt{outdir}\codett{/balrog\_sexconfig/}  \\ \\
-\orow{*.assoc.nosim.txt}{Association mode matching list for \sex{} run prior to adding simulated galaxies. Only written if \opt{noempty} and \opt{noassoc} are unflagged.}\\ \\
+\orow{*.assoc.nosim.txt}{Association mode matching list for \sex{} run prior to adding simulated galaxies. Only written if \opt{nonosim} and \opt{noassoc} are unflagged.}\\ \\
 \orow{*.assoc.sim.txt}{Association mode matching list for \sex{} run with simulated galaxies. Only written if \opt{noassoc} is unflagged.}\\ \\
 \orow{\$\{--sexconfig\}}{Explicit copy of file given by \opt{sexconfig}.} \\ \\
 \orow{\$\{--sexparam\}}{Explicit copy of file given by \opt{sexparam}.} \\ \\
-\orow{\$\{--sexemptyparam\}}{Explicit copy of file given by \opt{sexemptyparam}.} \\ \\
+\orow{\$\{--nosimsexparam\}}{Explicit copy of file given by \opt{nosimsexparam}.} \\ \\
 \orow{\$\{--sexnnw\}}{Explicit copy of file given by \opt{sexnnw}.} \\ \\
 \orow{\$\{--sexconv\}}{Explicit copy of file given by \opt{sexconv}.} \\ \\
 
@@ -46,7 +46,7 @@ Only written if need be.}\\ \\
 
 \orow{*.measuredcat.nosim.sex.params}{\sex{} \codett{param} file used during run prior to inserting simulated galaxies. 
 Closely related, but not necessarily identical to \opt{sexparam} (c.f. \autoref{sec:cmdline}). 
-Only written if \opt{noempty} is unflagged.}\\ \\
+Only written if \opt{nonosim} is unflagged.}\\ \\
 
 \orow{*.measuredcat.sim.sex.params}{\sex{} \codett{param} file used during run including simulated galaxies.
 Closely related, but not necessarily identical to \opt{sexparam} (c.f. \autoref{sec:cmdline}).} \\ \\ \\
