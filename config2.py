@@ -19,10 +19,9 @@ def CustomArgs(parser):
 
 
 ### Throughout the remainder of the file, you have access to your custom command line arguments in the attributes of args.
-### The three functions below execute in the order they appear. Attributes changed in ealier functions will propogate downstream.
-### Your custom command line arguments will be logged as they exist at the end of the three functions.
+### Only changes to args made in CustomParseArgs persist throughout this file.
 
-### You also have local access to the native Balrog command line arguments. 
+### You also have local access to the native Balrog command line arguments in args.
 ### However, to avoid accidentally breaking Balrog, any changes you make to these native args do not propagate outside this file.
 ###         e.g. You could change args.xmin for convenience if you wanted, but this would have no effect on the minimum x for your simulation area.
 ### Any native arguments you didn't specficy from the command line have already assumed their default values when these functions are called.
@@ -43,12 +42,12 @@ def CustomParseArgs(args):
 ###    Multi-component models require InitializeSeric to be called
 ###    prior to using {beta, axisratio, sersicindex, halflightradius, magnitude}.
 
-### You can simulate parameters in 5 different ways:
-###    The same constant for each galaxy --> rules.g1 = 0
-###    An array with an element for each galaxy --> rules.g1 = np.zeros(args.ngal)
-###    The same as another parameter --> rules.g2 = sampled.g1
-###    Sample drawing from a FITS catalog --> rules.magnitude[0] = Catalog(file='somefitscatalog.fits', ext=1, col='IMAG')
-###    A function you defined --> rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
+### You can simulate parameters in 4 (5 depending how you count) different ways:
+###    1)   The same constant for each galaxy --> rules.g1 = 0
+###    2)   An array with an element for each galaxy --> rules.g1 = np.zeros(args.ngal)
+###    2.5) The same as another parameter --> rules.g2 = sampled.g1
+###    3)   Sample drawing from a FITS catalog --> rules.magnitude[0] = Catalog(file='somefitscatalog.fits', ext=1, col='IMAG')
+###    4)   A function you defined --> rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
 
 ### Functions used with sampling type Function MUST return an array of length ngal
 ### Function accepts *args or **kwargs along the lines of usual python syntax,
@@ -72,7 +71,6 @@ def SimulationRules(args, rules, sampled):
 
     rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
     rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
-
     rules.g1 = 0
     rules.g2 = 0
     rules.magnification = 1
@@ -93,6 +91,7 @@ def SimulationRules(args, rules, sampled):
     '''
     nc = Catalog(file='cosmos_n=1.fits',ext=1,col='SERSIC_INDEX')
     n = Function(function=g, args=[4, 0.05, args.ngal, nc])
+    rules.sersicindex = [1, n]
     '''
     ns = Function(function=f, args=[np.ones(args.ngal)])
     n = Function(function=g, args=[4, 0.05, args.ngal, ns])
