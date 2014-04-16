@@ -868,7 +868,6 @@ The code has been written this way so users do not need to consider the order in
 in order to know excatly what \parseargs{} they are using in each function.
 The behavior is consistent with including the \parsefunc{} in the first place.
 The only place to make persisting changes to \parseargs{} is \parsefunc{}.
-\hl{I need to incorporate the new args behavior into the code.}
 
 Please note, no parsing of any kind can be done inside \argsfunc{}.
 \argsfunc{} is for definitions only.
@@ -1258,9 +1257,8 @@ Subsampling the PSF amounts to appropriately changing the
 \codett{POLZERO1} and \codett{POLZERO2} header keywords.
 The \codett{*.sim.fits} file is the image the simulated galaxies have been written into.
 If the weight map lives in a separate file from the flux image, it is
-written to \codett{*.weight.sim.fits}. 
+written to \codett{*.weight.fits}. 
 It will also be a symbolic link if no subsampling has occurred.
-\hl{Maybe remove the .sim part?}.
 A \codett{.sim} or \codett{.nosim} qualifier for the weight image is irrelevant
 because the simulation process does not change it.
 When users flag the \opt{clean} option, the three images in \codett{balrog\_image/}
@@ -1335,13 +1333,7 @@ VUNIT11 = `ADU     '
 Think of \codett{`V'} as shorthand for \codett{`VECTOR'}. The indecies then label the components of this vector.
 Since a truth catalog itself is written by \balrog{} it is not strictly necessary to include the truth
 vector in the measured catalog. However, it is convenient and essentially comes for free with \balrog{}'s
-association mode setup. Although the \codett{.nosim.fits} file includes
-a \codett{VECTOR\_ASSOC} column, it is not particularly useful because the image did not contain any of the simulated galaxies anyway.
-This \codett{VECTOR\_ASSOC} will not hold
-\codett{flux\_noiseless} or \codett{flux\_noised} because they have not yet been generated when \balrog{}
-calls \sex{} here. 
-\hl{Should I get rid of the vector assoc in nosim altogether?}
-
+association mode setup. 
 
 \section{\sex{} Configuration Files}
 \label{sec:sexfiles}
