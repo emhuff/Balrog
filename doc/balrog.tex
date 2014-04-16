@@ -531,7 +531,7 @@ files to use with \sex{}, and a few other variables every \balrog{} run will nee
 Each comes with a default \balrog{} will assume if the user does not supply one.
 The default example's image data (\opt{image}), 
 weight map (\opt{weight}), 
-and PSF (\opt{psfin})
+and PSF (\opt{psf})
 live in {\ttfamily \$INSTALLDIR/default\_example/}.
 The \sex{} configuration files live in 
 {\ttfamily \$INSTALLDIR/astro\_config/}. 
@@ -700,7 +700,7 @@ preferring the orderly organization and conceptual clarity
 of the table over something which would require many more words to describe in paragraph form.
 However, we will make a few general comments to put \autoref{tab:opts} into better context.
 
-Each command line argument can be specified either with its full name or an abbreviated form, e.g. \opt{imagein} vs. \opt{ii}.
+Each command line argument can be specified either with its full name or an abbreviated form, e.g. \opt{image} vs. \opt{i}.
 The full names attempt to be as intuitive as possible while maintaining a reasonbly small number of characters.
 The abbreviatons trade clarity for brevity for those who prefer compactness. 
 Any parameter that  is left out of a user's \balrog{} call assumes a default value in the code.
@@ -716,7 +716,7 @@ The divisions do not matter per se; they are merely an organizational guide.
 However, because \balrog{} contains quite a few possible arguments to adjust,
 we find them to be a useful aid in adding to tractability.
 
-\opt{sexconfig} and \opt{sexparam}/\opt{sexemptyparam} require a bit more explanation than is practical
+\opt{sexconfig} and \opt{sexparam}/\opt{nosimsexparam} require a bit more explanation than is practical
 within the space of \autoref{tab:opts}
 First, not every keyword-value pair in \opt{sexconfig} is relevant during \balrog{} runs.
 Please note, we are not trying to say these settings have zero or very little effect on \sex{}.
@@ -724,7 +724,7 @@ What we mean is that their values within \opt{sexconfig} will be ignored by \bal
 the values are deduced directly from \balrog{}'s command line, and then 
 given as \sex{} command line arguments, which override the \codett{sexconfig} file.
 These amount to what has been written into \autoref{tab:b2s}.
-\autoref{tab:b2s} notes that the \opt{sexconfig} and \opt{sexparam}/\opt{sexemptyparam} given to \balrog{}
+\autoref{tab:b2s} notes that the \opt{sexconfig} and \opt{sexparam}/\opt{nosimsexparam} given to \balrog{}
 are not necessarily exactly the ones used when running \sex{}.
 This is to account for the syntax differnce between running with association mode on or off.
 If association mode is on, a \codett{sexparam} file must be written with the proper \codett{VECTOR\_ASSOC} line.
@@ -748,19 +748,19 @@ At any rate, \balrog{}'s output logs will allow users to read off exactly how th
 
 \textbf{\balrog{}} & & \textbf{\sex{}} \\ \midrule \\
 \multicolumn{2}{c}{\dfill} & Explit \hspace{0.3cm} \dfill \\
-\opt{imagein} & $\rightarrow$ & \codett{IMAGE} \\
-\opt{weightin} &  $\rightarrow$ & \codett{WEIGHT\_IMAGE}\\
+\opt{image} & $\rightarrow$ & \codett{IMAGE} \\
+\opt{weight} &  $\rightarrow$ & \codett{WEIGHT\_IMAGE}\\
 \opt{sexnnw} & $\rightarrow$ & \codett{STARNNW\_NAME} \\
 \opt{sexconv} & $\rightarrow$ & \codett{FILTER\_NAME} \\
 \opt{zeropoint} & $\rightarrow$ & \codett{MAG\_ZEROPOINT} \\
-\opt{psfin} & $\rightarrow$ & \codett{PSF\_NAME} \\
+\opt{psf} & $\rightarrow$ & \codett{PSF\_NAME} \\
 \opt{catfitstype} & $\rightarrow$ & \codett{CATALOG\_TYPE} \\
 \opt{outdir} & $\rightarrow$ & \codett{CATALOG\_NAME} \\ \\
 
 \multicolumn{3}{c}{\dfill - - - - Possibly Modified To Account For Association Mode - - - - \dfill} \\
 \opt{sexconfig} & $\rightarrow$  &\codett{c} \\
 \opt{sexparam}/ & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ 
-\opt{sexemptyparam} & \\ \\ \bottomrule \bottomrule
+\opt{nosimsexparam} & \\ \\ \bottomrule \bottomrule
 \end{tabular}
 \end{table}
 
@@ -1226,7 +1226,7 @@ giving a brief desription of each file. Depending on how
 in \autoref{tab:out} will be present in every run.
 The \codett{*} symbol in \autoref{tab:out} will be replaced with
 the base name of the input image file.
-By base name, we mean \opt{imagein}'s file name, stripping off the \codett{.fits} extentension,
+By base name, we mean \opt{image}'s file name, stripping off the \codett{.fits} extentension,
 as well as any proceeding directories locating it on the filesystem.
 For example,
 if the input image is named \codett{/Users/Balrog/example.fits},
@@ -1248,7 +1248,7 @@ while \autoref{sec:catalogs} describes the catalog files \balrog{} saves.
 
 Every successful \balrog{} run saves three, possbily four, files to \codett{balrog\_image/}.
 The \codett{*.nosim.fits} and \codett{*.psf} files are copies of the 
-input image (\opt{imagein}) and the input PSF (\opt{psfin}) respectively.
+input image (\opt{image}) and the input PSF (\opt{psf}) respectively.
 If no subsampling was done, \codett{*.nosim.fits} and \codett{*.psf} are actually symbolic links
 to the input files instead of hard copies. Making symbolic links avoids
 writing potentially large files to disk compared to making hard copies.
@@ -1292,7 +1292,7 @@ Only one \codett{flux\_noiseless} and \codett{flux\_noised} exists per galaxy.
 
 \codett{*.measuredcat.nosim.fits} and \codett{*.measuredcat.sim.fits} are the two \sex{} catalogs.
 \codett{*.measuredcat.sim.fits} indcludes the simulated galaxies and \codett{*.measuredcat.nosim.fits} does not.
-If \opt{noempty} is flagged, there will not be a \codett{.nosim.fits} file.
+If \opt{nonosim} is flagged, there will not be a \codett{.nosim.fits} file.
 When using association mode, the catalogs are made up solely of simulated galaxies, 
 modulo blending effects (c.f \autoref{sec:processing}). Likely all the simulated galaxies will not
 be detected so there usually will not be as many rows as simulated galaxies.
@@ -1346,12 +1346,12 @@ To run \sex{} in association mode, users give \sex{} a list of coordinates to ma
 which is stored in a \codett{.txt} file.
 This is what \codett{*.assoc.nosim.txt} and \codett{*.assoc.sim.txt} are used for;
 they amount to \codett{txt} file versions of the truth catalog.
-The files given by command line arguments \opt{sexconfig}, \opt{sexparam}, \opt{sexemptyparam}, \opt{sexnnw}, and \opt{sexconv}
+The files given by command line arguments \opt{sexconfig}, \opt{sexparam}, \opt{nosimsexparam}, \opt{sexnnw}, and \opt{sexconv}
 are copied to the output directory to facilitate reproducibility. Users may very well modify 
 the \sex{} configurations files on their filesystem, and even if they do they still have
 copies of how they existed when \balrog{} ran.
 Because \balrog{} automatically accounts for turning \sex{} association mode on and off, 
-\opt{sexconfig} and \opt{sexparam}/\opt{sexemptyparam} may need to be slightly modified, even when allowing for
+\opt{sexconfig} and \opt{sexparam}/\opt{nosimsexparam} may need to be slightly modified, even when allowing for
 \sex{} configuration from the command line (c.f. \autoref{sec:cmdline}).
 \codett{*.measuredcat.nosim.sex.config}, \codett{*.measuredcat.sim.sex.config}, \codett{*.measuredcat.nosim.sex.params}, 
 and \codett{*.measuredcat.sim.sex.params} 
