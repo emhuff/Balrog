@@ -455,6 +455,9 @@ class nComponentSersic(object):
     def GetConvolved(self, psfmodel, i, wcs, gsparams, BalrogSetup):
         for j in range(len(self.component)):
             reff = float(self.component[j]['halflightradius'][i])
+            if reff < 0:
+                reff = 0
+
             n = float(self.component[j]['sersicindex'][i])
             flux = float(self.component[j]['flux'][i])
             q = float(self.component[j]['axisratio'][i])
