@@ -230,7 +230,7 @@ def WriteParamFile(BalrogSetup, catalogmeasured, nosim):
 
     pfile = DefaultName(catalogmeasured, '.fits', '.sex.params', BalrogSetup.sexdir)
     txt = ParamTxtWithoutAssoc(param_file)
-    if not BalrogSetup.noassoc and not nosim:
+    if not BalrogSetup.noassoc: #and not nosim:
         start = 'VECTOR_ASSOC(%i)' %(len(BalrogSetup.assocnames))
         txt = '%s\n%s' %(start,txt)
     stream = open(pfile, 'w')
@@ -285,8 +285,15 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
                 y = i
         eng.config['ASSOC_NAME'] = afile
         eng.config['ASSOC_PARAMS'] = '%i,%i' %(x,y)
+
+        eng.config['ASSOC_DATA'] = ','.join(inds)
+        '''
         if not nosim:
             eng.config['ASSOC_DATA'] = ','.join(inds)
+        else:
+            eng.config['ASSOC_DATA'] = '%i,%i' %(x,y)
+        '''
+
         eng.config['ASSOC_RADIUS'] = '2.0'
         eng.config['ASSOC_TYPE'] = 'NEAREST'
         eng.config['ASSOCSELEC_TYPE'] = 'MATCHED'
