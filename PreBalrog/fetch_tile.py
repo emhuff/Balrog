@@ -30,7 +30,7 @@ def GetArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument( "-b", "--band", help="Filter band", type=str, default='i')
     parser.add_argument( "-t", "--tile", help="Coadd tile name", type=str, required=True)
-    parser.add_argument( "-d", "--directory", help="Directory where your output will go. Tiles will have subdirectories under this.", default='/n/des/suchyta.1/balrog_sva1')
+    parser.add_argument( "-d", "--directory", help="Directory where your output will go. Tiles will have subdirectories under this.", default=os.environ['SVA1_TILE'])
     args = parser.parse_args()
     return args
 
