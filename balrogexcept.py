@@ -74,7 +74,7 @@ class OutdirWriteError(BaseException):
 
 class SubdirWriteError(BaseException):
     def init(self, dir):
-        self.msg = "ERROR code: %i. Could not create output subdirectory %s" %(self.code,dir)
+        self.msg = "ERROR code: %i. Could not create output directory %s" %(self.code,dir)
 
 
 class ImageInputError(BaseException):

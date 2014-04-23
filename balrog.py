@@ -158,7 +158,14 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         d = {}
         for key in gspcatalog.galaxy.keys():
             if gspcatalog.galaxy[key]!=None:
-                d[key] = gspcatalog.galaxy[key][i]
+                if key in ['minimum_fft_size', 'maximum_fft_size', 'range_for_extrema']:
+                    mod = gspcatalog.galaxy[key][i] % 1
+                    if mod > 0.0:
+                        d[key] = gspcatalog.galaxy[key][i]
+                    else:
+                        d[key] = int(gspcatalog.galaxy[key][i])
+                else:
+                    d[key] = gspcatalog.galaxy[key][i]
         gsparams = galsim.GSParams(**d)
         combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
 
@@ -890,11 +897,17 @@ def DefaultName(startfile, lookfor, replacewith, outdir):
 
 
 def CreateSubDir(subdir):
+    '''
     err = 0
     if not os.path.lexists(subdir):
         err = subprocess.call(['mkdir', subdir], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     if err!=0:
-        raise SubdirWriteError(202, subdir)
+    '''
+    if not os.path.lexists(subdir):
+        try:
+            os.makedirs(subdir)
+        except:
+            raise SubdirWriteError(202, subdir)
 
 
 def CreateDir(dir):
@@ -1225,7 +1238,7 @@ def GetKnown(parser):
     outdir = os.path.join(defdir, 'output')
     if known.outdir==None:
         known.outdir = outdir
-    CreateDir(known.outdir)
+    #CreateDir(known.outdir)
     known.logdir = os.path.join(known.outdir, 'balrog_log')
     CreateSubDir(known.logdir)
     
