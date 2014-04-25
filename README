@@ -1,5 +1,2 @@
-More will come soon in here.
-
-* The doc/ directory has a PDF you can open for documenation
-* run ./balrog.py --help to get all the command line options for Balrog and what they do
-* https://cdcvs.fnal.gov/redmine/projects/deswlwg/wiki/Balrog
+* The doc/ directory has a PDF file. All the documenation is there.
+* If you're in DES, you can check out our wiki page: https://cdcvs.fnal.gov/redmine/projects/deswlwg/wiki/Balrog.
