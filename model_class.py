@@ -392,9 +392,11 @@ class nComponentSersic(object):
         for i in range(len(self.component)):
             self.component[i]['flux'] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i]['flux']) / 2.5)
             zeros = (self.component[i]['flux']==np.inf)
-            self.component[i]['flux'][zeros] = 0
+            if np.sum(zeros) > 0:
+                self.component[i]['flux'][zeros] = 0
+                BalrogSetup.runlogger.warning('Magnitude value caused overflow when computing flux. Its flux was set to 0. This may not be a problem if a large negative value for magnitude means no detection, e.g. -100')
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
-        np.seterr(over='print')
+        np.seterr(over='warn')
 
 
     '''
