@@ -387,10 +387,14 @@ class nComponentSersic(object):
         for key in self.galaxy.keys():
             if self.galaxy[key]==None:
                 self.galaxy[key] = self.GetGalaxyDefault(key, used, BalrogSetup)
-         
+        
+        np.seterr(over='ignore')
         for i in range(len(self.component)):
             self.component[i]['flux'] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i]['flux']) / 2.5)
+            zeros = (self.component[i]['flux']==np.inf)
+            self.component[i]['flux'][zeros] = 0
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
+        np.seterr(over='print')
 
 
     '''
