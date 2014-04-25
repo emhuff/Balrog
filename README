@@ -1,2 +1,3 @@
 * The doc/ directory has a PDF file. All the documenation is there.
 * If you're in DES, you can check out our wiki page: https://cdcvs.fnal.gov/redmine/projects/deswlwg/wiki/Balrog.
+* Some utils for Balrog, used in DES, but possibly useful otherwise too: https://github.com/suchyta1/BalrogUtils.
