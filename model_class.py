@@ -332,7 +332,7 @@ class nComponentSersic(object):
             return self.FunctionCatalog(used, [file,1,'SERSIC_INDEX'])
         if key=='magnitude' or key=='flux':
             BalrogSetup.runlogger.warning('A user-defined rule was not found for component %i of %s. Balrog will use the default of sampling from the supplied COSMOS catalog.' %(i, key))
-            return self.FunctionCatalog(used, [file,1,'IMAG'])
+            return self.FunctionCatalog(used, [file,1,'MAPP_I_SUBARU'])
 
     def GetGalaxyDefault(self, key, used, BalrogSetup):
         thisdir = os.path.dirname( os.path.realpath(__file__) )

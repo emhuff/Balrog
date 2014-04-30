@@ -1254,14 +1254,14 @@ def GetConfig(known):
 
     if not os.path.lexists(known.pyconfig):
         #raise ConfigFileNotFound(150, known.config)
-        log.warning('Path to Balrog python config file not found: %s. All properties of the simulated galaxies will assume their defaults.' %known.pyconfig)
+        known.logs[0].warning('Path to Balrog python config file not found: %s. All properties of the simulated galaxies will assume their defaults.' %known.pyconfig)
         config = None
     else:
         try:
             config = imp.load_source('config', known.pyconfig)
         except:
             #raise ConfigImportError(151, known.pyconfig)
-            log.warning('Python could not import your Balrog config file: %s. This means it has the python equivalent of a compiling error, apart from any possible runtime errors. First check for an error global in scope, such as an import. Continuing by assigning all properties of the simulated galaxies to their defaults.' %known.pyconfig)
+            known.logs[0].warning('Python could not import your Balrog config file: %s. This means it has the python equivalent of a compiling error, apart from any possible runtime errors. First check for an error global in scope, such as an import. Continuing by assigning all properties of the simulated galaxies to their defaults.' %known.pyconfig)
             config = None
 
     return config
