@@ -56,6 +56,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
     tbhdu.header['YSTART'] = BalrogSetup.ymin
     tbhdu.header['YEND'] = BalrogSetup.ymax
     tbhdu.header['NSIM'] = BalrogSetup.ngal
+    tbhdu.header['ZP'] = BalrogSetup.zeropoint
 
     if fits:
         phdu = pyfits.PrimaryHDU()
