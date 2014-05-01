@@ -449,6 +449,8 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy):
     gsprules = DefineRules(BalrogSetup.ngal, gkeys, grules, [], [], 0)
     gsprules.SimpleSample(BalrogSetup)
 
+    simgals.galaxy['index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
+
     return simgals, gsprules
 
 
@@ -1148,6 +1150,8 @@ def DefaultArgs(parser):
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
     parser.add_argument( "-ft", "--fulltraceback", help="Full traceback is written out", action="store_true")
     parser.add_argument( "-pc", "--pyconfig", help="Balrog python config file", type=str, default=None)
+
+    parser.add_argument( "-is", "--indexstart", help="Index for first simulated galaxy", type=int, default=0)
 
     # How to run sextractor
     parser.add_argument( "-sex", "--sexpath", help='Path for sextractor binary', type=str, default='sex')
