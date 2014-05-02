@@ -343,7 +343,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
     BalrogSetup.sexlogger.info(msg)
     eng.run(logger=BalrogSetup.sexlogger)
 
-    if not BalrogSetup.noassoc and not nosim:
+    if not BalrogSetup.noassoc: #and not nosim:
         CopyAssoc(BalrogSetup, catalogmeasured)
 
 
