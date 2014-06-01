@@ -9,12 +9,13 @@ from model_class import *
 ### Google python argparse for help if the syntax is unclear.
 def CustomArgs(parser):
     # Catlog to sample simulation parameters from
-    parser.add_argument( "-cs", "--catalogsample", help="Catalog used to sample simulated galaxy parameter distriubtions from", type=str, default=None)
+    parser.add_argument( "-cs", "--catalog", help="Catalog used to sample simulated galaxy parameter distriubtions from", type=str, default=None)
     parser.add_argument( "-ext", "--ext", help="Index of the data extension for sampling catalog", type=int, default=1)
     parser.add_argument( "-reff", "--reff", help="Column name when drawing half light radius from catalog", type=str, default="HALF_LIGHT_RADIUS")
     parser.add_argument( "-nsersic", "--sersicindex", help="Column name when drawing sersic index catalog", type=str, default="SERSIC_INDEX")
     parser.add_argument( "-mag", "--mag", help="Column name when drawing magnitude from catalog", type=str, default=None)
     parser.add_argument( "-b", "--band", help="Which filter band to choose from COSMOS catalog. Only relevant if --mag is not given and using COSMOS catlalog.", type=str, default='i', choices=['g','r','i','z'])
+    parser.add_argument( "-is", "--indexstart", help="Index for first simulated galaxy", type=int, default=0)
 
 
 ### Throughout the remainder of the file, you have access to your custom command line arguments in the attributes of args.
@@ -28,8 +29,8 @@ def CustomArgs(parser):
 ### How you want to parse your command line arguments
 def CustomParseArgs(args):
     thisdir = os.path.dirname( os.path.realpath(__file__) )
-    if args.catalogsample==None:
-        args.catalogsample = os.path.join(thisdir, 'cosmos.fits')
+    if args.catalog==None:
+        args.catalog = os.path.join(thisdir, 'cosmos.fits')
     if args.mag==None:
         args.mag = 'MAPP_%s_SUBARU' %(args.band.upper())
     
@@ -67,19 +68,22 @@ def SimulationRules(args, rules, sampled, TruthCat):
     rules.magnification = np.ones(args.ngal)
     
     # Being precise, halflightradius is along the major axis
-    tab = Table(file=args.catalogsample, ext=args.ext)
+    tab = Table(file=args.catalog, ext=args.ext)
     rules.halflightradius = tab.Column(args.reff)
-    rules.magnitude = Column(args.catalogsample, args.ext, args.mag)
-    rules.sersicindex = Catalog(file=args.catalogsample, ext=args.ext, col=args.sersicindex)
+    rules.magnitude = Column(args.catalog, args.ext, args.mag)
+    rules.sersicindex = Catalog(file=args.catalog, ext=args.ext, col=args.sersicindex)
     rules.beta = 0
     rules.axisratio = 1
 
     demo = Function(function=SampleFunction, args=[sampled.x, sampled.y])
     TruthCat.AddColumn(demo, name='demo')
     TruthCat.AddColumn(tab.Column('ID'))
-    TruthCat.AddColumn(Catalog(args.catalogsample, args.ext, 'TYPE'))
-    TruthCat.AddColumn(Column(args.catalogsample, args.ext, 'Z'))
+    TruthCat.AddColumn(Catalog(args.catalog, args.ext, 'TYPE'))
+    TruthCat.AddColumn(Column(args.catalog, args.ext, 'Z'))
     TruthCat.AddColumn(sampled.sersicindex, name='n0_repeat')
+
+    index = args.indexstart + np.arange(0, args.ngal)
+    TruthCat.AddColumn(index, name='index', unit='dimensionless')
 
 
     ### extra args/kwargs examples

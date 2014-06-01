@@ -505,8 +505,6 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy, TruthC
                 TruthRules.component[i][comp] = simgals.component[i][comp]
 
         used = TruthRules.SimpleSample(BalrogSetup, used)
-    
-    simgals.galaxy['index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
 
     return simgals, gsprules, TruthRules, TruthCatExtra
 
@@ -1259,7 +1257,6 @@ def DefaultArgs(parser):
     parser.add_argument( "-ft", "--fulltraceback", help="Full traceback is written out", action="store_true")
     parser.add_argument( "-pc", "--pyconfig", help="Balrog python config file", type=str, default=None)
 
-    parser.add_argument( "-is", "--indexstart", help="Index for first simulated galaxy", type=int, default=0)
 
     # How to run sextractor
     parser.add_argument( "-sex", "--sexpath", help='Path for sextractor binary', type=str, default='sex')
