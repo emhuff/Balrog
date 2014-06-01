@@ -57,6 +57,14 @@
 # 506 Catalog col doesn't exist
 
 
+# 601 TagList addition error
+# 602 Tag() without column name
+# 603 Tag + something that isn't Tag
+# 604 Trying to set attribute of tags explicitly
+
+# 700s Adding columns to truth catalog stuff
+# 800s Table stuff
+
 class BaseException(Exception):
     def __init__(self, *args):
         self.code = args[0]
@@ -172,7 +180,7 @@ class RulesHiddenError(BaseException):
 
 class FunctionReturnError(BaseException):
     def init(self, name):
-        self.msg = "ERROR code: %i. Illegal return value for the function %s. All Function rules must return an array of length ngal." %(self.code, name)
+        self.msg = "ERROR code: %i. Illegal return value for the function %s. All Function rules must return a 1D array of length ngal." %(self.code, name)
 
 class FunctionArgError(BaseException):
     def init(self, label):
@@ -207,3 +215,51 @@ class ConfigFileNotFound(BaseException):
 class ConfigImportError(BaseException):
     def init(self, path):
         self.msg = "ERROR code: %i. Python could not import your Balrog config file: %s. This means it has the python equivalen of a compiling error, apart from any possible runtime errors. Check for an error global in scope, such as an import." %(self.code, path)
+
+
+
+class TagAddError(BaseException):
+    def init(self):
+        self.msg = "ERROR code: %i. Attempted to add something that is not a tag to tags." %(self.code)
+
+class TagNoColError(BaseException):
+    def init(self):
+        self.msg = "ERROR code: %i. Called a tag with no column name." %(self.code)
+
+class TagAddtionError(BaseException):
+    def init(self):
+        self.msg = "ERROR code: %i. Attempted to add something that is not a tag to another tag." %(self.code)
+
+class TagsAttributeError(BaseException):
+    def init(self, name, value):
+        self.msg = "ERROR code: %i. Attempted to attribute %s to value %s. You're not allowed to directly create or reassign attributes of tags." %(self.code, name, value)
+
+
+class ColumnSizeError(BaseException):
+    def init(self, name, s1, s2):
+        self.msg = "ERROR code: %i. The name='%s' NewColumn size = %i does not match the number of galaxies = %i" %(self.code, name, s1, s2)
+
+class ColumnDefinitionError(BaseException):
+    def init(self, label):
+        self.msg = 'ERROR code: %i. The name="%s" NewColumn data you gave was not understood. NewColumn data is given like a rule is given' %(self.code, label)
+
+class ColumnNameError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. You must assign a name for any non-Catalog NewColumn' %(self.code)
+
+class ColumnAddError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. Trying to add something that is not a NewColumn to truth catalog' %(self.code)
+
+class ColumnArrayError(BaseException):
+    def init(self, name):
+        self.msg = 'ERROR code: %i. You attempted to write a multidimensional array into the additional truth catalog output in column %s. This is not allowed' %(self.code, name)
+
+class ColumnAttributeError(BaseException):
+    def init(self, name):
+        self.msg = 'ERROR code: %i. You attempted to assign a %s attribute of TruthCat. Assigning attributes is not allowed.' %(self.code, name)
+
+
+class TableAssignmentError(BaseException):
+    def init(self):
+        self.msg = 'ERROR code: %i. Attempted to assign attributes to a table. You cannot assign any attributes to Table() type objects.' %(self.code)

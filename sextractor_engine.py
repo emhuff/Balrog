@@ -105,7 +105,7 @@ class SextractorEngine():
 
         self.config = {}
         self.config['IMAGE'] = IMAGE
-        self.config['WEIGHT_IMAGE'] = WEIGHT_IMAGE
+        #self.config['WEIGHT_IMAGE'] = WEIGHT_IMAGE
         self.config['c'] = c
         self.config['PARAMETERS_NAME'] = PARAMETERS_NAME
         self.config['STARNNW_NAME'] = STARNNW_NAME

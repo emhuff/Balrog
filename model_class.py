@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import numpy.lib.recfunctions
 import astropy.io.fits as pyfits
 import galsim
 import copy
@@ -82,17 +83,36 @@ class nComponentSersic(object):
                 self.galaxy[key] = np.array( arr )
     
 
-    def DoCatalog(self, catalogs):
-        used = []
+    def DoCatalog(self, catalogs, BalrogSetup, used=None):
+        '''
+        if used==None:
+            used = []
+        if len(used) > 0:
+            pass
+        '''
+        dtype = [ ('file',np.object), ('ext',np.int), ('rows', (np.int,BalrogSetup.ngal)) ]
+        if used == None:
+            used = np.array( [], dtype=dtype )
+
         for catalog in catalogs:
             file = catalog[0][0]
             ext = catalog[0][1]
             hdus = pyfits.open(file)
             data = hdus[ext].data
-            size = len(data)
-            randints = np.random.randint(0,high=size, size=self.ngal)
-            selected = data[randints]
-            used.append( (file, ext, randints) )
+            
+            if (file not in used['file']) or (ext not in used['ext']):
+                size = len(data)
+                randints = np.random.randint(0,high=size, size=self.ngal)
+                selected = data[randints]
+
+                newused = np.array( [(file,ext,randints)], dtype=dtype )
+                used = np.concatenate( (used,newused), axis=0 )
+                #used.append( (file, ext, randints) )
+                #used.append( [file, ext, randints] )
+            else:
+                cut = (used['file']==file) & (used['ext']==ext)
+                randints = used[cut]['rows'][0]
+                selected = data[randints]
 
             for tup in catalog[1]:
                 index, key, column = tup
@@ -226,12 +246,18 @@ class nComponentSersic(object):
                 self.component[index][key] = func(*arguments, **kwarguments)
                 try:
                     size = len(self.component[index][key])
+                    arr = np.array(self.component[index][key])
+                    if arr.ndim!=1:
+                        raise FunctionReturnError(501, func.__name__)
                 except:
                     raise FunctionReturnError(501, func.__name__)
             else:
                 self.galaxy[key] = func(*arguments, **kwarguments)
                 try:
                     size = len(self.galaxy[key])
+                    arr = np.array(self.galaxy[key])
+                    if arr.ndim!=1:
+                        raise FunctionReturnError(501, func.__name__)
                 except:
                     raise FunctionReturnError(501, func.__name__)
             
@@ -352,7 +378,7 @@ class nComponentSersic(object):
             return np.random.uniform( BalrogSetup.ymin, BalrogSetup.ymax, self.ngal )
       
 
-    def SimpleSample(self, BalrogSetup):
+    def SimpleSample(self, BalrogSetup, used=None):
         value = []
         array = []
         catalog = []
@@ -372,7 +398,7 @@ class nComponentSersic(object):
         np.random.seed(BalrogSetup.seed)
         self.DoValue(value)
         self.DoArray(array)
-        used = self.DoCatalog(cat)
+        used = self.DoCatalog(cat, BalrogSetup, used=used)
         self.TryFunctionComponent(function, component, used)
         return used
 
@@ -397,6 +423,7 @@ class nComponentSersic(object):
                 BalrogSetup.runlogger.warning('Magnitude value caused overflow when computing flux. Its flux was set to 0. This may not be a problem if a large negative value for magnitude means no detection, e.g. -100')
             self.component[i]['halflightradius'] = self.component[i]['halflightradius'] * np.sqrt(self.component[i]['axisratio'])
         np.seterr(over='warn')
+        return used
 
 
     '''
@@ -603,11 +630,25 @@ def Array( arr=None ):
 def Catalog( file=None, ext=None, col=None ):
     return Rule(type='catalog', catalog=file, ext=ext, column=col)
 
+def Column( file=None, ext=None, col=None ):
+    return Rule(type='catalog', catalog=file, ext=ext, column=col)
+
 def Same( comp ):
     return Rule(type='component', component=comp)
 
 def Function(function=None, args=(), kwargs={}):
     return Rule(type='function', function=function, args=args, kwargs=kwargs)
+
+class Table(object):
+    def __init__(self, file=None, ext=None):
+        super(Table, self).__setattr__('file', file)
+        super(Table, self).__setattr__('ext',  ext)
+
+    def Column(self, col=None):
+        return Catalog(file=self.file, ext=self.ext, col=col)
+
+    def __setattr__(self, name, value):
+        raise TableAssignmentError(801)
 
 
 def Tuplify(g, k):
@@ -677,6 +718,7 @@ def DefineRules(ngal, galkeys, galrules, compkeys, comprules, nProfiles):
     return simulatedgals
 
 
-def InitializeSersic(rules, sampled, nProfiles=1):
+def InitializeSersic(rules, sampled, TruthCat, nProfiles=1):
     rules.InitializeSersic(nProfiles=nProfiles)
     sampled.InitializeSersic(nProfiles=nProfiles)
+    TruthCat.InitializeSersic(nProfiles=nProfiles) 

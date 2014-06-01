@@ -16,8 +16,14 @@ import galsim.des
 import sextractor_engine
 from model_class import *
 
+def FindInCat(rule, name):
+    cat = rule.param[0]
+    ext = rule.param[1]
+    hdu = pyfits.open(cat)[ext]
+    cut = np.in1d(hdu.columns.names,np.array([name]))
+    return cut, hdu
 
-def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
+def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, extracatalog=None):
     columns = []
     for key in sample.galaxy.keys():
         name = '%s' %(key)
@@ -31,9 +37,40 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
         elif key.find('flux')!=-1:
             unit = 'ADU'
         else:
-            unit = 'none'
+            unit = 'dimensionless'
         col = pyfits.Column(name=name, array=arr,format='E', unit=unit)
         columns.append(col)
+
+    if TruthCatExtra!=None:
+        for rule,name,fmt,unit in zip(TruthCatExtra.rules,TruthCatExtra.names,TruthCatExtra.fmts, TruthCatExtra.units):
+            if unit==None:
+                if rule.type!='catalog':
+                    unit = 'unspecified'
+                    BalrogSetup.runlogger.info('No unit was specificed for additional truth catalog column %s' %(name))
+                else:
+                    cut,hdu = FindInCat(rule, name)
+                    unit = np.array(hdu.columns.units)[cut][0]
+            if unit.strip()=='':
+                unit = 'unspecified'
+
+            if fmt==None:
+                if rule.type!='catalog':
+                    arrtype = str(type(extracatalog.galaxy[name][0]))
+                    if arrtype.find('str')!=-1:
+                        strlen = len(max(extracatalog.galaxy[name]))
+                        fmt = '%iA' %(strlen)
+                    elif arrtype.find('int')!=-1:
+                        fmt = 'J'
+                    else:
+                        fmt = 'E'
+                else:
+                    cut,hdu = FindInCat(rule, name)
+                    fmt = np.array(hdu.columns.formats)[cut][0]
+                
+                col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
+                columns.append(col)
+
+
     for i in range(len(sample.component)):
         for key in sample.component[i].keys():
             name = '%s_%i' %(key,i)
@@ -41,15 +78,16 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False):
                 col = pyfits.Column(name=name, array=sample.component[i][key]/np.sqrt(sample.component[i]['axisratio']), format='E', unit='arcsec')
             else:
                 if key.find('sersicindex')!=-1:
-                    unit = 'none'
+                    unit = 'dimensionless'
                 if key.find('flux')!=-1:
                     unit = 'ADU'
                 if key.find('beta')!=-1:
                     unit = 'deg'
                 if key.find('axisratio')!=-1:
-                    unit = 'none'
+                    unit = 'dimensionless'
                 col = pyfits.Column(name=name, array=sample.component[i][key],format='E', unit=unit)
             columns.append(col)
+
     tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
     tbhdu.header['XSTART'] = BalrogSetup.xmin
     tbhdu.header['XEND'] = BalrogSetup.xmax
@@ -90,7 +128,7 @@ def CopyAssoc(BalrogSetup, outfile):
         elif BalrogSetup.assocnames[i].find('flux')!=-1:
             unit = 'ADU'
         else:
-            unit = 'none'
+            unit = 'dimensionless'
         mhead[ 'VUNIT%i'%i ] = unit
     mhdus.close() 
 
@@ -380,6 +418,7 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
     ExtraSexConfig = {}
     results = Results(galkeys, compkeys)
     cmdline_args_copy = copy.copy(cmdline_args)
+    TruthCatExtra = TableColumns(BalrogSetup.ngal)
 
     if config!=None:
         if 'CustomParseArgs' not in dir(config):
@@ -392,7 +431,7 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
         if 'SimulationRules' not in dir(config):
             BalrogSetup.runlogger.warning('The function SimulationRules was not found in your Balrog python config file: %s. All properties of the simulated galaxies will assume their defaults.' %BalrogSetup.pyconfig)
         else:
-            config.SimulationRules(copy1,rules,results)
+            config.SimulationRules(copy1,rules,results, TruthCatExtra)
 
         if 'SextractorConfigs' not in dir(config):
             BalrogSetup.runlogger.info('The function SextractorConfigs  was not found in your Balrog python config file: %s. Add this function to manually override configurations in the sextractor config file.' %BalrogSetup.pyconfig)
@@ -400,7 +439,7 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
             config.SextractorConfigs(copy2, ExtraSexConfig)
 
     LogCmdlineOpts(cmdline_args, cmdline_args_copy, BalrogSetup.arglogger, '\n# Final parsed values for each command line option')
-    return rules, ExtraSexConfig, cmdline_args_copy
+    return rules, ExtraSexConfig, cmdline_args_copy, TruthCatExtra
 
 
 class Result4GSP(object):
@@ -435,8 +474,8 @@ class Result4GSP(object):
         raise SampledAssignmentError(403, name, 'galaxies')
 
 
-def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy):
-    simgals.Sample(BalrogSetup)
+def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy, TruthCatExtra):
+    used = simgals.Sample(BalrogSetup)
     
     gkeys = ['minimum_fft_size','maximum_fft_size','alias_threshold','stepk_minimum_hlr','maxk_threshold','kvalue_accuracy','xvalue_accuracy','table_spacing','realspace_relerr','realspace_abserr','integration_relerr','integration_abserr']
     gsp = SimRules(BalrogSetup.ngal, gkeys, [])
@@ -448,11 +487,28 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy):
             config.GalsimParams(cmdline_opts_copy, gsp, s)
     grules =  [gsp.minimum_fft_size, gsp.maximum_fft_size, gsp.alias_threshold, gsp.stepk_minimum_hlr, gsp.maxk_threshold, gsp.kvalue_accuracy, gsp.xvalue_accuracy, gsp.table_spacing, gsp.realspace_relerr, gsp.realspace_abserr, gsp.integration_relerr, gsp.integration_abserr]
     gsprules = DefineRules(BalrogSetup.ngal, gkeys, grules, [], [], 0)
-    gsprules.SimpleSample(BalrogSetup)
+    used = gsprules.SimpleSample(BalrogSetup, used)
 
+    if len(TruthCatExtra.rules)==0:
+        ExtraTruthCat = None
+        TruthRules = None
+    else:
+        ncomp = len(simgals.component)
+        ExtraTruthRules = TruthCatExtra.rules
+        TruthRules = DefineRules(BalrogSetup.ngal, TruthCatExtra.names, ExtraTruthRules, [], [], ncomp)
+
+        for gal in simgals.galaxy.keys():
+            TruthRules.galaxy[gal] = simgals.galaxy[gal]
+        
+        for i in range(ncomp):
+            for comp in simgals.component[i].keys():
+                TruthRules.component[i][comp] = simgals.component[i][comp]
+
+        used = TruthRules.SimpleSample(BalrogSetup, used)
+    
     simgals.galaxy['index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
 
-    return simgals, gsprules
+    return simgals, gsprules, TruthRules, TruthCatExtra
 
 
 def CompError(name, i):
@@ -463,6 +519,57 @@ def CompError(name, i):
 def GalError(name):
     raise RulesAssignmentError(303, name)
 
+
+
+class TableColumns(object):
+    def __init__(self, ngal):
+        super(TableColumns, self).__setattr__('ngal', ngal)
+        super(TableColumns, self).__setattr__('rules', [])
+        super(TableColumns, self).__setattr__('names', [])
+        super(TableColumns, self).__setattr__('fmts', [])
+        super(TableColumns, self).__setattr__('units', [])
+        self.InitializeSersic()
+
+    def InitializeSersic(self, nProfiles=1):
+        super(TableColumns, self).__setattr__('nProfiles', nProfiles)
+
+    def AddColumn(self, rule=None, name=None, fmt=None, unit=None):
+        rule = self._CheckRule(rule, name)
+        if rule.type != 'catalog':
+            if name==None:
+                raise ColumnNameError(703)
+        else:
+            if name==None:
+                name = rule.param[2]
+
+        self.rules.append(rule)
+        self.names.append(name)
+        self.fmts.append(fmt)
+        self.units.append(unit)
+
+    def _CheckRule(self, rule, name):
+        if type(rule).__name__!='Rule':
+            if type(rule).__name__=='CompResult':
+                if rule.nProfiles==1:
+                    return self._CheckRule(rule[0], name)
+                else:
+                    raise ColumnArrayError(705, name)
+            elif type(rule)==float or type(rule)==int or type(rule)==str:
+                rule = Value(rule)
+            else:
+                try:
+                    arr = np.array(rule)
+                    if arr.ndim==1 and arr.size==self.ngal:
+                        rule = Array(arr)
+                    else:
+                        raise ColumnSizeError(701, name, len(arr), self.ngal)
+                except:
+                    raise ColumnDefinitionError(702, name)
+
+        return rule
+
+    def __setattr__(self, name, value):
+        raise ColumnAttributeError(706, name)
 
 
 ## Class used with the {sersicindex, halflightradius, magnitude, axisratio, beta} components of rules.
@@ -1225,14 +1332,15 @@ def NativeParse(parser, known):
 def CustomParse(cmdline_opts, BalrogSetup, config):
     galkeys = ['x', 'y', 'g1', 'g2', 'magnification']
     compkeys = ['sersicindex', 'halflightradius', 'magnitude', 'axisratio', 'beta']
-    rules, extra_sex_config, cmdline_opts_copy = UserDefinitions(cmdline_opts, BalrogSetup, config, galkeys, compkeys)
+
+    rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = UserDefinitions(cmdline_opts, BalrogSetup, config, galkeys, compkeys)
     compkeys[2] = 'flux'
 
     galrules = [rules.x, rules.y, rules.g1, rules.g2, rules.magnification]
     comprules = [rules.sersicindex, rules.halflightradius, rules.magnitude, rules.axisratio, rules.beta]
     rules = DefineRules(BalrogSetup.ngal, galkeys, galrules, compkeys, comprules, rules.nProfiles )
 
-    return rules, extra_sex_config, cmdline_opts_copy
+    return rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra
 
 
 def GetKnown(parser):
@@ -1288,10 +1396,10 @@ def RunBalrog(parser, known):
 
     # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser, known)
-    rules, extra_sex_config, cmdline_opts_copy = CustomParse(cmdline_opts, BalrogSetup, config)
+    rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = CustomParse(cmdline_opts, BalrogSetup, config)
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
-    catalog, gspcatalog = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy)
+    catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy, TruthCatExtra)
    
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
@@ -1303,7 +1411,7 @@ def RunBalrog(parser, known):
     # Insert simulated galaxies.
     bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
     WriteImages(BalrogSetup, bigImage, subWeight)
-    WriteCatalog(catalog, BalrogSetup, txt=None, fits=True)
+    WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
 
     # Run sextractor over the simulated image.
     RunSextractor(BalrogSetup, extra_sex_config, catalog)

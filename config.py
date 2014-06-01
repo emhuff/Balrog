@@ -58,9 +58,7 @@ def CustomParseArgs(args):
 ### Nesting a Function argument within another Function agument is also permissible.
 
 ### How you want to simulate your galaxies
-def SimulationRules(args, rules, sampled):
-    cat = args.catalogsample
-    ext = args.ext
+def SimulationRules(args, rules, sampled, TruthCat):
 
     rules.x = Function(function=rand, args=[args.xmin, args.xmax, args.ngal])
     rules.y = Function(function=rand, args=[args.ymin, args.ymax, args.ngal])
@@ -69,11 +67,20 @@ def SimulationRules(args, rules, sampled):
     rules.magnification = np.ones(args.ngal)
     
     # Being precise, halflightradius is along the major axis
-    rules.halflightradius = Catalog(file=cat,ext=ext,col=args.reff)
-    rules.magnitude = Catalog(cat,ext,args.mag)
-    rules.sersicindex = Catalog(cat,ext,args.sersicindex)
+    tab = Table(file=args.catalogsample, ext=args.ext)
+    rules.halflightradius = tab.Column(args.reff)
+    rules.magnitude = Column(args.catalogsample, args.ext, args.mag)
+    rules.sersicindex = Catalog(file=args.catalogsample, ext=args.ext, col=args.sersicindex)
     rules.beta = 0
     rules.axisratio = 1
+
+    demo = Function(function=SampleFunction, args=[sampled.x, sampled.y])
+    TruthCat.AddColumn(demo, name='demo')
+    TruthCat.AddColumn(tab.Column('ID'))
+    TruthCat.AddColumn(Catalog(args.catalogsample, args.ext, 'TYPE'))
+    TruthCat.AddColumn(Column(args.catalogsample, args.ext, 'Z'))
+    TruthCat.AddColumn(sampled.sersicindex, name='n0_repeat')
+
 
     ### extra args/kwargs examples
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y, args.xmax, args.ymax])
@@ -104,3 +111,4 @@ def SampleFunction(x, y, xmax=1000, ymax=1000):
 
 def StupidSize(size):
     return size * 1.0e-3
+
