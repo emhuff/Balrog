@@ -55,14 +55,17 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
 
             if fmt==None:
                 if rule.type!='catalog':
-                    arrtype = str(type(extracatalog.galaxy[name][0]))
-                    if arrtype.find('str')!=-1:
-                        strlen = len(max(extracatalog.galaxy[name]))
-                        fmt = '%iA' %(strlen)
-                    elif arrtype.find('int')!=-1:
-                        fmt = 'J'
-                    else:
+                    if len(extracatalog.galaxy[name])==0:
                         fmt = 'E'
+                    else:
+                        arrtype = str(type(extracatalog.galaxy[name][0]))
+                        if arrtype.find('str')!=-1:
+                            strlen = len(max(extracatalog.galaxy[name]))
+                            fmt = '%iA' %(strlen)
+                        elif arrtype.find('int')!=-1:
+                            fmt = 'J'
+                        else:
+                            fmt = 'E'
                 else:
                     cut,hdu = FindInCat(rule, name)
                     fmt = np.array(hdu.columns.formats)[cut][0]
@@ -189,8 +192,14 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
     t0 = datetime.datetime.now()
     rt = long( t0.microsecond )
 
+    '''
     simulatedgals.galaxy['flux_noised'] = np.copy(simulatedgals.galaxy['x'])
     simulatedgals.galaxy['flux_noiseless'] = np.copy(simulatedgals.galaxy['x'])
+    '''
+    simulatedgals.galaxy['flux_noised'] = np.zeros( len(simulatedgals.galaxy['x']) )
+    simulatedgals.galaxy['flux_noiseless'] = np.zeros( len(simulatedgals.galaxy['x']) )
+    simulatedgals.galaxy['not_drawn'] = np.array( [0]*len(simulatedgals.galaxy['x']) )
+
     for i in range(BalrogSetup.ngal):
 
         #postageStampSize = int(psizes[i])
@@ -206,7 +215,13 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
                 else:
                     d[key] = gspcatalog.galaxy[key][i]
         gsparams = galsim.GSParams(**d)
-        combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
+
+        try:
+            combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
+        except:
+            simulatedgals.galaxy['not_drawn'][i] = 1
+            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i]; sys.stdout.flush()
+            continue
 
         ix = int(simulatedgals.galaxy['x'][i])
         iy = int(simulatedgals.galaxy['y'][i])
@@ -222,7 +237,14 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         local = wcs.local(image_pos=pos)
         localscale = np.sqrt(local.dudx * local.dvdy)
         #smallImage = combinedObjConv.draw(scale=localscale)
-        smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
+
+        try:
+            smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
+        except:
+            simulatedgals.galaxy['not_drawn'][i] = 1
+            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i]; sys.stdout.flush()
+            continue
+
         smallImage.setCenter(ix,iy)
 
         t1 = datetime.datetime.now()
@@ -236,6 +258,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         simulatedgals.galaxy['flux_noised'][i] = flux_noised
         bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
+        
 
     return bigImage
 
@@ -505,6 +528,8 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy, TruthC
                 TruthRules.component[i][comp] = simgals.component[i][comp]
 
         used = TruthRules.SimpleSample(BalrogSetup, used)
+
+    simgals.galaxy['index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
 
     return simgals, gsprules, TruthRules, TruthCatExtra
 
@@ -987,7 +1012,7 @@ def CmdlineListOrdered():
             "pyconfig",
             "image", "imageext", "weight", "weightext", "psf", 
             "xmin", "xmax", "ymin", "ymax",
-            "ngal", "seed", "gain", "zeropoint", 
+            "ngal", "seed", "gain", "zeropoint", "indexstart",
             "stdverbosity", "logverbosity", "fulltraceback", 
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "nonosim", "nosimsexparam", "noassoc", "catfitstype"]
     return args
@@ -1256,6 +1281,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
     parser.add_argument( "-ft", "--fulltraceback", help="Full traceback is written out", action="store_true")
     parser.add_argument( "-pc", "--pyconfig", help="Balrog python config file", type=str, default=None)
+    parser.add_argument( "-is", "--indexstart", help="Index for first simulated galaxy", type=int, default=0)
 
 
     # How to run sextractor

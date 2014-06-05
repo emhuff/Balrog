@@ -15,7 +15,6 @@ def CustomArgs(parser):
     parser.add_argument( "-nsersic", "--sersicindex", help="Column name when drawing sersic index catalog", type=str, default="SERSIC_INDEX")
     parser.add_argument( "-mag", "--mag", help="Column name when drawing magnitude from catalog", type=str, default=None)
     parser.add_argument( "-b", "--band", help="Which filter band to choose from COSMOS catalog. Only relevant if --mag is not given and using COSMOS catlalog.", type=str, default='i', choices=['g','r','i','z'])
-    parser.add_argument( "-is", "--indexstart", help="Index for first simulated galaxy", type=int, default=0)
 
 
 ### Throughout the remainder of the file, you have access to your custom command line arguments in the attributes of args.
@@ -81,9 +80,6 @@ def SimulationRules(args, rules, sampled, TruthCat):
     TruthCat.AddColumn(Catalog(args.catalog, args.ext, 'TYPE'))
     TruthCat.AddColumn(Column(args.catalog, args.ext, 'Z'))
     TruthCat.AddColumn(sampled.sersicindex, name='n0_repeat')
-
-    index = args.indexstart + np.arange(0, args.ngal)
-    TruthCat.AddColumn(index, name='index', unit='dimensionless')
 
 
     ### extra args/kwargs examples
