@@ -142,8 +142,9 @@ def main(args):
     options.output_filename = args.out_filename
     options.save_output = False
     extra_cols=['e1_sky','e2_sky']
-    excluded_cols = ['exposure_x','exposure_y','exposure_e1','exposure_e2','exposure_chi2','mean_flux']
-    output = py3shape.output.Output(args.out_filename, options.model_name, excluded_cols=excluded_cols)
+    excluded_cols = ['exposure_x','exposure_y','exposure_e1','exposure_e2','exposure_chi2',
+                     'mean_flux','exposure_residual_stdev']
+    output = py3shape.output.Output(args.out_filename, options, excluded_cols=excluded_cols)
 
     extra_lines=['driver: Balrog/run_im3shape.py', 
                 'ini file: %s' % (args.ini_filename,),
