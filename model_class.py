@@ -529,9 +529,9 @@ class nComponentSersic(object):
         #psf.applyShift(psf_centroid.x, psf_centroid.y)
 
         #pix = galsim.Box(width=local.dudx, height=local.dvdy, gsparams=gsparams)
-        pix = galsim.Pixel(scale=localscale, gsparams=gsparams)
-
-        combinedObj = galsim.Convolve([psf,pix,combinedObj])
+        #pix = galsim.Pixel(scale=localscale, gsparams=gsparams)
+        #combinedObj = galsim.Convolve([psf,pix,combinedObj])
+        combinedObj = galsim.Convolve([psf,combinedObj])
 
         '''
         f1 = os.path.join(BalrogSetup.outdir,'balrog_image','obj%i.fits'%i)
