@@ -142,6 +142,7 @@ def main(args):
     options.output_filename = args.out_filename
     options.save_output = False
     extra_cols=['e1_sky','e2_sky']
+    #exclude following columns...this is messy, probably better to define new output object...
     excluded_cols = ['exposure_x','exposure_y','exposure_e1','exposure_e2','exposure_chi2',
                      'mean_flux','exposure_residual_stdev']
     output = py3shape.output.Output(args.out_filename, options, excluded_cols=excluded_cols)
