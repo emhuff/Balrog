@@ -14,7 +14,7 @@ class DEFAULT:
     ASTRO_DIR = os.path.join( BALROG_DIR, 'astro_config' )
     IM3_OPTIONS = os.path.join( ASTRO_DIR, 'im3_options.ini' )
 
-#creat galaxy catalog dictionary from fits catalog
+#create galaxy catalog dictionary from fits catalog
 def get_gal_cat(args):
     gal_cat={}
     ext=2
@@ -71,7 +71,7 @@ def get_stamp(image,x_pos,y_pos,stamp_size):
     stamp = image[subBounds]
     #stamp = img_data[ypos-half:ypos+half, xpos-half:xpos+half]
     x0,y0 = x_pos - x_min, y_pos - y_min
-    return stamp, x0, y0
+    return stamp.array, x0, y0
 
 
 
@@ -96,6 +96,27 @@ def convert_g_image2sky(local, g1image, g2image):
     g1sky, g2sky = py3shape.utils.convert_e_quadratic_to_linear(e1sky, e2sky)
     return g1sky, g2sky
 
+def seg_to_mask_basic(identifier,seg_stamp):
+    if identifier not in seg_stamp:
+        print 'target object not in segmentation mask...junk'
+    mask=np.ones(seg_stamp.shape)
+    mask[((seg_stamp!=0) & (seg_stamp!=identifier))] = 0
+    return mask
+
+
+def get_fits_extension(input_filename):
+    ext=0
+    output_filename=input_filename
+    if input_filename[-1]==']' and input_filename[-3]=='[':
+        try:
+            ext=int(input_filename[-2])
+            output_filename = input_filename[:-3]
+        except TypeError:
+            print 'specify image/weight/seg as fits filename with extension appended in square brackets'
+            print 'e.g. bullet.fits[2], default extension is 0'
+            raise
+    return output_filename,ext
+
 def main(args):
 
     # load the options file
@@ -110,18 +131,16 @@ def main(args):
 
 
     # Read in the FITS data
-    ext=0
-    if args.img_filename[-1]==']' and args.img_filename[-3]=='[':
-        try:
-            ext=int(args.img_filename[-2])
-            args.img_filename = args.img_filename[:-3]
-        except TypeError:
-            print 'specify image as fits filename with extension appended in square brackets'
-            print 'e.g. bullet.fits[2]'
-            raise
-    
+    img_filename,img_ext = get_fits_extension(args.img_filename)
+    if args.weight_filename:
+        weight_filename,weight_ext = get_fits_extension(args.weight_filename)
+        weight_gs = galsim.fits.read(weight_filename,hdu=weight_ext)
+    if args.seg_filename:
+        seg_filename, seg_ext = get_fits_extension(args.seg_filename)
+        seg_gs = galsim.fits.read(seg_filename,hdu=seg_ext)
+
     #Read in image
-    image_gs=galsim.fits.read(args.img_filename,hdu=ext)
+    image_gs=galsim.fits.read(img_filename,hdu=img_ext)
     img_data=image_gs.array
     #Get wcs info:
     wcs = image_gs.wcs
@@ -131,6 +150,7 @@ def main(args):
     except Exception:
         logging.error('failed to read psf file %s',(args.psf_filename))
         raise
+
 
     #Read in catalog data
     gal_cat = get_gal_cat(args)
@@ -161,23 +181,26 @@ def main(args):
     for extra_line in extra_lines:
         logging.info(extra_line)
 
-    # Loop over objects in catalog
-    logging.info('Analyzing %d/%d galaxies' % (min(args.last-args.first+1,len(gal_cat['ID'])), len(gal_cat['ID'])))
-    start_time = time.clock()
+
 
     #main galaxy loop
     ID=gal_cat['ID']
     X_IMAGE=gal_cat['X_IMAGE']
     Y_IMAGE=gal_cat['Y_IMAGE']
+    if args.last==None or args.last>len(ID)-1:
+        args.last = len(ID)-1
 
-    for i,identifier in enumerate(ID):
-        if i>args.last:
-            logging.info('Done')
-            break
+
+    # Loop over objects in catalog
+    logging.info('Analyzing %d/%d galaxies' % (min(args.last-args.first+1,len(gal_cat['ID'])), len(gal_cat['ID'])))
+    start_time = time.clock()
+
+    for i in range(args.first,args.last+1):
         # Read galaxy catalog entry
         identifier = ID[i]
         xpos = X_IMAGE[i]
         ypos = Y_IMAGE[i]
+        #Get image stamp
         stamp_stuff = get_stamp(image_gs,X_IMAGE[i],Y_IMAGE[i],options.stamp_size)
         try:
             stamp,x0,y0 = stamp_stuff
@@ -188,13 +211,24 @@ def main(args):
                 logging.warning('failed to get stamp for galaxy %d, skipping',identifier)
             continue
 
+        #Get weight stamp and mask stamp:
+        if args.weight_filename:
+            weight_stamp,_,_ = get_stamp(weight_gs,xpos,ypos,options.stamp_size)
+            weight_stamp = py3shape.Image(weight_stamp)
+        else:
+            weight_stamp=None
+        if args.seg_filename:
+            seg_stamp,_,_ = get_stamp(seg_gs,xpos,ypos,options.stamp_size)
+            mask=seg_to_mask_basic(identifier,seg_stamp)
+            mask_stamp = py3shape.Image(mask)
+        else:
+            mask_stamp=None
             
-        stamp_array = stamp.array
         options.sersics_x0_start = x0
         options.sersics_y0_start = y0
         #print 'starting coords:',x0,y0
         #Get position in stamp for starting position:
-        galaxy = py3shape.Image(stamp_array)
+        galaxy = py3shape.Image(stamp)
 
         #Get psf image
         print xpos,ypos
@@ -207,8 +241,9 @@ def main(args):
             continue
 
         try:
-            result,model = py3shape.analyze(galaxy, py3shape.Image(psf), options, ID=identifier)
+            result,model = py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=mask_stamp, ID=identifier)
         except Exception,emsg:
+            print emsg
             logging.error('im3shape failed for galaxy %d, with following error message:',identifier)
             logging.error(emsg)
             continue
@@ -224,7 +259,7 @@ def main(args):
             pylab.imshow(model,origin='lower',interpolation='nearest')
             pylab.subplot(133)
             pylab.imshow(stamp_array-(model)*stamp_array.sum(),origin='lower',interpolation='nearest')
-            pylab.show()
+            pylab.show() 
         
         extra_output=[e1_sky,e2_sky]
         output.write_row(result, options, psf, extra_output=extra_output)
@@ -256,9 +291,10 @@ parser.add_argument('cat_filename', type=str, help='object catalogue file, with 
 parser.add_argument('psf_filename', type=str, help='psfex file')
 parser.add_argument('out_filename', type=str, help='output filename')
 parser.add_argument('--first', type=int, default=0, help='[first_image_to_process]')
-parser.add_argument('--last', type=int, default=5, help='[last_image_to_process]')
+parser.add_argument('--last', type=int, default=None, help='[last_image_to_process]')
 parser.add_argument('--ini_filename', type=str, default=DEFAULT.IM3_OPTIONS, help='options filename')
-parser.add_argument('--weight_filename', type=str, help='weight file, with extension as filename[<ext>], otherwise defaults to 1')
+parser.add_argument('--weight_filename', type=str, help='weight file, with extension as filename[<ext>], otherwise defaults to 0')
+parser.add_argument('--seg_filename', type=str, help='segmentation file (from SExtractor), with extension as filename[<ext>], otherwise defaults to 0')
 parser.add_argument('--x_image_col', type=str, default='X_IMAGE', help='name of x column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--y_image_col', type=str, default='Y_IMAGE', help='name of y column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--id_col', type=str, default='NUMBER', help='name of id column in catalog file, defaults to NUMBER')
