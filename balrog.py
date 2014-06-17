@@ -368,7 +368,7 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
         eng.config['ASSOCSELEC_TYPE'] = 'MATCHED'
    
 
-def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
+def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc_seg=False):
     afile = None
     weightout = BalrogSetup.weightout
     if nosim:
@@ -376,8 +376,15 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False):
         imageout = BalrogSetup.nosim_imageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_nosimfile
-    else:
+    elif not sim_noassoc_seg:
         catalogmeasured = BalrogSetup.catalogmeasured
+        imageout = BalrogSetup.imageout
+        if not BalrogSetup.noassoc:
+            afile = BalrogSetup.assoc_simfile
+        if BalrogSetup.image==BalrogSetup.weight:
+            weightout = imageout
+    else:
+        catalogmeasured = BalrogSetup.catalogmeasured+'sim_noassoc_seg'
         imageout = BalrogSetup.imageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
@@ -1291,6 +1298,8 @@ def DefaultArgs(parser):
     parser.add_argument( "-sn", "--sexnnw", help='Sextractor neural network star-galaxy file', type=str, default=None)
     parser.add_argument( "-sf", "--sexconv", help='Sextractor filter convolution file', type=str, default=None)
     parser.add_argument( "-na", "--noassoc", help="Don't do association mode matching in sextractor.", action="store_true")
+    parser.add_argument( "-nas", "--sim_noassoc_seg", help="If set, run non assoctation mode sextractor over simulated image, as well as assoc mode,\
+        and save resulting seg map to outdir/sim_noassoc_seg", default=None)
     parser.add_argument( "-nn", "--nonosim", help="Skip sextractor run over original image, prior to any simulation.", action="store_true")
     parser.add_argument( "-nsp", "--nosimsexparam", help="Sextractor param file for run over original image, prior to any simulation.", type=str, default=None)
     parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
@@ -1438,6 +1447,13 @@ def RunBalrog(parser, known):
 
     # Run sextractor over the simulated image.
     RunSextractor(BalrogSetup, extra_sex_config, catalog)
+
+    # Run sextractor over simulated image in noassoc mode, only saving seg mask
+    if BalrogSetup.sim_noassoc_seg:
+        BalrogSetup.noassoc = True
+        extra_sex_config['CHECKIMAGE_TYPE']='SEGMENTATION'
+        extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.outdir+'/'+BalrogSetup.sim_noassoc_seg
+        RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True)
 
     # If chosen, clean up image files you don't need anymore
     if BalrogSetup.clean:
