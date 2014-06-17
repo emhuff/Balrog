@@ -1452,7 +1452,7 @@ def RunBalrog(parser, known):
     if BalrogSetup.sim_noassoc_seg:
         BalrogSetup.noassoc = True
         extra_sex_config['CHECKIMAGE_TYPE']='SEGMENTATION'
-        extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.outdir+'/'+BalrogSetup.sim_noassoc_seg
+        extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.sim_noassoc_seg
         RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True)
 
     # If chosen, clean up image files you don't need anymore
