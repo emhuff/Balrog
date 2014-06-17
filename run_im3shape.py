@@ -7,6 +7,7 @@ import time
 import pyfits
 import argparse
 import logging
+from scipy.stats import mode
 
 #im3shape defaults
 class DEFAULT:
@@ -65,7 +66,7 @@ def get_stamp(image,x_pos,y_pos,stamp_size):
     x_min,x_max,y_min,y_max = int(x_pos-half),int(x_pos+half),int(y_pos-half),int(y_pos+half)
     over_edge = (x_min<0) | (y_min<0) | (x_max>image.array.shape[1]) | (y_max>image.array.shape[0])
     if over_edge:
-        print 'stamp over edge of image, skipping this object'
+        logging.warning('galaxy stamp overlaps edge of image, skipping')
         return 1
     subBounds = galsim.BoundsI(x_min,x_max-1,y_min,y_max-1)
     stamp = image[subBounds]
@@ -135,9 +136,12 @@ def main(args):
     if args.weight_filename:
         weight_filename,weight_ext = get_fits_extension(args.weight_filename)
         weight_gs = galsim.fits.read(weight_filename,hdu=weight_ext)
-    if args.seg_filename:
-        seg_filename, seg_ext = get_fits_extension(args.seg_filename)
-        seg_gs = galsim.fits.read(seg_filename,hdu=seg_ext)
+
+    if args.seg_filenames:
+        seg_imgs=[]
+        for seg_file in args.seg_filenames:
+            seg_filename, seg_ext = get_fits_extension(seg_file)
+            seg_imgs.append(galsim.fits.read(seg_filename,hdu=seg_ext))
 
     #Read in image
     image_gs=galsim.fits.read(img_filename,hdu=img_ext)
@@ -198,6 +202,7 @@ def main(args):
     for i in range(args.first,args.last+1):
         # Read galaxy catalog entry
         identifier = ID[i]
+        print identifier
         xpos = X_IMAGE[i]
         ypos = Y_IMAGE[i]
         #Get image stamp
@@ -205,10 +210,10 @@ def main(args):
         try:
             stamp,x0,y0 = stamp_stuff
         except TypeError:
-            if stamp_stuff==1:
-                logging.warning('galaxy %d stamp overlaps edge of image, skipping',identifier)
-            else:
-                logging.warning('failed to get stamp for galaxy %d, skipping',identifier)
+            #if stamp_stuff==1:
+            #    logging.warning('galaxy %d stamp overlaps edge of image, skipping',identifier)
+            #else:
+            #    logging.warning('failed to get stamp for galaxy %d, skipping',identifier)
             continue
 
         #Get weight stamp and mask stamp:
@@ -217,10 +222,32 @@ def main(args):
             weight_stamp = py3shape.Image(weight_stamp)
         else:
             weight_stamp=None
-        if args.seg_filename:
-            seg_stamp,_,_ = get_stamp(seg_gs,xpos,ypos,options.stamp_size)
-            mask=seg_to_mask_basic(identifier,seg_stamp)
-            mask_stamp = py3shape.Image(mask)
+        if args.seg_filenames:
+            #Get seg stamp data...decide what to do depending on how many seg files provided.
+            #If only one provided, this should be the orignal seg map. Set all non-zero pixels in this image
+            #to -1, that way they won't match ID of any detected simulated objects.
+            if len(seg_imgs)==1:
+                seg_stamp,_,_ = get_stamp(seg_imgs[0],xpos,ypos,options.stamp_size)
+                seg_stamp[(seg_stamp!=0)] = -1
+                mask=seg_to_mask_basic(identifier,seg_stamp)
+                mask_stamp = py3shape.Image(mask)
+            #If two provided, combine them in the following way:
+            if len(seg_imgs)==2:
+                #np.set_printoptions(threshold=np.nan)
+                noassoc_seg_stamp,_,_ = get_stamp(seg_imgs[0],xpos,ypos,options.stamp_size)
+                assoc_seg_stamp,_,_ = get_stamp(seg_imgs[0],xpos,ypos,options.stamp_size)
+                #Find target object pixels in assoc stamp, and find which pixel value they overlap
+                #most with in noassoc stamp. What if this is zero? Can't see why this would happen if same SExtractor settings
+                #used for both seg maps, so for no just log a warning and skip object if this happens...
+                assoc_obj_inds=np.where(assoc_seg_stamp==identifier)
+                noassoc_seg_vals=noassoc_seg_stamp[assoc_obj_inds]
+                noassoc_identifier=mode(noassoc_seg_vals)[0]
+                #Set pixels in noassoc seg stamp with pixel value noassoc_identifier to identifier, and others to -1
+                noassoc_obj_inds=np.where(noassoc_seg_stamp==noassoc_identifier)
+                noassoc_seg_stamp[(noassoc_seg_stamp!=0)] = -1
+                noassoc_seg_stamp[noassoc_obj_inds] = identifier
+                mask=seg_to_mask_basic(identifier,noassoc_seg_stamp)
+                mask_stamp = py3shape.Image(mask)            
         else:
             mask_stamp=None
             
@@ -294,7 +321,9 @@ parser.add_argument('--first', type=int, default=0, help='[first_image_to_proces
 parser.add_argument('--last', type=int, default=None, help='[last_image_to_process]')
 parser.add_argument('--ini_filename', type=str, default=DEFAULT.IM3_OPTIONS, help='options filename')
 parser.add_argument('--weight_filename', type=str, help='weight file, with extension as filename[<ext>], otherwise defaults to 0')
-parser.add_argument('--seg_filename', type=str, help='segmentation file (from SExtractor), with extension as filename[<ext>], otherwise defaults to 0')
+parser.add_argument('--seg_filenames', type=str, nargs='*', help="1 or 2 segmentation mask files (from SExtractor), \
+with extension as filename[<ext>], otherwise defaults to 0. If only one, assume it is that of the original image, in which case pixels from original objects can be ignored.\
+If two seg files, first should be from simulated image, second should be from simulated image in assoc mode (allowing object matching/uberseg).")
 parser.add_argument('--x_image_col', type=str, default='X_IMAGE', help='name of x column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--y_image_col', type=str, default='Y_IMAGE', help='name of y column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--id_col', type=str, default='NUMBER', help='name of id column in catalog file, defaults to NUMBER')
