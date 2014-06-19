@@ -219,7 +219,8 @@ def main(args):
         #Get weight stamp and mask stamp:
         if args.weight_filename:
             weight_stamp,_,_ = get_stamp(weight_gs,xpos,ypos,options.stamp_size)
-            weight_stamp = py3shape.Image(weight_stamp)
+            #Set negative values to zero
+            weight_stamp[weight_stamp<0]=0
         else:
             weight_stamp=None
         if args.seg_filenames:
@@ -235,7 +236,7 @@ def main(args):
             if len(seg_imgs)==2:
                 #np.set_printoptions(threshold=np.nan)
                 noassoc_seg_stamp,_,_ = get_stamp(seg_imgs[0],xpos,ypos,options.stamp_size)
-                assoc_seg_stamp,_,_ = get_stamp(seg_imgs[0],xpos,ypos,options.stamp_size)
+                assoc_seg_stamp,_,_ = get_stamp(seg_imgs[1],xpos,ypos,options.stamp_size)
                 #Find target object pixels in assoc stamp, and find which pixel value they overlap
                 #most with in noassoc stamp. What if this is zero? Can't see why this would happen if same SExtractor settings
                 #used for both seg maps, so for no just log a warning and skip object if this happens...
@@ -246,8 +247,7 @@ def main(args):
                 noassoc_obj_inds=np.where(noassoc_seg_stamp==noassoc_identifier)
                 noassoc_seg_stamp[(noassoc_seg_stamp!=0)] = -1
                 noassoc_seg_stamp[noassoc_obj_inds] = identifier
-                mask=seg_to_mask_basic(identifier,noassoc_seg_stamp)
-                mask_stamp = py3shape.Image(mask)            
+                mask_stamp=seg_to_mask_basic(identifier,noassoc_seg_stamp)         
         else:
             mask_stamp=None
             
@@ -333,8 +333,7 @@ parser.add_argument('--plot', action='store_true', default=False, help='display 
 parser.add_argument('-p', '--option', dest='extra_options', action='append',
     help='Additional options to be set. Can specify more than once in form -p option=value. Overrides ini file')
 
-        
-
+    
 if __name__ == "__main__":
     args = parser.parse_args()
     if args.log_file:
