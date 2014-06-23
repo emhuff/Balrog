@@ -97,7 +97,7 @@ def SimulationRules(args, rules, sampled, TruthCat):
 
 
 def Test(x, y, file, ext):
-    print file, ext
+    import pyfits
     hdu = pyfits.open(file)[ext]
     header = hdu.header
     wcs = pywcs.WCS(header)
