@@ -30,6 +30,8 @@ def get_gal_cat(args):
     gal_cat['X_IMAGE'] = gal_data[args.x_image_col]
     gal_cat['Y_IMAGE'] = gal_data[args.y_image_col]
     gal_cat['ID'] = gal_data[args.id_col]
+    gal_cat['RA'] = gal_data[args.ra_col]
+    gal_cat['DEC'] = gal_data[args.dec_col]
     return gal_cat
 
 #Read Balrog output catalog to get positions of galaxies
@@ -179,7 +181,7 @@ def main(args):
                 'first object: %s' % (args.first,),
                 'last object: %s' % (args.last,)]
 
-    output.write_header(include_radec=False, extra_cols=extra_cols,extra_lines=extra_lines)
+    output.write_header(include_radec=True, extra_cols=extra_cols,extra_lines=extra_lines)
 
     #Write extra lines to info() log
     for extra_line in extra_lines:
@@ -191,6 +193,7 @@ def main(args):
     ID=gal_cat['ID']
     X_IMAGE=gal_cat['X_IMAGE']
     Y_IMAGE=gal_cat['Y_IMAGE']
+    RA,DEC=gal_cat['RA'],gal_cat['DEC']
     if args.last==None or args.last>len(ID)-1:
         args.last = len(ID)-1
 
@@ -242,7 +245,11 @@ def main(args):
                 #used for both seg maps, so for no just log a warning and skip object if this happens...
                 assoc_obj_inds=np.where(assoc_seg_stamp==identifier)
                 noassoc_seg_vals=noassoc_seg_stamp[assoc_obj_inds]
-                noassoc_identifier=mode(noassoc_seg_vals)[0]
+                try:
+                    noassoc_identifier=mode(noassoc_seg_vals)[0]
+                except UnboundLocalError:
+                    logging.warning('No object found in seg map....skipping')
+                    continue
                 #Set pixels in noassoc seg stamp with pixel value noassoc_identifier to identifier, and others to -1
                 noassoc_obj_inds=np.where(noassoc_seg_stamp==noassoc_identifier)
                 noassoc_seg_stamp[(noassoc_seg_stamp!=0)] = -1
@@ -289,12 +296,7 @@ def main(args):
             pylab.show() 
         
         extra_output=[e1_sky,e2_sky]
-        output.write_row(result, options, psf, extra_output=extra_output)
-        # Compute rgpp/rp
-        # rgpp_rp = compute_rgpp_rp(result, psf, options)
-        
-        # Write out results within python rather than from the C side
-        
+        output.write_row(result, options, psf, extra_output=extra_output,ra=RA[i],dec=DEC[i])
         
     total_time = time.clock() - start_time
     ngal = args.last+1 - args.first
@@ -327,6 +329,8 @@ If two seg files, first should be from simulated image, second should be from si
 parser.add_argument('--x_image_col', type=str, default='X_IMAGE', help='name of x column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--y_image_col', type=str, default='Y_IMAGE', help='name of y column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--id_col', type=str, default='NUMBER', help='name of id column in catalog file, defaults to NUMBER')
+parser.add_argument('--ra_col', type=str, default='ALPHAPEAK_J2000', help='name of ra column in catalog file, defaults to ALPHAPEAK_J2000')
+parser.add_argument('--dec_col', type=str, default='DELTAPEAK_J2000', help='name of dec column in catalog file, defaults to DELTAPEAK_J2000')
 parser.add_argument('--log_file', type=str, default=None, help='name of log file, if not specified, no log file written')
 parser.add_argument('--loglevel', type=str, default='INFO', help='python logging level (DEBUG,INFO,WARNING,ERROR...see https://docs.python.org/2/howto/logging.html#)')
 parser.add_argument('--plot', action='store_true', default=False, help='display image, model and residuals for each galaxy (using pylab.imshow())')
