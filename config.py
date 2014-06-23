@@ -2,6 +2,8 @@
 
 import os
 import numpy as np
+import pywcs
+import pyfits
 from model_class import *
 
 
@@ -81,10 +83,28 @@ def SimulationRules(args, rules, sampled, TruthCat):
     TruthCat.AddColumn(sampled.sersicindex, name='n0_repeat')
     TruthCat.AddColumn(tab.Column('TYPE'), name='OBJTYPE')
 
+    #test = Function(function=Test, args=[sampled.x])
+    #TruthCat.AddColumn(test, name='TEST')
+
+    file = 'fiducialwcs.fits'
+    fext = 0
+    test = Function(function=Test, args=[sampled.x, sampled.y, file, fext])
+    TruthCat.AddColumn(test, name='TEST')
 
     ### extra args/kwargs examples
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y, args.xmax, args.ymax])
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y], kwargs={'xmax':args.xmax, 'ymax':args.ymax})
+
+
+def Test(x, y, file, ext):
+    print file, ext
+    hdu = pyfits.open(file)[ext]
+    header = hdu.header
+    wcs = pywcs.WCS(header)
+    pcoords = np.dstack((x,y))[0]
+    wcoords = wcs.wcs_pix2sky(pcoords, 1)
+    r = wcoords[:,0]
+    return x  
 
 
 ### Adjust the galsim GSParams

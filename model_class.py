@@ -181,6 +181,7 @@ class nComponentSersic(object):
 
         if type(arg).__name__=='Rule':
             a, notready = self.TryRule(arg, notready, used)
+
         else:
             try:
                 length = len(arg)
@@ -191,6 +192,9 @@ class nComponentSersic(object):
             a = arg
             if ok:
                 if length > 0:
+                    if type(arg)==str:
+                        return a, notready
+
                     if type(arg)==tuple:
                         aa = [None]*length
                     else:
