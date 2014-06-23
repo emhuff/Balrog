@@ -46,7 +46,6 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         columns.append(col)
 
     if TruthCatExtra!=None:
-        print TruthCatExtra.names
         for rule,name,fmt,unit in zip(TruthCatExtra.rules,TruthCatExtra.names,TruthCatExtra.fmts, TruthCatExtra.units):
             if unit==None:
                 if rule.type!='catalog':
