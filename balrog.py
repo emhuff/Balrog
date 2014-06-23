@@ -19,8 +19,12 @@ from model_class import *
 def FindInCat(rule, name):
     cat = rule.param[0]
     ext = rule.param[1]
+    n = rule.param[2]
+
     hdu = pyfits.open(cat)[ext]
-    cut = np.in1d(hdu.columns.names,np.array([name]))
+    #cut = np.in1d(hdu.columns.names,np.array([name]))
+    cut = np.in1d(hdu.columns.names,np.array([n]))
+
     return cut, hdu
 
 def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, extracatalog=None):
@@ -42,6 +46,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         columns.append(col)
 
     if TruthCatExtra!=None:
+        print TruthCatExtra.names
         for rule,name,fmt,unit in zip(TruthCatExtra.rules,TruthCatExtra.names,TruthCatExtra.fmts, TruthCatExtra.units):
             if unit==None:
                 if rule.type!='catalog':
@@ -569,6 +574,7 @@ class TableColumns(object):
         self.names.append(name)
         self.fmts.append(fmt)
         self.units.append(unit)
+
 
     def _CheckRule(self, rule, name):
         if type(rule).__name__!='Rule':

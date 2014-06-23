@@ -77,9 +77,9 @@ def SimulationRules(args, rules, sampled, TruthCat):
     demo = Function(function=SampleFunction, args=[sampled.x, sampled.y])
     TruthCat.AddColumn(demo, name='demo')
     TruthCat.AddColumn(tab.Column('ID'))
-    TruthCat.AddColumn(Catalog(args.catalog, args.ext, 'TYPE'))
     TruthCat.AddColumn(Column(args.catalog, args.ext, 'Z'))
     TruthCat.AddColumn(sampled.sersicindex, name='n0_repeat')
+    TruthCat.AddColumn(tab.Column('TYPE'), name='OBJTYPE')
 
 
     ### extra args/kwargs examples
