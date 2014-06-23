@@ -533,7 +533,7 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy, TruthC
 
         used = TruthRules.SimpleSample(BalrogSetup, used)
 
-    simgals.galaxy['index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
+    simgals.galaxy['balrog_index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
 
     return simgals, gsprules, TruthRules, TruthCatExtra
 
