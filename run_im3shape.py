@@ -120,6 +120,25 @@ def get_fits_extension(input_filename):
             raise
     return output_filename,ext
 
+def seg_to_mask_uber(identifier,seg_stamp):
+    #Object id in seg map should be 
+    #First check that expected object is in seg map
+    if identifier not in seg_stamp:
+        print 'ID not in seg...'
+        raise ValueError
+    #First get all indices of all seg map pixels which contain an object i.e. are not equal to zero
+    obj_inds = np.where(seg_stamp!=0)
+    mask=np.ones(seg_stamp.shape)
+    #Then loop through pixels in seg map, check which obj ind it is closest to.
+    #If the closest obj ind does not correspond to the target, set this pixel in the weight map to zero.
+    for i,row in enumerate(seg_stamp):
+        for j, element in enumerate(row):
+            obj_dists = (i-obj_inds[0])**2 + (j-obj_inds[1])**2
+            ind_min=np.argmin(obj_dists)
+            if seg_stamp[obj_inds[0][ind_min],obj_inds[1][ind_min]] != identifier:
+                mask[i,j] = 0.
+    return mask
+
 def main(args):
 
     # load the options file
@@ -168,6 +187,8 @@ def main(args):
     options.output_filename = args.out_filename
     options.save_output = False
     extra_cols=['e1_sky','e2_sky']
+    if args.allmasks:
+        extra_cols+=['e1_nomask','e2_nomask','e1_uber','e2_uber']
     #exclude following columns...this is messy, probably better to define new output object...
     excluded_cols = ['exposure_x','exposure_y','exposure_e1','exposure_e2','exposure_chi2',
                      'mean_flux','exposure_residual_stdev']
@@ -254,7 +275,9 @@ def main(args):
                 noassoc_obj_inds=np.where(noassoc_seg_stamp==noassoc_identifier)
                 noassoc_seg_stamp[(noassoc_seg_stamp!=0)] = -1
                 noassoc_seg_stamp[noassoc_obj_inds] = identifier
-                mask_stamp=seg_to_mask_basic(identifier,noassoc_seg_stamp)         
+                mask_stamp=seg_to_mask_basic(identifier,noassoc_seg_stamp)
+                if args.allmasks:
+                    uberseg_mask_stamp = seg_to_mask_uber(identifier,noassoc_seg_stamp)         
         else:
             mask_stamp=None
             
@@ -282,20 +305,34 @@ def main(args):
             logging.error(emsg)
             continue
 
+        if args.allmasks:
+            result_nomask,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=None, ID=identifier)
+            e1_nomask,e2_nomask = result_nomask.get_params().e1,result_nomask.get_params().e2
+            result_uber,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=uberseg_mask_stamp, ID=identifier)
+            e1_uber,e2_uber = result_uber.get_params().e1,result_uber.get_params().e2
+
         #Convert e's to sky coordinates...not totally sure about this function...
         local_wcs = wcs.local(image_pos=pos)
         e1_sky,e2_sky = convert_g_image2sky(local_wcs,result.get_params().e1,result.get_params().e2)
 
         if args.plot:   
-            pylab.subplot(131)
-            pylab.imshow(stamp_array,origin='lower',interpolation='nearest')
-            pylab.subplot(132)
+            pylab.subplot(231)
+            pylab.imshow(stamp,origin='lower',interpolation='nearest')
+            pylab.subplot(232)
             pylab.imshow(model,origin='lower',interpolation='nearest')
-            pylab.subplot(133)
-            pylab.imshow(stamp_array-(model)*stamp_array.sum(),origin='lower',interpolation='nearest')
+            pylab.subplot(233)
+            pylab.imshow(stamp-(model)*stamp.sum(),origin='lower',interpolation='nearest')
+            pylab.subplot(234)
+            pylab.imshow(mask_stamp,origin='lower',interpolation='nearest')
+            pylab.subplot(235)
+            if args.allmasks:
+                pylab.imshow(uberseg_mask_stamp,origin='lower',interpolation='nearest')            
+
             pylab.show() 
         
         extra_output=[e1_sky,e2_sky]
+        if args.allmasks:
+            extra_output+=[e1_nomask,e2_nomask,e1_uber,e2_uber]
         output.write_row(result, options, psf, extra_output=extra_output,ra=RA[i],dec=DEC[i])
         
     total_time = time.clock() - start_time
@@ -333,6 +370,7 @@ parser.add_argument('--ra_col', type=str, default='ALPHAPEAK_J2000', help='name 
 parser.add_argument('--dec_col', type=str, default='DELTAPEAK_J2000', help='name of dec column in catalog file, defaults to DELTAPEAK_J2000')
 parser.add_argument('--log_file', type=str, default=None, help='name of log file, if not specified, no log file written')
 parser.add_argument('--loglevel', type=str, default='INFO', help='python logging level (DEBUG,INFO,WARNING,ERROR...see https://docs.python.org/2/howto/logging.html#)')
+parser.add_argument('--allmasks', action='store_true', help='Also run im3shape without masking and with uberseg...')
 parser.add_argument('--plot', action='store_true', default=False, help='display image, model and residuals for each galaxy (using pylab.imshow())')
 parser.add_argument('-p', '--option', dest='extra_options', action='append',
     help='Additional options to be set. Can specify more than once in form -p option=value. Overrides ini file')
