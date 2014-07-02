@@ -115,9 +115,7 @@ class nComponentSersic(object):
                 #used.append( (file, ext, randints) )
                 #used.append( [file, ext, randints] )
             else:
-                print used
                 cut = (used['file']==file) & (used['ext']==ext)
-                print used[cut]
                 randints = used[cut]['rows'][0]
                 selected = data[randints]
 
