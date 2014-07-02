@@ -75,7 +75,6 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
                     cut,hdu = FindInCat(rule, name)
                     fmt = np.array(hdu.columns.formats)[cut][0]
                 
-                print extracatalog.galaxy[name], name
                 col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
                 columns.append(col)
 
@@ -267,7 +266,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         bigImage[bounds] += smallImage[bounds]
         
         end = datetime.datetime.now()
-        print (end - start).total_seconds(), simulatedgals.component[0]['sersicindex'][i], simulatedgals.component[0]['halflightradius'][i], simulatedgals.component[0]['axisratio'][i], simulatedgals.component[0]['flux'][i]; sys.stdout.flush()
+        #print (end - start).total_seconds(), simulatedgals.component[0]['sersicindex'][i], simulatedgals.component[0]['halflightradius'][i], simulatedgals.component[0]['axisratio'][i], simulatedgals.component[0]['flux'][i]; sys.stdout.flush()
 
     return bigImage
 
