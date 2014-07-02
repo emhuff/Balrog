@@ -263,3 +263,8 @@ class ColumnAttributeError(BaseException):
 class TableAssignmentError(BaseException):
     def init(self):
         self.msg = 'ERROR code: %i. Attempted to assign attributes to a table. You cannot assign any attributes to Table() type objects.' %(self.code)
+
+
+class TableUnknownType(BaseException):
+    def init(self, name):
+        self.msg = 'ERROR code: %i. Cannot determine type of column %s when ngal=0. No contents of array to take type from.' %(self.code, name)

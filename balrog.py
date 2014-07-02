@@ -61,7 +61,8 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
             if fmt==None:
                 if rule.type!='catalog':
                     if len(extracatalog.galaxy[name])==0:
-                        fmt = 'E'
+                        #fmt = 'E'
+                        raise TableUnknownType(401, name)
                     else:
                         arrtype = str(type(extracatalog.galaxy[name][0]))
                         if arrtype.find('str')!=-1:
