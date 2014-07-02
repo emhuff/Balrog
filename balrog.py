@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import imp
 import copy
 import datetime
@@ -74,6 +75,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
                     cut,hdu = FindInCat(rule, name)
                     fmt = np.array(hdu.columns.formats)[cut][0]
                 
+                print extracatalog.galaxy[name], name
                 col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
                 columns.append(col)
 
@@ -205,6 +207,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
     simulatedgals.galaxy['not_drawn'] = np.array( [0]*len(simulatedgals.galaxy['x']) )
 
     for i in range(BalrogSetup.ngal):
+        start = datetime.datetime.now()
 
         #postageStampSize = int(psizes[i])
         d = {}
@@ -263,6 +266,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
         
+        end = datetime.datetime.now()
+        print (end - start).total_seconds(), simulatedgals.component[0]['sersicindex'][i], simulatedgals.component[0]['halflightradius'][i], simulatedgals.component[0]['axisratio'][i], simulatedgals.component[0]['flux'][i]; sys.stdout.flush()
 
     return bigImage
 

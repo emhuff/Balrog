@@ -90,7 +90,10 @@ class nComponentSersic(object):
         if len(used) > 0:
             pass
         '''
-        dtype = [ ('file',np.object), ('ext',np.int), ('rows', (np.int,BalrogSetup.ngal)) ]
+        if BalrogSetup.ngal==1:
+            dtype = [ ('file',np.object), ('ext',np.int), ('rows', '(1,)i8') ]
+        else:
+            dtype = [ ('file',np.object), ('ext',np.int), ('rows', (np.int,BalrogSetup.ngal)) ]
         if used == None:
             used = np.array( [], dtype=dtype )
 
@@ -103,6 +106,8 @@ class nComponentSersic(object):
             if (file not in used['file']) or (ext not in used['ext']):
                 size = len(data)
                 randints = np.random.randint(0,high=size, size=self.ngal)
+                if self.ngal == 1:
+                    randints = np.array([randints])
                 selected = data[randints]
 
                 newused = np.array( [(file,ext,randints)], dtype=dtype )
@@ -110,7 +115,9 @@ class nComponentSersic(object):
                 #used.append( (file, ext, randints) )
                 #used.append( [file, ext, randints] )
             else:
+                print used
                 cut = (used['file']==file) & (used['ext']==ext)
+                print used[cut]
                 randints = used[cut]['rows'][0]
                 selected = data[randints]
 
