@@ -106,14 +106,9 @@ class nComponentSersic(object):
             if (file not in used['file']) or (ext not in used['ext']):
                 size = len(data)
                 randints = np.random.randint(0,high=size, size=self.ngal)
-                if self.ngal == 1:
-                    randints = np.array([randints])
                 selected = data[randints]
-
                 newused = np.array( [(file,ext,randints)], dtype=dtype )
                 used = np.concatenate( (used,newused), axis=0 )
-                #used.append( (file, ext, randints) )
-                #used.append( [file, ext, randints] )
             else:
                 cut = (used['file']==file) & (used['ext']==ext)
                 randints = used[cut]['rows'][0]
