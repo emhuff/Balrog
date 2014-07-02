@@ -84,7 +84,7 @@ def SimulationRules(args, rules, sampled, TruthCat):
     '''
 
     demo = Function(function=SampleFunction, args=[sampled.x, sampled.y])
-    TruthCat.AddColumn(demo, name='demo')
+    TruthCat.AddColumn(demo, name='demo', fmt='E')
     TruthCat.AddColumn(tab.Column('ID'))
     TruthCat.AddColumn(Column(args.catalog, args.ext, 'Z'))
     TruthCat.AddColumn(tab.Column('TYPE'), name='OBJTYPE')

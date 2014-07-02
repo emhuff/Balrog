@@ -76,8 +76,8 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
                     cut,hdu = FindInCat(rule, name)
                     fmt = np.array(hdu.columns.formats)[cut][0]
                 
-                col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
-                columns.append(col)
+            col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
+            columns.append(col)
 
 
     for i in range(len(sample.component)):
