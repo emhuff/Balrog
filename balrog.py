@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import imp
 import copy
 import datetime
@@ -19,8 +20,12 @@ from model_class import *
 def FindInCat(rule, name):
     cat = rule.param[0]
     ext = rule.param[1]
+    n = rule.param[2]
+
     hdu = pyfits.open(cat)[ext]
-    cut = np.in1d(hdu.columns.names,np.array([name]))
+    #cut = np.in1d(hdu.columns.names,np.array([name]))
+    cut = np.in1d(hdu.columns.names,np.array([n]))
+
     return cut, hdu
 
 def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, extracatalog=None):
@@ -56,7 +61,8 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
             if fmt==None:
                 if rule.type!='catalog':
                     if len(extracatalog.galaxy[name])==0:
-                        fmt = 'E'
+                        #fmt = 'E'
+                        raise TableUnknownType(401, name)
                     else:
                         arrtype = str(type(extracatalog.galaxy[name][0]))
                         if arrtype.find('str')!=-1:
@@ -70,8 +76,8 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
                     cut,hdu = FindInCat(rule, name)
                     fmt = np.array(hdu.columns.formats)[cut][0]
                 
-                col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
-                columns.append(col)
+            col = pyfits.Column(array=extracatalog.galaxy[name], name=name, format=fmt, unit=unit)
+            columns.append(col)
 
 
     for i in range(len(sample.component)):
@@ -201,6 +207,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
     simulatedgals.galaxy['not_drawn'] = np.array( [0]*len(simulatedgals.galaxy['x']) )
 
     for i in range(BalrogSetup.ngal):
+        start = datetime.datetime.now()
 
         #postageStampSize = int(psizes[i])
         d = {}
@@ -259,6 +266,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
         
+        end = datetime.datetime.now()
+        #print (end - start).total_seconds(), simulatedgals.component[0]['sersicindex'][i], simulatedgals.component[0]['halflightradius'][i], simulatedgals.component[0]['axisratio'][i], simulatedgals.component[0]['flux'][i]; sys.stdout.flush()
 
     return bigImage
 
@@ -538,7 +547,7 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy, TruthC
 
         used = TruthRules.SimpleSample(BalrogSetup, used)
 
-    simgals.galaxy['index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
+    simgals.galaxy['balrog_index'] = BalrogSetup.indexstart + np.arange(0, BalrogSetup.ngal)
 
     return simgals, gsprules, TruthRules, TruthCatExtra
 
@@ -578,6 +587,7 @@ class TableColumns(object):
         self.names.append(name)
         self.fmts.append(fmt)
         self.units.append(unit)
+
 
     def _CheckRule(self, rule, name):
         if type(rule).__name__!='Rule':

@@ -2,6 +2,8 @@
 
 import os
 import numpy as np
+import pywcs
+import pyfits
 from model_class import *
 
 
@@ -74,23 +76,47 @@ def SimulationRules(args, rules, sampled, TruthCat):
     rules.sersicindex = Catalog(file=args.catalog, ext=args.ext, col=args.sersicindex)
     rules.beta = 0
     rules.axisratio = 1
+    '''
+    rules.halflightradius = tab.Column('halflightradius')
+    rules.magnitude = Column(args.catalog, args.ext, 'Mapp_i_subaru')
+    rules.sersicindex = Catalog(file=args.catalog, ext=args.ext, col='sersicindex')
+    rules.beta = tab.Column('beta')
+    rules.axisratio = tab.Column('axisratio')
+    '''
 
     demo = Function(function=SampleFunction, args=[sampled.x, sampled.y])
-    TruthCat.AddColumn(demo, name='demo')
+    TruthCat.AddColumn(demo, name='demo', fmt='E')
     TruthCat.AddColumn(tab.Column('ID'))
-    TruthCat.AddColumn(Catalog(args.catalog, args.ext, 'TYPE'))
     TruthCat.AddColumn(Column(args.catalog, args.ext, 'Z'))
-    TruthCat.AddColumn(sampled.sersicindex, name='n0_repeat')
+    TruthCat.AddColumn(tab.Column('TYPE'), name='OBJTYPE')
 
+    '''
+    file = 'fiducialwcs.fits'
+    fext = 0
+    test = Function(function=Test, args=[sampled.x, sampled.y, file, fext])
+    TruthCat.AddColumn(test, name='TEST')
+    '''
 
     ### extra args/kwargs examples
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y, args.xmax, args.ymax])
     #rules.axisratio = Function(function=SampleFunction, args=[sampled.x, sampled.y], kwargs={'xmax':args.xmax, 'ymax':args.ymax})
 
 
+def Test(x, y, file, ext):
+    import pyfits
+    hdu = pyfits.open(file)[ext]
+    header = hdu.header
+    wcs = pywcs.WCS(header)
+    pcoords = np.dstack((x,y))[0]
+    wcoords = wcs.wcs_pix2sky(pcoords, 1)
+    r = wcoords[:,0]
+    return x  
+
+
 ### Adjust the galsim GSParams
 def GalsimParams(args, gsparams, galaxies):
     gsparams.alias_threshold = 1e-3
+    gsparams.maximum_fft_size = 6144
     #gsparams.alias_threshold = Function( function=StupidSize, args=[galaxies.halflightradius] )
 
 

@@ -90,7 +90,10 @@ class nComponentSersic(object):
         if len(used) > 0:
             pass
         '''
-        dtype = [ ('file',np.object), ('ext',np.int), ('rows', (np.int,BalrogSetup.ngal)) ]
+        if BalrogSetup.ngal==1:
+            dtype = [ ('file',np.object), ('ext',np.int), ('rows', '(1,)i8') ]
+        else:
+            dtype = [ ('file',np.object), ('ext',np.int), ('rows', (np.int,BalrogSetup.ngal)) ]
         if used == None:
             used = np.array( [], dtype=dtype )
 
@@ -104,11 +107,8 @@ class nComponentSersic(object):
                 size = len(data)
                 randints = np.random.randint(0,high=size, size=self.ngal)
                 selected = data[randints]
-
                 newused = np.array( [(file,ext,randints)], dtype=dtype )
                 used = np.concatenate( (used,newused), axis=0 )
-                #used.append( (file, ext, randints) )
-                #used.append( [file, ext, randints] )
             else:
                 cut = (used['file']==file) & (used['ext']==ext)
                 randints = used[cut]['rows'][0]
@@ -181,6 +181,7 @@ class nComponentSersic(object):
 
         if type(arg).__name__=='Rule':
             a, notready = self.TryRule(arg, notready, used)
+
         else:
             try:
                 length = len(arg)
@@ -191,6 +192,9 @@ class nComponentSersic(object):
             a = arg
             if ok:
                 if length > 0:
+                    if type(arg)==str:
+                        return a, notready
+
                     if type(arg)==tuple:
                         aa = [None]*length
                     else:
