@@ -97,7 +97,8 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
                 col = pyfits.Column(name=name, array=sample.component[i][key],format='E', unit=unit)
             columns.append(col)
 
-    tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
+    #tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
+    tbhdu = pyfits.BinTableHDU.from_columns(pyfits.ColDefs(columns))
     tbhdu.header['XSTART'] = BalrogSetup.xmin
     tbhdu.header['XEND'] = BalrogSetup.xmax
     tbhdu.header['YSTART'] = BalrogSetup.ymin
