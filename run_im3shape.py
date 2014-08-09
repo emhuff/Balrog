@@ -1,3 +1,12 @@
+#Single epoch driver for im3shape (a model-fitting shape measurement code) for use on e.g. a coadd
+#You need to install im3shape (https://bitbucket.org/joezuntz/im3shape) to use it
+#The SExtractor segmentation map can (and usually should!) be used to mask neighbouring objects when fitting
+#This process is a bit more complicated in Balrog, since within Balrog SExtractor will be run in assoc mode,
+#which won't produce the necessary segmentation mask (you need to run SExtractor in normal mode, after inserting
+#galaxies). Having a segmentation map both from the full run, and the assoc run allows both masking, and the matching
+#of objects identified in the full run, to the assoc run. This allows the use of uberseg. Hence the option '--seg_filnames' 
+#can be used with two segmentation maps.
+
 import py3shape
 import numpy as np
 import galsim
@@ -101,24 +110,10 @@ def convert_g_image2sky(local, g1image, g2image):
 
 def seg_to_mask_basic(identifier,seg_stamp):
     if identifier not in seg_stamp:
-        print 'target object not in segmentation mask...junk'
+        print 'target object not in segmentation mask...'
     mask=np.ones(seg_stamp.shape)
     mask[((seg_stamp!=0) & (seg_stamp!=identifier))] = 0
     return mask
-
-
-def get_fits_extension(input_filename):
-    ext=0
-    output_filename=input_filename
-    if input_filename[-1]==']' and input_filename[-3]=='[':
-        try:
-            ext=int(input_filename[-2])
-            output_filename = input_filename[:-3]
-        except TypeError:
-            print 'specify image/weight/seg as fits filename with extension appended in square brackets'
-            print 'e.g. bullet.fits[2], default extension is 0'
-            raise
-    return output_filename,ext
 
 def seg_to_mask_uber(identifier,seg_stamp):
     #Object id in seg map should be 
@@ -139,6 +134,20 @@ def seg_to_mask_uber(identifier,seg_stamp):
                 mask[i,j] = 0.
     return mask
 
+def get_fits_extension(input_filename):
+    ext=0
+    output_filename=input_filename
+    if input_filename[-1]==']' and input_filename[-3]=='[':
+        try:
+            ext=int(input_filename[-2])
+            output_filename = input_filename[:-3]
+        except TypeError:
+            print 'specify image/weight/seg as fits filename with extension appended in square brackets'
+            print 'e.g. bullet.fits[2], default extension is 0'
+            raise
+    return output_filename,ext
+
+
 def main(args):
 
     # load the options file
@@ -150,7 +159,6 @@ def main(args):
         for opt in args.extra_options:
             key,val = opt.split('=')
             setattr(options, key, val)
-
 
     # Read in the FITS data
     img_filename,img_ext = get_fits_extension(args.img_filename)
@@ -187,9 +195,9 @@ def main(args):
     options.output_filename = args.out_filename
     options.save_output = False
     extra_cols=['e1_sky','e2_sky']
-    if args.allmasks:
+    if args.masking_type=='all':
         extra_cols+=['e1_nomask','e2_nomask','e1_uber','e2_uber']
-    #exclude following columns...this is messy, probably better to define new output object...
+    #exclude following columns...this is messy, probably better to define new single epoch output object in im3shape...
     excluded_cols = ['exposure_x','exposure_y','exposure_e1','exposure_e2','exposure_chi2',
                      'mean_flux','exposure_residual_stdev']
     output = py3shape.output.Output(args.out_filename, options, excluded_cols=excluded_cols)
@@ -208,8 +216,6 @@ def main(args):
     for extra_line in extra_lines:
         logging.info(extra_line)
 
-
-
     #main galaxy loop
     ID=gal_cat['ID']
     X_IMAGE=gal_cat['X_IMAGE']
@@ -217,7 +223,6 @@ def main(args):
     RA,DEC=gal_cat['RA'],gal_cat['DEC']
     if args.last==None or args.last>len(ID)-1:
         args.last = len(ID)-1
-
 
     # Loop over objects in catalog
     logging.info('Analyzing %d/%d galaxies' % (min(args.last-args.first+1,len(gal_cat['ID'])), len(gal_cat['ID'])))
@@ -247,12 +252,14 @@ def main(args):
             weight_stamp[weight_stamp<0]=0
         else:
             weight_stamp=None
-        if args.seg_filenames:
+        if not args.masking_type=='none':
             #Get seg stamp data...decide what to do depending on how many seg files provided.
-            #If only one provided, this should be the orignal seg map. Set all non-zero pixels in this image
-            #to -1, that way they won't match ID of any detected simulated objects.
+            #If only one provided, this should be the seg map from the original image. Set all non-zero pixels in this image
+            #to -1, then create mask, that way they won't match ID of any detected simulated objects.
             if len(seg_imgs)==1:
                 seg_stamp,_,_ = get_stamp(seg_imgs[0],xpos,ypos,options.stamp_size)
+                #np.set_printoptions(threshold=np.nan)
+                #print 'seg_stamp',seg_stamp
                 seg_stamp[(seg_stamp!=0)] = -1
                 mask=seg_to_mask_basic(identifier,seg_stamp)
                 mask_stamp = py3shape.Image(mask)
@@ -275,12 +282,21 @@ def main(args):
                 noassoc_obj_inds=np.where(noassoc_seg_stamp==noassoc_identifier)
                 noassoc_seg_stamp[(noassoc_seg_stamp!=0)] = -1
                 noassoc_seg_stamp[noassoc_obj_inds] = identifier
-                mask_stamp=seg_to_mask_basic(identifier,noassoc_seg_stamp)
-                if args.allmasks:
-                    uberseg_mask_stamp = seg_to_mask_uber(identifier,noassoc_seg_stamp)         
+                if args.masking_type=='seg':
+                    mask=seg_to_mask_basic(identifier,noassoc_seg_stamp)
+                    mask_stamp=py3shape.Image(mask)
+                if args.masking_type=='uberseg':
+                    mask = seg_to_mask_uber(identifier,noassoc_seg_stamp)
+                    mask_stamp=py3shape.Image(mask)
+                if args.masking_type=='all':
+                    mask=seg_to_mask_basic(identifier,noassoc_seg_stamp)
+                    uberseg_mask=seg_to_mask_uber(identifier,noassoc_seg_stamp)
+                    mask_stamp = py3shape.Image(mask)
+                    extra_mask_stamps = [py3shape.Image(uberseg_mask),None]       
         else:
             mask_stamp=None
-            
+        #np.set_printoptions(threshold=np.nan)
+        #print 'mask_stamp',mask
         options.sersics_x0_start = x0
         options.sersics_y0_start = y0
         #print 'starting coords:',x0,y0
@@ -305,10 +321,10 @@ def main(args):
             logging.error(emsg)
             continue
 
-        if args.allmasks:
-            result_nomask,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=None, ID=identifier)
+        if args.masking_type=='all':
+            result_nomask,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=extra_mask_stamps[1], ID=identifier)
             e1_nomask,e2_nomask = result_nomask.get_params().e1,result_nomask.get_params().e2
-            result_uber,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=uberseg_mask_stamp, ID=identifier)
+            result_uber,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=extra_mask_stamps[0], ID=identifier)
             e1_uber,e2_uber = result_uber.get_params().e1,result_uber.get_params().e2
 
         #Convert e's to sky coordinates...not totally sure about this function...
@@ -323,22 +339,22 @@ def main(args):
             pylab.subplot(233)
             pylab.imshow(stamp-(model)*stamp.sum(),origin='lower',interpolation='nearest')
             pylab.subplot(234)
-            pylab.imshow(mask_stamp,origin='lower',interpolation='nearest')
-            pylab.subplot(235)
-            if args.allmasks:
-                pylab.imshow(uberseg_mask_stamp,origin='lower',interpolation='nearest')            
+            pylab.imshow(mask,origin='lower',interpolation='nearest')
+            if args.masking_type=='all':
+                pylab.subplot(235)
+                pylab.imshow(uberseg_mask,origin='lower',interpolation='nearest')            
 
             pylab.show() 
         
         extra_output=[e1_sky,e2_sky]
-        if args.allmasks:
+        if args.masking_type=='all':
             extra_output+=[e1_nomask,e2_nomask,e1_uber,e2_uber]
         output.write_row(result, options, psf, extra_output=extra_output,ra=RA[i],dec=DEC[i])
         
     total_time = time.clock() - start_time
     ngal = args.last+1 - args.first
-    print "Total time for processing in Python:" , total_time
-    print "Time per galaxy:" , total_time / ngal
+    logging.info("Total time for processing in Python:" , total_time)
+    logging.info("Time per galaxy:" , total_time / ngal)
 
 # Set up and parse the command line arguments
 description = 'Im3shape measures the shapes of galaxies in astronomical survey images,\n \
@@ -356,13 +372,14 @@ parser.add_argument('img_filename', type=str, help='image file, with extension a
 parser.add_argument('cat_filename', type=str, help='object catalogue file, with extension as filename[<ext>], otherwise defaults to 2')
 parser.add_argument('psf_filename', type=str, help='psfex file')
 parser.add_argument('out_filename', type=str, help='output filename')
-parser.add_argument('--first', type=int, default=0, help='[first_image_to_process]')
-parser.add_argument('--last', type=int, default=None, help='[last_image_to_process]')
+parser.add_argument('--first','-f', type=int, default=0, help='[first_image_to_process]')
+parser.add_argument('--last', '-l', type=int, default=None, help='[last_image_to_process]')
 parser.add_argument('--ini_filename', type=str, default=DEFAULT.IM3_OPTIONS, help='options filename')
 parser.add_argument('--weight_filename', type=str, help='weight file, with extension as filename[<ext>], otherwise defaults to 0')
 parser.add_argument('--seg_filenames', type=str, nargs='*', help="1 or 2 segmentation mask files (from SExtractor), \
-with extension as filename[<ext>], otherwise defaults to 0. If only one, assume it is that of the original image, in which case pixels from original objects can be ignored.\
-If two seg files, first should be from simulated image, second should be from simulated image in assoc mode (allowing object matching/uberseg).")
+with extension as filename[<ext>], otherwise defaults to 0. If only one, assume it is that from the original image, \
+in which case all nonzero pixels are ignored in fit.If two seg files, first should be from simulated image full run, second \
+should be from simulated image in assoc mode (allowing object matching/uberseg).")
 parser.add_argument('--x_image_col', type=str, default='X_IMAGE', help='name of x column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--y_image_col', type=str, default='Y_IMAGE', help='name of y column in catalog file, defaults to X_IMAGE')
 parser.add_argument('--id_col', type=str, default='NUMBER', help='name of id column in catalog file, defaults to NUMBER')
@@ -370,7 +387,8 @@ parser.add_argument('--ra_col', type=str, default='ALPHAPEAK_J2000', help='name 
 parser.add_argument('--dec_col', type=str, default='DELTAPEAK_J2000', help='name of dec column in catalog file, defaults to DELTAPEAK_J2000')
 parser.add_argument('--log_file', type=str, default=None, help='name of log file, if not specified, no log file written')
 parser.add_argument('--loglevel', type=str, default='INFO', help='python logging level (DEBUG,INFO,WARNING,ERROR...see https://docs.python.org/2/howto/logging.html#)')
-parser.add_argument('--allmasks', action='store_true', help='Also run im3shape without masking and with uberseg...')
+parser.add_argument('--masking_type', type=str, default='seg',help="""One of 'seg' (neighbouring object segmentaiton pixels weighted to zero), 
+                    'uberseg','none' or 'all'. Need two seg maps to use uberseg""")
 parser.add_argument('--plot', action='store_true', default=False, help='display image, model and residuals for each galaxy (using pylab.imshow())')
 parser.add_argument('-p', '--option', dest='extra_options', action='append',
     help='Additional options to be set. Can specify more than once in form -p option=value. Overrides ini file')
@@ -382,4 +400,16 @@ if __name__ == "__main__":
         logging.basicConfig(filename=args.log_file,level=getattr(logging, args.loglevel.upper()))
     if args.plot:
         import pylab
+    if args.masking_type not in ['seg','uberseg','none','all']:
+        print "invalid masking type, should be one of 'seg','uberseg','none','all', exiting"
+        logging.error("invalid masking type, should be one of 'seg','uberseg','none','all', exiting")
+        exit(1)
+    if args.masking_type==('uberseg' or 'all') and len(args.seg_filenames) < 2:
+        print "Need two seg maps to use uberseg, reverting to default 'seg' masking"
+        logging.warning("Need two seg maps to use uberseg, reverting to default 'seg' masking")
+        args.masking_type='seg'
+    if args.masking_type=='seg' and not args.seg_filenames:
+        print "Need a seg map to do 'seg' masking, but none provided, proceeding without masking"
+        logging.warning("Need a seg map to do 'seg' masking, but none provided, proceeding without masking")
+        args.masking_type='none'    
     main(args)
