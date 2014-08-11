@@ -393,7 +393,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
         if BalrogSetup.image==BalrogSetup.weight:
             weightout = imageout
     else:
-        catalogmeasured = BalrogSetup.catalogmeasured+'sim_noassoc_seg'
+        catalogmeasured = BalrogSetup.sim_noassoc_catalogmeasured
         imageout = BalrogSetup.imageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
@@ -885,14 +885,15 @@ class DerivedArgs():
         self.catalogmeasured = DefaultName(args.image, '.fits', '.measuredcat.sim.fits', self.catdir)
         if not args.noassoc:
             self.assoc_simfile = DefaultName(args.image, '.fits', '.assoc.sim.txt', self.sexdir)
-            self.assoc_nosimfile = DefaultName(args.image, '.fits', '.assoc.nosim.txt', self.sexdir)
-
+            self.assoc_nosimfile = DefaultName(args.image, '.fits', '.assoc.nosim.txt', self.sexdir)            
         self.psf_written = False
         self.wcshead = args.image
         ext = '.nosim.fits'
         self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
-
+        if args.sim_noassoc_seg is not None:
+            ext = '.sim_noassoc.fits'
+            self.sim_noassoc_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
 
         if args.image==args.weight:
             if args.nonosim:
@@ -1311,8 +1312,8 @@ def DefaultArgs(parser):
     parser.add_argument( "-sf", "--sexconv", help='Sextractor filter convolution file', type=str, default=None)
     parser.add_argument( "-na", "--noassoc", help="Don't do association mode matching in sextractor.", action="store_true")
     parser.add_argument( "-nas", "--sim_noassoc_seg", help="If set, run non assoctation mode sextractor over simulated image, as well as assoc mode,\
-        and save resulting seg map to outdir/sim_noassoc_seg", default=None)
-    parser.add_argument( "--sim_noassoc_seg_param_file", help="param file for nas run (since only need it for seg map, this can be minimal", default=None)
+        and save resulting seg map to outdir/sim_noassoc_seg", type=str, default=None)
+    parser.add_argument( "--sim_noassoc_seg_param_file", help="param file for nas run (since only need it for seg map, this can be minimal)", default=None)
     parser.add_argument( "-nn", "--nonosim", help="Skip sextractor run over original image, prior to any simulation.", action="store_true")
     parser.add_argument( "-nsp", "--nosimsexparam", help="Sextractor param file for run over original image, prior to any simulation.", type=str, default=None)
     parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
