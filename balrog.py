@@ -97,7 +97,10 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
                 col = pyfits.Column(name=name, array=sample.component[i][key],format='E', unit=unit)
             columns.append(col)
 
-    tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
+    try:
+        tbhdu = pyfits.BinTableHDU.from_columns(pyfits.ColDefs(columns))
+    except:
+        tbhdu = pyfits.new_table(pyfits.ColDefs(columns))
     tbhdu.header['XSTART'] = BalrogSetup.xmin
     tbhdu.header['XEND'] = BalrogSetup.xmax
     tbhdu.header['YSTART'] = BalrogSetup.ymin
@@ -227,7 +230,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
         except:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i]; sys.stdout.flush()
+            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             continue
 
         ix = int(simulatedgals.galaxy['x'][i])
@@ -249,7 +252,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
         except:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i]; sys.stdout.flush()
+            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             continue
 
         smallImage.setCenter(ix,iy)
