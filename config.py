@@ -17,7 +17,6 @@ def CustomArgs(parser):
     parser.add_argument( "-nsersic", "--sersicindex", help="Column name when drawing sersic index catalog", type=str, default="SERSIC_INDEX")
     parser.add_argument( "-mag", "--mag", help="Column name when drawing magnitude from catalog", type=str, default=None)
     parser.add_argument( "-b", "--band", help="Which filter band to choose from COSMOS catalog. Only relevant if --mag is not given and using COSMOS catlalog.", type=str, default='i', choices=['g','r','i','z'])
-    parser.add_argument( "--seg_name", default=None,help="file name for SExtractor seg image")
 
 
 ### Throughout the remainder of the file, you have access to your custom command line arguments in the attributes of args.
@@ -123,10 +122,8 @@ def GalsimParams(args, gsparams, galaxies):
 # These are extra configurations to give to sextractor which will override the ones in the config file
 # Each dictionary keyword can be one of the sextractor config file keywords
 def SextractorConfigs(args, config):
-    config['CHECKIMAGE_TYPE'] = None
-    if args.seg_name:
-        config['CHECKIMAGE_TYPE'] = 'SEGMENTATION'
-        config['CHECKIMAGE_NAME'] = args.seg_name
+    config['CHECKIMAGE_TYPE'] = 'NONE'
+
 
 
 # Extra functions the user has defined. Could be used with sampling type Function
