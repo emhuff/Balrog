@@ -17,6 +17,7 @@ import pyfits
 import argparse
 import logging
 from scipy.stats import mode
+from py3shape.analyse import get_psf_params
 
 #im3shape defaults
 class DEFAULT:
@@ -195,8 +196,11 @@ def main(args):
     options.output_filename = args.out_filename
     options.save_output = False
     extra_cols=['e1_sky','e2_sky']
+    if args.psf_props:
+        extra_cols+=['psf_fwhm','psf_e1','psf_e2']
     if args.masking_type=='all':
         extra_cols+=['e1_nomask','e2_nomask','e1_uber','e2_uber']
+
     #exclude following columns...this is messy, probably better to define new single epoch output object in im3shape...
     excluded_cols = ['exposure_x','exposure_y','exposure_e1','exposure_e2','exposure_chi2',
                      'mean_flux','exposure_residual_stdev']
@@ -309,6 +313,7 @@ def main(args):
         psf_size=(options.stamp_size+options.padding)*options.upsampling
         try:
             psf = getPSFExarray(psfexer, pos, psf_size, psf_size, upsampling=options.upsampling)
+            psf_Image=py3shape.Image(psf)
         except Exception:
             logging.warning('failed to get psf for galaxy %d, skipping',identifier)
             continue
@@ -322,14 +327,17 @@ def main(args):
             continue
 
         if args.masking_type=='all':
-            result_nomask,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=extra_mask_stamps[1], ID=identifier)
+            result_nomask,_=py3shape.analyze(galaxy, psf_Image, options, weight=weight_stamp, mask=extra_mask_stamps[1], ID=identifier)
             e1_nomask,e2_nomask = result_nomask.get_params().e1,result_nomask.get_params().e2
-            result_uber,_=py3shape.analyze(galaxy, py3shape.Image(psf), options, weight=weight_stamp, mask=extra_mask_stamps[0], ID=identifier)
+            result_uber,_=py3shape.analyze(galaxy, psf_Image, options, weight=weight_stamp, mask=extra_mask_stamps[0], ID=identifier)
             e1_uber,e2_uber = result_uber.get_params().e1,result_uber.get_params().e2
 
         #Convert e's to sky coordinates...not totally sure about this function...
         local_wcs = wcs.local(image_pos=pos)
         e1_sky,e2_sky = convert_g_image2sky(local_wcs,result.get_params().e1,result.get_params().e2)
+
+        #Measure psf properties
+        psf_fwhm,psf_e1,psf_e2=(get_psf_params([psf_Image], options, radialProfile=True, hsm=False))[0]
 
         if args.plot:   
             pylab.subplot(231)
@@ -347,6 +355,8 @@ def main(args):
             pylab.show() 
         
         extra_output=[e1_sky,e2_sky]
+        if args.psf_props:
+            extra_output+=[psf_fwhm,psf_e1,psf_e2]
         if args.masking_type=='all':
             extra_output+=[e1_nomask,e2_nomask,e1_uber,e2_uber]
         output.write_row(result, options, psf, extra_output=extra_output,ra=RA[i],dec=DEC[i])
@@ -389,6 +399,7 @@ parser.add_argument('--log_file', type=str, default=None, help='name of log file
 parser.add_argument('--loglevel', type=str, default='INFO', help='python logging level (DEBUG,INFO,WARNING,ERROR...see https://docs.python.org/2/howto/logging.html#)')
 parser.add_argument('--masking_type', type=str, default='seg',help="""One of 'seg' (neighbouring object segmentaiton pixels weighted to zero), 
                     'uberseg','none' or 'all'. Need two seg maps to use uberseg""")
+parser.add_argument('--psf_props','-pp', action='store_true',help="""Save psf fwhm and ellipticities""")
 parser.add_argument('--plot', action='store_true', default=False, help='display image, model and residuals for each galaxy (using pylab.imshow())')
 parser.add_argument('-p', '--option', dest='extra_options', action='append',
     help='Additional options to be set. Can specify more than once in form -p option=value. Overrides ini file')
