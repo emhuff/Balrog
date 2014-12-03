@@ -94,7 +94,7 @@ class nComponentSersic(object):
             dtype = [ ('file',np.object), ('ext',np.int), ('rows', '(1,)i8') ]
         else:
             dtype = [ ('file',np.object), ('ext',np.int), ('rows', (np.int,BalrogSetup.ngal)) ]
-        if used == None:
+        if IsNone(used):
             used = np.array( [], dtype=dtype )
 
         for catalog in catalogs:
@@ -161,7 +161,7 @@ class nComponentSersic(object):
             if type(arg.param)==str:
                 arg.param = (-1,arg.param)
             a = self.ReturnComponent(arg.param[1],mindex=arg.param[0])
-            if a==None:
+            if IsNone(a):
                 notready = True
 
         elif arg.type=='function':
@@ -411,11 +411,11 @@ class nComponentSersic(object):
         used = self.SimpleSample(BalrogSetup)
         for i in range(len(self.component)):
             for key in self.component[i].keys():
-                if self.component[i][key]==None:
+                if IsNone(self.component[i][key]):
                     self.component[i][key] = self.GetCompDefault(key, BalrogSetup, used, i)
                     
         for key in self.galaxy.keys():
-            if self.galaxy[key]==None:
+            if IsNone(self.galaxy[key]):
                 self.galaxy[key] = self.GetGalaxyDefault(key, used, BalrogSetup)
         
         np.seterr(over='ignore')
@@ -599,7 +599,7 @@ class Rule(object):
             self.param = value
 
         elif type=='array':
-            if array==None:
+            if IsNone(array):
                 raise Exception('must specify an array with sample type array')
             self.param = array
 
@@ -623,6 +623,14 @@ class Rule(object):
             raise Exception('unknown smpling type')
 
         self.type = type
+
+def IsNone(rule):
+    try:
+        len(rule)
+    except:
+        if rule==None:
+            return True
+    return False
 
 
 def Value( val=None ):

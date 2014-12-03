@@ -182,6 +182,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False):
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psf, BalrogSetup.psfout)
+        WritePsf(BalrogSetup, BalrogSetup.detpsf, BalrogSetup.detpsfout)
         BalrogSetup.psf_written = True
 
 
@@ -215,7 +216,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         #postageStampSize = int(psizes[i])
         d = {}
         for key in gspcatalog.galaxy.keys():
-            if gspcatalog.galaxy[key]!=None:
+            if not IsNone(gspcatalog.galaxy[key]):
                 if key in ['minimum_fft_size', 'maximum_fft_size', 'range_for_extrema']:
                     mod = gspcatalog.galaxy[key][i] % 1
                     if mod > 0.0:
@@ -342,17 +343,17 @@ def WriteConfigFile(BalrogSetup, config_file, catalogmeasured):
     return cfile
 
 
-def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim):
+def AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim):
     eng.Path(BalrogSetup.sexpath)
-    eng.config['IMAGE'] = '%s[%i],%s[%s]' %(imageout,BalrogSetup.outimageext,imageout,BalrogSetup.outimageext)
-    eng.config['WEIGHT_IMAGE'] = '%s[%i],%s[%i]' %(weightout,BalrogSetup.outweightext,weightout,BalrogSetup.outweightext)
+    eng.config['IMAGE'] = '%s[%i],%s[%s]' %(detimageout,BalrogSetup.outdetimageext, imageout,BalrogSetup.outimageext)
+    eng.config['WEIGHT_IMAGE'] = '%s[%i],%s[%i]' %(detweightout,BalrogSetup.outdetweightext, weightout,BalrogSetup.outweightext)
     eng.config['CATALOG_NAME'] = catalogmeasured
     eng.config['c'] = config_file
     eng.config['PARAMETERS_NAME'] = param_file
     eng.config['STARNNW_NAME'] = BalrogSetup.sexnnw
     eng.config['FILTER_NAME'] = BalrogSetup.sexconv
     eng.config['MAG_ZEROPOINT'] = BalrogSetup.zeropoint
-    eng.config['PSF_NAME'] = '%s,%s' %(BalrogSetup.psfout,BalrogSetup.psfout)
+    eng.config['PSF_NAME'] = '%s,%s' %(BalrogSetup.detpsfout, BalrogSetup.psfout)
     eng.config['CATALOG_TYPE'] = '%s' %(BalrogSetup.catfitstype)
 
     if not BalrogSetup.noassoc:
@@ -383,25 +384,32 @@ def AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, p
 def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc_seg=False):
     afile = None
     weightout = BalrogSetup.weightout
+    detweightout = BalrogSetup.detweightout
+
     if nosim:
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
+        detimageout = BalrogSetup.nosim_detimageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_nosimfile
     elif not sim_noassoc_seg:
         catalogmeasured = BalrogSetup.catalogmeasured
         imageout = BalrogSetup.imageout
+        detimageout = BalrogSetup.detimageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
         if BalrogSetup.image==BalrogSetup.weight:
             weightout = imageout
+            detweightout = detimageout
     else:
         catalogmeasured = BalrogSetup.sim_noassoc_catalogmeasured
         imageout = BalrogSetup.imageout
+        detimageout = BalrogSetup.detimageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
         if BalrogSetup.image==BalrogSetup.weight:
             weightout = imageout
+            detweightout = detimageout
 
     if not BalrogSetup.noassoc:
         WriteCatalog(catalog, BalrogSetup, txt=afile, fits=False)
@@ -417,7 +425,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
-    AutoConfig(BalrogSetup, imageout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
+    AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
     if nosim:
         msg = '# Running sextractor prior to inserting simulated galaxies\n'
     else:
@@ -429,19 +437,26 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
         CopyAssoc(BalrogSetup, catalogmeasured)
 
 
+def rm_link(attr):
+    if os.path.lexists(attr):
+        subprocess.call( ['rm', attr] )
+
+
 def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog):
     if BalrogSetup.subsample:
         WriteImages(BalrogSetup, bigImage, subweight, nosim=True)
     else:
-        if os.path.lexists(BalrogSetup.nosim_imageout):
-            subprocess.call( ['rm', BalrogSetup.nosim_imageout] )
-        if os.path.lexists(BalrogSetup.weightout):
-            subprocess.call( ['rm', BalrogSetup.weightout] )
-        if os.path.lexists(BalrogSetup.psfout):
-            subprocess.call( ['rm', BalrogSetup.psfout] )
-
+        rm_link(BalrogSetup.nosim_imageout)
+        rm_link(BalrogSetup.weightout)
+        rm_link(BalrogSetup.psfout)
+        rm_link(BalrogSetup.nosim_detimageout)
+        rm_link(BalrogSetup.detpsfout)
+        
         subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
         subprocess.call( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
+        subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
+        subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
+
         BalrogSetup.psf_written = True
         
         if BalrogSetup.weight!=BalrogSetup.image:
@@ -780,7 +795,8 @@ class SimRules(object):
 
     def _CheckRule(self, name, rule, kind, i=None):
         if type(rule).__name__!='Rule':
-            if rule==None:
+
+            if IsNone(rule):
                 pass
             elif type(rule)==float or type(rule)==int:
                 rule = Value(float(rule))
@@ -879,11 +895,25 @@ class DerivedArgs():
             self.subsample = False
 
         length = len('.sim.fits')
+        dlength = len('.sim.det.fits')
+
         self.outimageext = 0
+        self.outdetimageext = 0
         self.outweightext = 1
+        self.outdetweightext = 1
+
         self.imageout = DefaultName(args.image, '.fits', '.sim.fits', self.imgdir)
+        self.detimageout = DefaultName(args.image, '.fits', '.sim.det.fits', self.imgdir)
+        if args.detimage==args.image:
+            self.detimagein = args.image
+        else:
+            self.detimagein = args.detimage
+
 
         self.psfout = DefaultName(args.psf, '.psf', '.psf', self.imgdir)
+        self.detpsfout = DefaultName(args.psf, '.psf', '.det.psf', self.imgdir)
+
+
         self.catalogtruth = DefaultName(args.image, '.fits', '.truthcat.sim.fits', self.catdir)
         self.catalogmeasured = DefaultName(args.image, '.fits', '.measuredcat.sim.fits', self.catdir)
         if not args.noassoc:
@@ -891,8 +921,13 @@ class DerivedArgs():
             self.assoc_nosimfile = DefaultName(args.image, '.fits', '.assoc.nosim.txt', self.sexdir)            
         self.psf_written = False
         self.wcshead = args.image
+
         ext = '.nosim.fits'
+        dext = '.nosim.det.fits'
         self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
+        self.nosim_detimageout = '%s%s' %(self.detimageout[:-dlength],dext)
+
+
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
         if args.sim_noassoc_seg is not None:
             ext = '.sim_noassoc.fits'
@@ -906,6 +941,15 @@ class DerivedArgs():
         else:
             self.weightout = DefaultName(args.weight, '.fits', '.weight.fits', self.imgdir)
             self.outweightext = 0
+
+        if args.detimage==args.detweight:
+            if args.nonosim:
+                self.detweightout = self.detimageout
+            else:
+                self.detweightout = self.nosim_detimageout
+        else:
+            self.detweightout = DefaultName(args.detweight, '.fits', '.weight.det.fits', self.imgdir)
+            self.outdetweightext = 0
 
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
@@ -1031,13 +1075,14 @@ def LogCmdlineOpts(cmdline_args, cmdline_args_copy, logger, desc):
 
 
 def CmdlineListOrdered():
-    args = ["outdir","clean",
-            "pyconfig",
-            "image", "imageext", "weight", "weightext", "psf", 
-            "xmin", "xmax", "ymin", "ymax",
-            "ngal", "seed", "gain", "zeropoint", "indexstart",
-            "stdverbosity", "logverbosity", "fulltraceback", 
-            "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "nonosim", "nosimsexparam", "noassoc", "catfitstype"]
+    args = ["outdir",
+            "image", "imageext", "detimage", "detimageext",
+            "weight", "weightext", "detweight", "detweightext",
+            "psf","detpsf", 
+            "xmin", "xmax", "ymin", "ymax","ngal", "gain", "zeropoint", "seed", 
+            "clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
+            "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
+            "sim_noassoc_seg", "sim_noassoc_seg_param_file"]
     return args
 
 
@@ -1089,43 +1134,29 @@ def CreateDir(dir):
                 raise OutdirWriteError(201, gdir, subdir)
 
 
-def ImagesExistenceCheck(args, log):
-    if not os.path.lexists(args.image):
-        raise ImageInputError(101, 'image', 'image', args.image)
-    if not os.path.lexists(args.weight):
-        raise ImageInputError(102, 'weight', 'weight', args.weight)
-    if not os.path.lexists(args.psf):
-        raise ImageInputError(103, 'PSF', 'psf', args.psf)
+def get_check_array_ext(args):
+    attrs = [args.image, args.weight, args.psf, args.detimage, args.detweight, args.detpsf]
+    ss = ['image', 'weight', 'psf', 'detimage', 'detweight','detpsf']
+    eattrs = [args.imageext, args.weightext, 0, args.detimageext, args.detweightext, 0]
+    ess = ['imageext', 'weightext', 'psfext', 'detimageext', 'detweightext', 'detpsfext']
+    codes = np.array( [1,2,3, 4,5,6] )
+    return attrs, ss, eattrs, ess, codes
 
-    args.image = os.path.abspath(args.image)
-    args.weight = os.path.abspath(args.weight)
-    args.psf = os.path.abspath(args.psf)
+def images_existence_check(attr, code, s):
+    if not os.path.lexists(attr):
+        raise ImageInputError(code, s, s, attr)
 
-
-def ImagesAreFITS(args, log):
+def images_are_fits(attr, code, s):
     try:
-        pyfits.open(args.image)
+        pyfits.open(attr)
     except:
-        raise FitsFileError(111, 'image', 'image', args.image) 
-    try:
-        pyfits.open(args.weight)
-    except:
-        raise FitsFileError(112, 'weight', 'weight', args.weight)
-    try:
-        pyfits.open(args.psf)
-    except:
-        raise FitsFileError(113, 'PSF', 'psf', args.psf)
+        raise FitsFileError(code, s, s, attr) 
 
-
-def ExtsExist(args, log):
+def exts_exist(attr, sattr, ext, sext, code):
     try: 
-        hdu = pyfits.open(args.image)[args.imageext]
+        hdu = pyfits.open(attr)[ext]
     except:
-        raise FitsExtError(121, 'image', 'imageext', args.imageext, 'image', args.image)
-    try:
-        hdu = pyfits.open(args.weight)[args.weightext]
-    except:
-        raise FitsExtError(122, 'weight', 'weightext', args.weightext, 'weight', args.weight)
+        raise FitsExtError(code, sattr, sext, ext, sattr, attr)
 
 
 def SizesOK(args, log):
@@ -1183,26 +1214,53 @@ def FindImages(args, log, indir):
     if args.image==None:
         args.image = default
         log.info('No --image explicitly given. Will use the default. Setting --image = %s' %args.image)
+    if args.detimage==None:
+        args.detimage = args.image
+        log.info('No --detimage explicitly given. Will use the image itself. Setting --detimage = %s' %args.detimage)
     if args.weight==None:
-        log.info('No --weight explicitly given. Assuming it lives in same file as the image. Setting --weight = %s' %args.image)
         args.weight = args.image
-    if args.weightext==None and os.path.abspath(args.weight)==args.image:
+        log.info('No --weight explicitly given. Assuming it lives in same file as the image. Setting --weight = %s' %args.weight)
+    if args.detweight==None:
+        args.detweight = args.detimage
+        log.info('No --detweight explicitly given. Assuming it lives in same file as the detimage. Setting --detweight = %s' %args.detimage)
+
+    if args.weightext==None and os.path.abspath(args.weight)==os.path.abspath(args.image):
         args.weight = os.path.abspath(args.weight)
-        log.info('No --weightext explicitly given. Assuming it lives in the extension after the image. Setting --weightext = %s' %(args.imageext+1))
         args.weightext = args.imageext + 1
+        log.info('No --weightext explicitly given. Assuming it lives in the extension after the image. Setting --weightext = %s' %(args.weightext))
     if args.weightext==None:
-        log.info('No --weightext explicitly given. Assuming it lives in the 0th extension. Setting --weightext = 0')
         args.weightext = 0
+        log.info('No --weightext explicitly given. Assuming it lives in the 0th extension. Setting --weightext = 0')
+    if args.detweightext==None and os.path.abspath(args.detweight)==os.path.abspath(args.detimage):
+        args.detweight = os.path.abspath(args.detweight)
+        args.detweightext = args.detimageext + 1
+        log.info('No --detweightext explicitly given. Assuming it lives in the extension after the detimage. Setting --detweightext = %s' %(args.detweightext))
+    if args.detweightext==None:
+        args.detweightext = 0
+        log.info('No --detweightext explicitly given. Assuming it lives in the 0th extension. Setting --detweightext = 0')
+
     if args.psf==None:
         args.psf = os.path.join(indir, 'example.psf')
         log.info('No --psf explicitly given. Will use the default. Setting --psf = %s' %args.psf)
+    if args.detpsf==None:
+        args.detpsf = args.psf
+        log.info('No --detpsf explicitly given. Assuming it is the same file as the image psf. Setting --detpsf = %s' %args.detpsf)
     
 
 def ParseImages(args, log, indir):
     FindImages(args, log, indir)
-    ImagesExistenceCheck(args, log)
-    ImagesAreFITS(args, log)
-    ExtsExist(args, log)
+
+    args.image = os.path.abspath(args.image)
+    args.weight = os.path.abspath(args.weight)
+    args.psf = os.path.abspath(args.psf)
+
+    attrs, ss, eattrs, ess, codes = get_check_array_ext(args)
+    for attr,s, eattr,es, code in zip(attrs,ss, eattrs,ess, codes):
+        images_existence_check(attr, code, s)
+        images_are_fits(attr, code+10, s)
+        #if s!='psf':
+        exts_exist(attr, s, eattr, es, code+20)
+
     SizesOK(args, log)
 
 
@@ -1282,11 +1340,19 @@ def ParseDefaultArgs(args,known):
 def DefaultArgs(parser):
     # Input and (temporary) output Images
     parser.add_argument( "-o", "--outdir", help="Directory where to put output. Output files will be named based on the input file name.", default=None)
+
     parser.add_argument( "-i", "--image", help="Input image to draw simulated galaxies into.", type=str, default=None)
     parser.add_argument( "-ie", "--imageext", help="FITS extension where the image lives in the input file.", type=int, default=0)
+    parser.add_argument( "-di", "--detimage", help="Input detection image ", type=str, default=None)
+    parser.add_argument( "-die", "--detimageext", help="FITS extension where the detection image lives in the input file.", type=int, default=0)
+
     parser.add_argument( "-w", "--weight", help="Weight map of input image.", type=str, default=None)
     parser.add_argument( "-we", "--weightext", help="FITS extension where the weight map lives in the input weight file.", type=int, default=None)
+    parser.add_argument( "-dw", "--detweight", help="Weight map of input detection image.", type=str, default=None)
+    parser.add_argument( "-dwe", "--detweightext", help="FITS extension where the detection weight map lives in the input weight file.", type=int, default=None)
+
     parser.add_argument( "-p", "--psf", help="PSF of the input image.", type=str, default=None)
+    parser.add_argument( "-dp", "--detpsf", help="PSF of the input detimage.", type=str, default=None)
 
     # Properties you want your simulated image to have
     parser.add_argument( "-x1", "--xmin", help="Minimum column index for subsampling, >=1.", type=int, default=1)
