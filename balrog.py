@@ -470,16 +470,6 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
             subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
 
         BalrogSetup.psf_written = True
-       
-        print BalrogSetup.imageout
-        print BalrogSetup.detimageout
-        print BalrogSetup.weightout
-        print BalrogSetup.detweightout
-
-        print BalrogSetup.detimage
-        print BalrogSetup.detweight
-        print BalrogSetup.nosim_detimageout
-
 
     RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=True)
 
@@ -798,7 +788,6 @@ class SimRules(object):
                 else:
                     size = 1
                     value = [value]
-                    #print type(value[0]).__name__
 
             if size!=self.nProfiles:
                 raise RulesAssignmentNoArrayError(306)
@@ -954,8 +943,6 @@ class DerivedArgs():
         self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
         #self.nosim_detimageout = '%s%s' %(self.detimageout[:-dlength],dext)
         #self.nosim_detimageout = DefaultName(args.detimage, '.fits', '.nosim.det.fits', self.imgdir)
-        print self.detimageout
-        print self.nosim_detimageout
 
 
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
@@ -975,10 +962,8 @@ class DerivedArgs():
         if args.detimage==args.detweight:
             if args.nonosim:
                 self.detweightout = self.detimageout
-                print self.detweightout, '1'
             else:
                 self.detweightout = self.nosim_detimageout
-                print self.detweightout, '2'
         else:
             self.detweightout = DefaultName(args.detweight, '.fits', '.weight.det.fits', self.imgdir)
             self.outdetweightext = 0
@@ -1591,14 +1576,14 @@ if __name__ == "__main__":
     # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
     # Only a writable outdir is required to be able to get the output log file.
 
-    import resource
+    #import resource
 
     parser = GetNativeOptions()
     known = GetKnown(parser)
     try:
-        print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
+        #print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
         RunBalrog(parser, known)
-        print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
+        #print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
     except:
         RaiseException(known.logs[0], fulltraceback=known.fulltraceback)
 
