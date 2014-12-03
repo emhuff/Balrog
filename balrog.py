@@ -182,7 +182,8 @@ def WriteImages(BalrogSetup, image, weight, nosim=False):
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psf, BalrogSetup.psfout)
-        WritePsf(BalrogSetup, BalrogSetup.detpsf, BalrogSetup.detpsfout)
+        if BalrogSetup.detpsf!=BalrogSetup.psf:
+            WritePsf(BalrogSetup, BalrogSetup.detpsf, BalrogSetup.detpsfout)
         BalrogSetup.psf_written = True
 
 
@@ -447,20 +448,38 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
         WriteImages(BalrogSetup, bigImage, subweight, nosim=True)
     else:
         rm_link(BalrogSetup.nosim_imageout)
-        rm_link(BalrogSetup.weightout)
         rm_link(BalrogSetup.psfout)
-        rm_link(BalrogSetup.nosim_detimageout)
-        rm_link(BalrogSetup.detpsfout)
         
-        subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
         subprocess.call( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
-        subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
-        subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
+        subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
+
+        if BalrogSetup.psf!=BalrogSetup.detpsf:
+            rm_link(BalrogSetup.detpsfout)
+            subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
+
+        if BalrogSetup.weight!=BalrogSetup.image:
+            rm_link(BalrogSetup.weightout)
+            subprocess.call( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
+
+        if BalrogSetup.detweight!=BalrogSetup.detimage:
+            rm_link(BalrogSetup.detweightout)
+            subprocess.call( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
+
+        if BalrogSetup.nosim_detimageout!=BalrogSetup.detimagein:
+            rm_link(BalrogSetup.nosim_detimageout)
+            subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
 
         BalrogSetup.psf_written = True
-        
-        if BalrogSetup.weight!=BalrogSetup.image:
-            subprocess.call( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
+       
+        print BalrogSetup.imageout
+        print BalrogSetup.detimageout
+        print BalrogSetup.weightout
+        print BalrogSetup.detweightout
+
+        print BalrogSetup.detimage
+        print BalrogSetup.detweight
+        print BalrogSetup.nosim_detimageout
+
 
     RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=True)
 
@@ -895,7 +914,8 @@ class DerivedArgs():
             self.subsample = False
 
         length = len('.sim.fits')
-        dlength = len('.sim.det.fits')
+        #dlength = len('.sim.det.fits')
+        dlength = len('.fits')
 
         self.outimageext = 0
         self.outdetimageext = 0
@@ -903,15 +923,22 @@ class DerivedArgs():
         self.outdetweightext = 1
 
         self.imageout = DefaultName(args.image, '.fits', '.sim.fits', self.imgdir)
-        self.detimageout = DefaultName(args.image, '.fits', '.sim.det.fits', self.imgdir)
+        #self.detimageout = DefaultName(args.image, '.fits', '.sim.det.fits', self.imgdir)
         if args.detimage==args.image:
             self.detimagein = args.image
+            self.detimageout = self.imageout
+            self.nosim_detimageout = self.detimagein
         else:
             self.detimagein = args.detimage
+            self.detimageout = args.detimage
+            self.nosim_detimageout = DefaultName(args.detimage, '.fits', '.nosim.det.fits', self.imgdir)
 
 
         self.psfout = DefaultName(args.psf, '.psf', '.psf', self.imgdir)
-        self.detpsfout = DefaultName(args.psf, '.psf', '.det.psf', self.imgdir)
+        if args.psf!=args.detpsf:
+            self.detpsfout = DefaultName(args.psf, '.psf', '.det.psf', self.imgdir)
+        else:
+            args.detpsfout = args.psf
 
 
         self.catalogtruth = DefaultName(args.image, '.fits', '.truthcat.sim.fits', self.catdir)
@@ -925,7 +952,10 @@ class DerivedArgs():
         ext = '.nosim.fits'
         dext = '.nosim.det.fits'
         self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
-        self.nosim_detimageout = '%s%s' %(self.detimageout[:-dlength],dext)
+        #self.nosim_detimageout = '%s%s' %(self.detimageout[:-dlength],dext)
+        #self.nosim_detimageout = DefaultName(args.detimage, '.fits', '.nosim.det.fits', self.imgdir)
+        print self.detimageout
+        print self.nosim_detimageout
 
 
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
@@ -945,8 +975,10 @@ class DerivedArgs():
         if args.detimage==args.detweight:
             if args.nonosim:
                 self.detweightout = self.detimageout
+                print self.detweightout, '1'
             else:
                 self.detweightout = self.nosim_detimageout
+                print self.detweightout, '2'
         else:
             self.detweightout = DefaultName(args.detweight, '.fits', '.weight.det.fits', self.imgdir)
             self.outdetweightext = 0
@@ -1221,7 +1253,10 @@ def FindImages(args, log, indir):
         args.weight = args.image
         log.info('No --weight explicitly given. Assuming it lives in same file as the image. Setting --weight = %s' %args.weight)
     if args.detweight==None:
-        args.detweight = args.detimage
+        if os.path.abspath(args.image)!=os.path.abspath(args.weight):
+            args.detweight = args.weight
+        else:
+            args.detweight = args.detimage
         log.info('No --detweight explicitly given. Assuming it lives in same file as the detimage. Setting --detweight = %s' %args.detimage)
 
     if args.weightext==None and os.path.abspath(args.weight)==os.path.abspath(args.image):
@@ -1253,6 +1288,9 @@ def ParseImages(args, log, indir):
     args.image = os.path.abspath(args.image)
     args.weight = os.path.abspath(args.weight)
     args.psf = os.path.abspath(args.psf)
+    args.detimage = os.path.abspath(args.detimage)
+    args.detweight = os.path.abspath(args.detweight)
+    args.detpsf = os.path.abspath(args.detpsf)
 
     attrs, ss, eattrs, ess, codes = get_check_array_ext(args)
     for attr,s, eattr,es, code in zip(attrs,ss, eattrs,ess, codes):
@@ -1547,14 +1585,20 @@ def RunBalrog(parser, known):
 
 
 
+
 if __name__ == "__main__":
    
     # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
     # Only a writable outdir is required to be able to get the output log file.
+
+    import resource
+
     parser = GetNativeOptions()
     known = GetKnown(parser)
     try:
+        print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
         RunBalrog(parser, known)
+        print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
     except:
         RaiseException(known.logs[0], fulltraceback=known.fulltraceback)
 
