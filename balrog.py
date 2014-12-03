@@ -1097,7 +1097,7 @@ def CmdlineListOrdered():
             "weight", "weightext", "detweight", "detweightext",
             "psf","detpsf", 
             "xmin", "xmax", "ymin", "ymax","ngal", "gain", "zeropoint", "seed", 
-            "clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
+            "imageonly","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
             "sim_noassoc_seg", "sim_noassoc_seg_param_file"]
     return args
@@ -1388,6 +1388,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-s", "--seed", help="Seed for random number generation when simulating galaxies. This does not apply to noise realizations, which are always random.", type=int, default=None)
 
     # Other Balrog stuff
+    parser.add_argument( "-io", "--imageonly", help="Only write the image, don't run sextractor", action="store_true")
     parser.add_argument( "-c", "--clean", help="Delete output image files", action="store_true")
     parser.add_argument( "-sv", "--stdverbosity", help="Verbosity level of stdout/stderr", type=str, default='n', choices=['n','v','vv','q'])
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
@@ -1542,24 +1543,29 @@ def RunBalrog(parser, known):
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
 
-    # If desired, run sextractor over the image prior to inserting any simulated galaxies.
-    if not BalrogSetup.nonosim:
-        NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
+
+    if not BalrogSetup.imageonly:
+        # If desired, run sextractor over the image prior to inserting any simulated galaxies.
+        if not BalrogSetup.nonosim:
+            NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
 
     # Insert simulated galaxies.
     bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
     WriteImages(BalrogSetup, bigImage, subWeight)
     WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
 
-    # Run sextractor over the simulated image.
-    RunSextractor(BalrogSetup, extra_sex_config, catalog)
 
-    # Run sextractor over simulated image in noassoc mode, only saving seg mask
-    if BalrogSetup.sim_noassoc_seg:
-        BalrogSetup.noassoc = True
-        extra_sex_config['CHECKIMAGE_TYPE']='SEGMENTATION'
-        extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.sim_noassoc_seg
-        RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True)
+    if not BalrogSetup.imageonly:
+
+        # Run sextractor over the simulated image.
+        RunSextractor(BalrogSetup, extra_sex_config, catalog)
+
+        # Run sextractor over simulated image in noassoc mode, only saving seg mask
+        if BalrogSetup.sim_noassoc_seg:
+            BalrogSetup.noassoc = True
+            extra_sex_config['CHECKIMAGE_TYPE']='SEGMENTATION'
+            extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.sim_noassoc_seg
+            RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True)
 
     # If chosen, clean up image files you don't need anymore
     if BalrogSetup.clean:
@@ -1568,6 +1574,13 @@ def RunBalrog(parser, known):
     # Log some  extra stuff Balrog used along the way
     LogDerivedOpts(cmdline_opts, BalrogSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
 
+    '''
+    del bigImage
+    del subWeight
+
+    import gc
+    gc.collect()
+    '''
 
 
 
