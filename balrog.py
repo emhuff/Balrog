@@ -1097,7 +1097,7 @@ def CmdlineListOrdered():
             "weight", "weightext", "detweight", "detweightext",
             "psf","detpsf", 
             "xmin", "xmax", "ymin", "ymax","ngal", "gain", "zeropoint", "seed", 
-            "imageonly","nodraw","forcecopy","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
+            "imageonly","nodraw","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
             "sim_noassoc_seg", "sim_noassoc_seg_param_file"]
     return args
@@ -1390,7 +1390,6 @@ def DefaultArgs(parser):
     # Other Balrog stuff
     parser.add_argument( "-io", "--imageonly", help="Only write the image, don't run sextractor", action="store_true")
     parser.add_argument( "-nd", "--nodraw", help="Don't draw generated galaxies into image", action="store_true")
-    parser.add_argument( "-fc", "--forcecopy", help="Force a copy of input image to be written. Only active with --nodraw", action="store_true")
     parser.add_argument( "-c", "--clean", help="Delete output image files", action="store_true")
     parser.add_argument( "-sv", "--stdverbosity", help="Verbosity level of stdout/stderr", type=str, default='n', choices=['n','v','vv','q'])
     parser.add_argument( "-lv", "--logverbosity", help="Verbosity level of log file", type=str, default='n', choices=['n','v','vv'])
@@ -1556,7 +1555,7 @@ def RunBalrog(parser, known):
         bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
         WriteImages(BalrogSetup, bigImage, subWeight)
         WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
-    elif BalrogSetup.forcecopy:
+    else:
         WriteImages(BalrogSetup, bigImage, subWeight)
 
 
