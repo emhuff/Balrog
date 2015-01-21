@@ -401,6 +401,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
             afile = BalrogSetup.assoc_simfile
         if BalrogSetup.image==BalrogSetup.weight:
             weightout = imageout
+        if BalrogSetup.detimage==BalrogSetup.detweight:
             detweightout = detimageout
     else:
         catalogmeasured = BalrogSetup.sim_noassoc_catalogmeasured
@@ -410,6 +411,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
             afile = BalrogSetup.assoc_simfile
         if BalrogSetup.image==BalrogSetup.weight:
             weightout = imageout
+        if BalrogSetup.detimage==BalrogSetup.detweight:
             detweightout = detimageout
 
     if not BalrogSetup.noassoc:
