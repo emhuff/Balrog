@@ -199,19 +199,26 @@ int main(int argc, char *argv[]) {
   // open segmap
   // need to allow negative numbers, therefore cast to signed long
   Image<long> segmap(argv[1]);
-  std::map<long, uint> counter;
+  std::multimap<long, std::list<ulong> > counter;
   for (ulong i = 0; i < segmap.size(); i++) {
     long id = segmap[i];
     if (id > 0) {
       std::list<ulong> pixellist = linkPixels(segmap, id, i);
-      counter[id]++;
+      counter.insert(std::pair<long, std::list<ulong> >(id, pixellist));
     }
   }
   
   // simple output the ID and # of fragments
-  std::cout << "# ID\tFRAGMENTS" << std::endl;
-  for (std::map<long, uint>::iterator iter = counter.begin(); iter != counter.end(); iter++)
-    if (iter->second > 1)
-      std::cout << iter->first << "\t" << iter->second << std::endl;
-     
+  std::cout << "# ID\tPIXELS\tX_CENTER\tY_CENTER" << std::endl;
+  for (std::multimap<long, std::list<ulong> >::iterator iter = counter.begin(); iter != counter.end(); iter++) {
+    std::cout << iter->first << "\t" << iter->second.size();
+    double x = 0, y = 0;
+    for (std::list<ulong>::iterator piter = iter->second.begin(); piter != iter->second.end(); piter++) {
+      x += segmap.grid(*piter, 0);
+      y += segmap.grid(*piter, 1);
+    }
+    x /= iter->second.size();
+    y /= iter->second.size();
+    std::cout << "\t" << x << "\t" << y << std::endl;
+  }
 }
