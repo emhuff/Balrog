@@ -112,7 +112,8 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         phdu = pyfits.PrimaryHDU()
         hdus = pyfits.HDUList([phdu,tbhdu])
         if os.path.lexists(BalrogSetup.catalogtruth):
-            subprocess.call(['rm',BalrogSetup.catalogtruth])
+            #subprocess.call(['rm',BalrogSetup.catalogtruth])
+            SystemCall( ['rm',BalrogSetup.catalogtruth] )
         hdus.writeto(BalrogSetup.catalogtruth)
 
     if txt!=None:
@@ -192,7 +193,8 @@ def WritePsf(BalrogSetup, psfin, psfout):
     psfhdus[1].header['POLZERO1'] = psfhdus[1].header['POLZERO1'] - (BalrogSetup.xmin - 1)
     psfhdus[1].header['POLZERO2'] = psfhdus[1].header['POLZERO2'] - (BalrogSetup.ymin - 1)
     if os.path.lexists(psfout):
-        subprocess.call(['rm', psfout])
+        #subprocess.call(['rm', psfout])
+        SystemCall( ['rm', psfout] )
     psfhdus.writeto(psfout)
 
 
@@ -265,9 +267,25 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         bounds = smallImage.bounds & bigImage.bounds
         simulatedgals.galaxy['flux_noiseless'][i] = smallImage.added_flux 
+        
+        '''
+        cut = np.isnan(smallImage.array.flatten())
+        if np.sum(cut > 0):
+            print 'nan in smallImage'
+        '''
+
         smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(micro)))
         flux_noised = np.sum(smallImage.array.flatten())
         simulatedgals.galaxy['flux_noised'][i] = flux_noised
+
+        '''
+        cut = np.isnan(smallImage.array.flatten())
+        if np.sum(cut > 0):
+            print 'nan in noised smallImage', micro, BalrogSetup.gain, simulatedgals.galaxy['flux_noiseless'][i], simulatedgals.component[0]['flux'][i]
+        else:
+            print 'NO nans in noised smallImage', micro, BalrogSetup.gain, simulatedgals.component[0]['flux'][i]
+        '''
+
         bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
         
@@ -428,13 +446,26 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
+    if BalrogSetup.nonosim:
+        detweightout = BalrogSetup.detweight
+        weightout = BalrogSetup.weight
+        if BalrogSetup.nodraw:
+            detimageout = BalrogSetup.detimage
+            imageout = BalrogSetup.image
+
     AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
     if nosim:
         msg = '# Running sextractor prior to inserting simulated galaxies\n'
     else:
         msg = '# Running sextractor after inserting simulated galaxies\n'
+    '''
     BalrogSetup.sexlogger.info(msg)
     eng.run(logger=BalrogSetup.sexlogger)
+    '''
+    sexlogger = open(BalrogSetup.sexlog, 'a')
+    sexlogger.write('\n\n' + msg)
+    sexlogger.close()
+    eng.run(logger=BalrogSetup.sexlog)
 
     if not BalrogSetup.noassoc: #and not nosim:
         CopyAssoc(BalrogSetup, catalogmeasured)
@@ -442,7 +473,8 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
 
 def rm_link(attr):
     if os.path.lexists(attr):
-        subprocess.call( ['rm', attr] )
+        #subprocess.call( ['rm', attr] )
+        SystemCall( ['rm', attr] )
 
 
 def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog):
@@ -452,24 +484,30 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
         rm_link(BalrogSetup.nosim_imageout)
         rm_link(BalrogSetup.psfout)
         
-        subprocess.call( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
-        subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
+        #subprocess.call( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
+        SystemCall( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
+        #subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
+        SystemCall( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
 
         if BalrogSetup.psf!=BalrogSetup.detpsf:
             rm_link(BalrogSetup.detpsfout)
-            subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
+            #subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
+            SystemCall( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
 
         if BalrogSetup.weight!=BalrogSetup.image:
             rm_link(BalrogSetup.weightout)
-            subprocess.call( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
+            #subprocess.call( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
+            SystemCall( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
 
         if BalrogSetup.detweight!=BalrogSetup.detimage:
             rm_link(BalrogSetup.detweightout)
-            subprocess.call( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
+            #subprocess.call( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
+            SystemCall( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
 
         if BalrogSetup.nosim_detimageout!=BalrogSetup.detimagein:
             rm_link(BalrogSetup.nosim_detimageout)
-            subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
+            #subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
+            SystemCall( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
 
         BalrogSetup.psf_written = True
 
@@ -480,7 +518,8 @@ def Cleanup(BalrogSetup):
     files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout]
     for file in files:
         if os.path.lexists(file):
-            subprocess.call(['rm',file])
+            #subprocess.call(['rm',file])
+            SystemCall(['rm',file])
 
 
 def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
@@ -1001,8 +1040,10 @@ class DerivedArgs():
         basename = os.path.basename(file)
         outname = os.path.join(dir,basename)
         if os.path.exists(outname):
-            subprocess.call(['rm', outname])
-        subprocess.call(['cp', file, outname])
+            #subprocess.call(['rm', outname])
+            SystemCall(['rm', outname])
+        #subprocess.call(['cp', file, outname])
+        SystemCall(['cp', file, outname])
 
         
 class BalrogConfig():
@@ -1051,6 +1092,9 @@ def SetupLogger(known):
     fh = logging.FileHandler(known.sexlogfile, mode='w')
     SetLevel(fh, logging.INFO)
     sexlog.addHandler(fh)
+
+    if os.path.exists(known.sexlogfile):
+        os.remove(known.sexlogfile)
 
     arglog = logging.getLogger('arg')
     arglog.setLevel(logging.INFO)
@@ -1129,7 +1173,7 @@ def CreateSubDir(subdir):
         except:
             raise SubdirWriteError(202, subdir)
 
-
+'''
 def CreateDir(dir):
     gdir = copy.copy(dir)
     full = False
@@ -1151,6 +1195,7 @@ def CreateDir(dir):
             err = subprocess.call( ['mkdir', subdir], stderr=subprocess.PIPE, stdout=subprocess.PIPE )
             if err!=0:
                 raise OutdirWriteError(201, gdir, subdir)
+'''
 
 
 def get_check_array_ext(args):
@@ -1331,6 +1376,10 @@ def FindSexFile(arg, log, configdir, default, label):
         arg = default
     return arg
 
+def SystemCall(cmd):
+    oscmd = subprocess.list2cmdline(cmd)
+    os.system(oscmd)
+
 
 def ParseSex(args, log, configdir):
     args.sexconfig = FindSexFile(args.sexconfig, log, configdir, 'sex.config', 'sexconfig')
@@ -1340,9 +1389,15 @@ def ParseSex(args, log, configdir):
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
     args.catfitstype = 'FITS_%s' %(args.catfitstype.upper())
 
+    '''
     try:
         sex = subprocess.check_output(['which', args.sexpath])
     except:
+        raise SextractorPathError(140, args.sexpath)
+    '''
+    cmd = 'which %s &> /dev/null' %(args.sexpath)
+    ret = os.system(cmd)
+    if ret!=0:
         raise SextractorPathError(140, args.sexpath)
 
 
