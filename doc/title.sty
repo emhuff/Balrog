@@ -1,0 +1,32 @@
+\newcommand*{\balrogtitlepage}{
+\begingroup % Create the command for including the title page in the document
+\newlength{\drop} % Command for generating a specific amount of whitespace
+\drop=0.1\textheight % Define the command as 10% of the total text height
+
+\noindent \rule{\textwidth}{1pt}\par % Thick horizontal line
+\vspace{4pt}\vspace{-\baselineskip} % Whitespace between lines
+\noindent \rule{\textwidth}{0.4pt}\par % Thin horizontal line
+
+\vspace{\drop} % Whitespace between the top lines and title
+\centering % Center all text
+\Huge \balrog \\[0.5\baselineskip] % Title line 1
+\Large An astronomical imaging simulation d(a)emon\footnote{Technically, the package is not a daemon, but I will invoke poetic license.} \\[0.5\baselineskip]
+\Large for those who dig too deeply \\[0.75\baselineskip]
+\Large and too greedily into \\[0.75\baselineskip] % 
+\Large their data... \\[0.75\baselineskip]
+\vspace{\drop} % Whitespace between the title and short horizontal line
+
+\rule{0.5\textwidth}{0.4pt}\par % Short horizontal line under the title
+\vspace{1.5\drop} % Whitespace between the thin horizontal line and the author name
+
+{\Large Documentation written by Eric Suchyta}\par % Author name
+
+\vfill % Whitespace between the author name and publisher text
+\vspace*{\drop} % Whitespace under the publisher text
+
+\rule{\textwidth}{0.4pt}\par % Thin horizontal line
+\vspace{4pt}\vspace{-\baselineskip} % Whitespace between lines
+\rule{\textwidth}{1pt}\par % Thick horizontal line
+
+\endgroup
+}

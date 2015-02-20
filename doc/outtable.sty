@@ -1,0 +1,68 @@
+\newcommand{\thickh}{\noalign{\hrule height 2.0pt}}
+\newcommand{\thinh}{\noalign{\hrule height 0.02pt}}
+\newcommand{\ofile}[1]{\codett{#1}}
+\newcommand{\orow}[2]{ & \ofile{#1} \\ & #2}
+\newcommand{\orowc}[3]{\cellcolor{#3} & \cellcolor{#3} \ofile{#1} \\ \cellcolor{#3} & \cellcolor{#3} #2}
+\newcommand{\dline}[1]{\multicolumn{2}{p{\linefactor}}{\dfill #1 \dfill}}
+
+\newcommand{\outtab}{
+\setlength{\extrarowheight}{2pt}
+\vspace{10pt}
+\begin{longtabu} to \textwidth {p{0.4cm} X}
+\caption{File structure of the output written by \balrog{}. * is replaced with the base name of the input image} \label{tab:out}\\ \toprule %\toprule
+\\
+%\textbf{Path} & \textbf{Contents} \\ \midrule \\
+
+\dline{Output Images} \\
+\opt{outdir}\codett{balrog\_image/}  \\ \\
+\orowc{*.nosim.fits}{Copy of (subsampled) input image. Present if \opt{nonosim} is unflagged.}{gray1}\\ \\
+\orow{*.sim.fits}{Image containing simulated galaxies.}\\ \\
+\orowc{*.weight.sim.fits}{Copy of (subsampled) weight map. Present if \opt{image}!=\opt{weight}}{gray1}\\ \\
+\orow{*.psf}{Copies of (subsampled) \psfex{} PSF image for measurement image (and detection image if relevant).}\\ \\ \\
+
+\dline{Output Catalogs} \\
+\opt{outdir}\codett{/balrog\_cat/}  \\ \\
+\orowc{*.measuredcat.nosim.fits}{\sex{} catalog measured over original image, prior to simulation. Present if \opt{nonosim} is unflagged.}{gray1} \\ \\
+\orow{*.measuredcat.sim.fits}{\sex{} catalog measured over image which includes simulated galaxies. Present if \opt{imageonly} is unflagged.} \\ \\
+\orowc{*.truthcat.sim.fits}{Truth catalog of the simulated galaxies' properties. Present if \opt{nodraw} is unflagged.}{gray1}\\ \\ \\
+
+
+\dline{\sex{} Configuration Files} \\ \\
+\opt{outdir}\codett{/balrog\_sexconfig/}  \\ \\
+\orowc{*.assoc.nosim.txt}{Association mode matching list for \sex{} run prior to adding simulated galaxies. Present if \opt{nonosim}, \opt{noassoc}, and \opt{imageonly} are unflagged.}{gray1}\\ \\
+\orow{*.assoc.sim.txt}{Association mode matching list for \sex{} run with simulated galaxies. Only written if \opt{noassoc} and \opt{imageonly} are unflagged.}\\ \\
+\orowc{\$\{--sexconfig\}}{Explicit copy of file given by \opt{sexconfig}.}{gray1} \\ \\
+\orow{\$\{--sexparam\}}{Explicit copy of file given by \opt{sexparam}.} \\ \\
+\orowc{\$\{--nosimsexparam\}}{Explicit copy of file given by \opt{nosimsexparam}.}{gray1} \\ \\
+\orow{\$\{--sexnnw\}}{Explicit copy of file given by \opt{sexnnw}.} \\ \\
+\orowc{\$\{--sexconv\}}{Explicit copy of file given by \opt{sexconv}.}{gray1} \\ \\
+
+\orow{*.measuredcat.nosim.sex.config}{\sex{} \codett{config} file actually with run prior to simulation. If this file exists,
+it is \hyperlink{hyper:dual}{closely related, but not necessarily identical to \opt{sexconfig}}. 
+Present if \opt{nonosim} and \opt{imageonly} are unflagged.}\\ \\
+
+\orowc{*.measuredcat.sim.sex.config}{\sex{} \codett{config} file actually used with run post simulation. If this file exists,
+it is \hyperlink{hyper:dual}{closely related, but not necessary identical to \opt{sexconfig}}. 
+Present if \opt{imageonly} is unflagged.}{gray1}\\ \\
+
+\orow{*.measuredcat.nosim.sex.params}{\sex{} \codett{param} file used during run prior to inserting simulated galaxies. 
+\hyperlink{hyper:dual}{Closely related, but not necessarily identical to \opt{sexparam}}. 
+Present if \opt{nonosim} and \opt{imageonly} are unflagged.} \\ \\
+
+\orowc{*.measuredcat.sim.sex.params}{\sex{} \codett{param} file used during run including simulated galaxies.
+\hyperlink{hyper:dual}{Closely related, but not necessarily identical to \opt{sexparam}}.
+Present if \opt{imageonly} is unflagged.}{gray1} \\ \\ \\
+
+
+\dline{Log Files} \\ \\
+\opt{outdir}\codett{/balrog\_log/}   \\ \\
+\orowc{run.log.txt}{Any \balrog{} warnings, errors, or other messages generated a run. \opt{logverbosity} applies to this file}{gray1} \\ \\
+\orow{args.log.txt}{Logs the command line parameters given for a \balrog{} run.} \\ \\
+\orowc{sex.log.txt}{\sex{} command line input/output.}{gray1} \\ \\
+\orow{\$\{--pyconfig\}}{Explicit copy of file given by \opt{pyconfig}} \\ \\
+\bottomrule %\bottomrule
+
+\end{longtabu}
+\setlength{\extrarowheight}{0pt}
+}
+
