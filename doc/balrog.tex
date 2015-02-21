@@ -297,7 +297,11 @@ However, the default configures a \textit{full \balrog{} run},
 meaning all the components of the pipeline execute.
 \balrog{} can be configured to turn off certain functionality with various command line arguments,
 described in \autoref{sec:cmdline}.
-
+For example, \balrog{} can be told to only insert the simulated galaxies without actually running \sex{}
+or not to draw anything at all.
+One final convenience we have not mentioned is that \balrog{} can optionally operate over only a subsample
+of an image rather than the full area.
+The only benefit of this is that file sizes are smaller and \sex{} runs faster.
 
 
 \section{Input Data}
@@ -406,11 +410,17 @@ Here, we briefly overview the functionality.
 Simple assignment types include a constant to be applied commonly to every object or an array containing an element for each object.
 Alternatively, values can be sampled from the columns in a catalog file. 
 Multiple columns from the same table are automatically jointly sampled.
+\balrog{} ships with a version of the \href{http://lamwws.oamp.fr/cosmowiki/RealisticSpectroPhotCat}{COSMOS mock catalog} (CMC) \citep{jouvel2009}, 
+in which we have added a column for \sersic{} index based on its early/late type.
+The CMC reaches faint depths, and can be used to build realistic input populations for shallower surveys.
 Last but certainly not least, users can define their own functions which determine the truth parameters of the simulated objects.
 This allows for arbitrary complexity to the simulations, 
 giving users the flexibility to implement whatever they can code themselves in \py{}.
 Conveniently, the functions may operate over the objects' truth parameters themselves, 
 allowing one parameter to be defined in terms of another.
+\suchytanote{Maybe we should include the version of the catalog with Claire's fits instead. 
+I just haven't done this, but we could. Otherwise, Huff needs to add what he did to get \sersic{} index.}
+
 
 %\begin{figure}[h]
 %%\includegraphics[width=0.9\linewidth]{flowchart.jpg}
@@ -1995,13 +2005,5 @@ unit vector), the maximum-likelihood estimator for $\alpha$ is:
 TODO: Demonstrate what you can do if you know the measurement
 covariance matrix.
 
-
-\section{Notes}
-
-\suchytanote{Once the documentation is more updated, reread the road map last paragraph of intro and make sure it all makes sense.}
-\suchytanote{Subsampling is not described anywhere in the text.}
-\suchytanote{Image only and no draw not in text either.}
-\suchytanote{Cosmos catalog is barely mentioned. I need to figure out where to put that in, if anywhere.}
-\suchytanote{Maybe I should say something along the lines that Catalog is quite useful if it reproduces the same distributions.}
 
 \end{document}
