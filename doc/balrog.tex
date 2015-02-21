@@ -172,7 +172,7 @@ The format of \balrog{}'s outputs are explained in \autoref{sec:out}.
 In general, the separate sections have been written to read fairly independently,
 so the entire document does not necessarily need to be read sequentially for the sections to make sense.
 Our approach is to build up the documentation conceptually and break it into manageably sized divisions.
-One thought to keep in mind is that depending on the user's intended application for \balrog{}'s,
+One thought to keep in mind is that depending on the user's intended application for \balrog{},
 configuring \balrog{} runs can range being from very simple to being fairly involved.
 The documentation does its best to adequately explain the intricacies when necessary,
 but not at the cost of clarity for the simpler concepts.
@@ -343,14 +343,14 @@ Object simulations are done in apparent magnitude space,
 and \balrog{} needs a zeropoint ($m_z$) to convert this to an image ADU level.
 The conversion is defined in the usual way, where the object's flux ($F$) and apparent magnitude ($m$) are related by:
 $m - m_ z = -2.5 \log_{10} F$.
-A default zeropoint of 30 is assumed by \balrog{} if one is not otherwise specified by the user.
+A default zeropoint of 30 is assumed by \balrog{} if one is not otherwise set by the user.
 
 \hypertarget{hyper:gain}{}
 \balrog{} uses \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1\_c\_c\_d\_noise.html}{\galsim{} functionality} 
 to add Poisson noise to the flux values in the simulated objects' postage stamps.
 The level of this noise is set by the effective electron/ADU gain level, with zero read noise.
 Higher gain decreases the noise level, with gain scaling like the square root of time.
-If the user does not provide a gain, \balrog{} defaults it to unity.
+If the user does not set a gain, \balrog{} defaults it to unity.
 
 \hypertarget{hyper:wcs}{}
 \balrog{} simulations incorporate \galsim{}'s WCS features, and hence
@@ -379,8 +379,8 @@ Please refer to their documentation or paper where necessary.
 
 \balrog{} calls \galsim{}'s class for implementing \sersic{} objects to model surface brightness distributions as \sersic{} profiles. 
 By effectively adding together these \sersic{} objects, \balrog{} allows objects to be composed of as many superimposed
-\sersic{} components as desired. Each of these components has its own \sersic{} index, half light radius, flux,
-minor to major axis ratio, and orientation angle. The half light radius is measured along
+\sersic{} components as desired. Each of these components has its own \sersic{} index ($n$), half light radius ($r_e$), flux ($F$),
+minor to major axis ratio ($b/a$), and orientation angle ($\beta$). The half light radius is measured along
 the major axis, and the orientation angle is measured as the major axis' counter-clockwise rotation
 away from the $\hat{x}$-direction. 
 Flux values are generated as magnitudes, then converted to ADU levels using the image's zeropoint:
@@ -395,7 +395,7 @@ To be explicitly clear, the shear and magnification are lensing effects applied 
 while the others are intrinsic quantities, as they would be in the absence of lensing, prior to convolution with the PSF.
 When $\mu > 1$ is applied, the simulated objects' images appear bigger and brighter.
 However, the flux and half light radius reported in the \balrog{} truth catalog do not increase as $\mu$ increases.
-They are pre-lensing quantities. This is merely, a choice on our part. 
+They are pre-lensing quantities. This is merely a choice on our part. 
 At any rate, transformation of the truth quantities through magnification is simple: 
 $\log F \rightarrow \log F + \kappa$, $\log r_e \rightarrow \log r_e + 2 \kappa$.
 
@@ -514,12 +514,17 @@ but meant to be indicative of the actual commands, presented here in a compact f
 The simulation process runs in a loop with a number of iterations equal to the number of objects to be simulated.
 A nested loop then iterates over the number of \sersic{} profiles the objects are composed of.
 For each profile, a \galsim{} \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_sersic.html}{\texttt{Sersic}}
-object is instantiated with the \sersic{} index,
-half light radius, and flux which were generated in the truth catalog. Initially these objects are circularly symmetric,
+object is initialized with the \sersic{} index and flux which were generated in the truth catalog. 
+Initially these objects are circularly symmetric,
 then \galsim{}'s \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_g\_s\_object.html#a85cc0094dcf470cfbff93d9830ab80bd}{\texttt{applyShear}} 
 method is called to stretch it to the given axis ratio and orient it in the given direction.
-Each object's stack of \sersic{} components is summed to create the object's composite profile. 
-Next, lensing is applied to the combined object, 
+The \galsim{} \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_sersic.html}{\texttt{Sersic}} objects were originally
+initialized with half light radii which were multiplied by a factor of $\sqrt{a/b}$ compared to the truth catalog's half light radii,
+meaning the \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_g\_s\_object.html#a85cc0094dcf470cfbff93d9830ab80bd}{\texttt{applyShear}}
+command has now stretched the originally circular objects into ellipses with half light radii along their major axes equal to truth catalog values.
+
+Next, each object's stack of \sersic{} components is summed to create the object's composite profile. 
+Lensing is applied to this combined object, 
 calling \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_g\_s\_object.html#a85cc0094dcf470cfbff93d9830ab80bd}{\texttt{applyShear}}
 and \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_g\_s\_object.html#a9d13b0238057f6d5d01f2681d91c09b0}{\texttt{applyMagnfication}}
 with the truth catalog's shear and magnification.
@@ -531,7 +536,7 @@ and \galsim{}'s \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_
 \psfex{}'s models include the contribution from the pixel response function, 
 so no \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_pixel.html}{\texttt{Pixel}} call is made in \galsim{}.
 The PSF models \psfex{} generates are not guaranteed to be centered within a postage stamp, 
-so \balrog{} applies a shift to center the model at calculated centroid.
+so \balrog{} applies a shift to center the model at the calculated centroid.
 After convolution, 
 the \href{http://galsim-developers.github.io/GalSim/classgalsim\_1\_1base\_1\_1\_g\_s\_object.html#ae0b346a8b438dedbc7f60a52220869d8}{\texttt{draw}} 
 method draws each object into a postage stamp image.
@@ -619,7 +624,7 @@ because \balrog{} sets some automatically, such as the image and weight map name
 The top of \autoref{tab:b2s} shows what is ignored in the \texttt{config} file.
 Turning association mode on or off requires modifications to both \texttt{config} and \texttt{assoc},
 and \balrog{} automatically account for this.
-\balrog{} ignores any association lines are in the user's \texttt{param} and \texttt{config} files,
+\balrog{} ignores any association lines that are in the user's \texttt{param} and \texttt{config} files,
 and generates the appropriate ones based on the user's \balrog{} command line arguments.
 We emphasize, there has been no loss generality for running \sex{}.
 We have just automated the process of creating an on/off switch for association mode, and moved some
@@ -679,11 +684,11 @@ We recommend choosing the most recent version.
 
 The \galsim{} documentation includes an extensive
 \href{https://github.com/GalSim-developers/GalSim/blob/releases/1.0/INSTALL.md}{installation guide},
-with many helpful hints and links to \codett{FAQ} pages. 
+with many helpful hints and links to \href{https://github.com/GalSim-developers/GalSim/wiki/Installation\%20FAQ}{FAQ} pages. 
 We refer \balrog{} users to this guide for how to install \galsim{}.
 The \galsim{} team deserves a big thanks for the utility of their installation notes.
-Those who make up the The \balrog{} are far from accomplished system administrators, 
-but we all were independently successful installing \galsim{} on our systems by following these notes.
+Those who make up the the \balrog{} team are far from accomplished system administrators, 
+but we were all independently successful installing \galsim{} on our systems by following these notes.
 
 Section 3 of the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual}
 contains a brief section explaining how to install the software. The code itself also includes a file called \codett{INSTALL}, with
@@ -719,7 +724,7 @@ Here we focus on running \balrog{} itself.
 Users less familiar with \sex{} may find it helpful to refer to our \hyperref[sec:quicksex]{\sex{} appendix}.
 
 Throughout our documentation, we will supplement the discourse with concrete example calls users can run.
-In order to enable copying and pasting the commands into the user's terminal and running them verbatim,
+In order to enable copying and pasting of the commands into the user's terminal and running them verbatim,
 users should create an alias to the \balrog{} executable \py{} file, \codett{balrog.py}. 
 This file is found in the directory which was pulled from GitHub during installation,
 which we will refer to as \codett{\$INSTALLDIR} for convenience.
@@ -788,8 +793,9 @@ Saving output to file is useful when attempting to debug runs after-the-fact.
 %Some debugging hints are offered in \autoref{sec:debug}.
 Had any \balrog{} runtime errors occurred during the run,
 \codett{run.log.txt} is the file they would be logged to.
-Additionally, \balrog{} logs the exact value of each command line argument  in \codett{args.log.txt}
-and directs all \sex{}'s \codett{stdout}/\codett{stderr} to \codett{sex.log.txt}.
+Additionally, \balrog{} logs the exact value of each command line argument in the file
+\codett{\$INSTALLDIR/default\_example/output/balrog\_log/args.log.txt}
+and redirects all \sex{}'s \codett{stdout} and \codett{stderr} to \codett{\$INSTALLDIR/default\_example/output/balrog\_log/sex.log.txt}.
 
 \begin{table}
 \caption{Definitions used throughout this manual to facilitate ease of command line calls.}
@@ -816,7 +822,7 @@ structured syntax which will be fully described in \autoref{sec:pyconfig}.
 The syntax is designed to be as natively \py{}esque as possible, so
 many users will likely be able to extrapolate directly from examples without reading lengthy documentation. 
 In the current \codett{runbalrog} examples, \opt{pyconfig} defaults to \codett{\$INSTALLDIR/config.py}.
-This file builds galaxies as single component \sersic{} objects, 
+This file builds simulated galaxies as single component \sersic{} objects, 
 jointly sampling magnitudes, half light radii, and \sersic{} index parameters from the included catalog.
 As an instructive guide, the file includes descriptive comment lines explaining what the different functions are used to do.
 Rather than copying the comments into this document, we encourage users to open the \pyconfig{} file themselves.
@@ -871,7 +877,7 @@ they do not necessarily spell out every possible detail users may wish to know.
 Accordingly, we include a more extensive supplement within this section.
 
 We direct the reader's attention to \autoref{tab:opts}.
-It is a comprehensive listing, containing an entry for each of \balrog{}'s command line arguments.
+It is a comprehensive listing, containing an entry for each of \balrog{}'s built-in command line arguments.
 \autoref{tab:opts} is the core substance of this section,
 and is intended to be more or less readable on it own, apart from the text of the document.
 Ergo, we refrain from copying every detail from \autoref{tab:opts} into the text, 
@@ -951,7 +957,7 @@ These have been summarized in \autoref{tab:b2s}.
 \opt{sexconv} & $\rightarrow$ & \codett{FILTER\_NAME} \\ 
 
 \rowcolor{white} & & \\
-\multicolumn{3}{c}{\balrog{}'s \hyperlink{hpyer:assoc}{association mode} configuration} \\
+\multicolumn{3}{c}{\balrog{}'s \hyperlink{hyper:assoc}{association mode} configuration} \\
 \rowcolor{gray1} \codett{if !--noassoc:} & & \\
 \rowcolor{gray1} \texttt{truth} & $\rightarrow$ & \codett{ASSOC\_DATA} \\
 \rowcolor{gray1} \texttt{truth['x'],truth['y']} & $\rightarrow$ & \codett{ASSOC\_PARAMS} \\
@@ -1003,8 +1009,9 @@ and the \galsim{} \href{http://galsim-developers.github.io/GalSim/structgalsim\_
 In the remainder of \autoref{sec:pyconfig} we concentrate on \pyconfig{}'s usage, with a particular focus on elucidating its syntax.
 \autoref{sec:user} treats user-defined command line arguments within \pyconfig{} and 
 \autoref{sec:simrules} illustrates how \pyconfig{} specifies simulated object property generation.
-\autoref{sec:sexoverride} describes the way in which \pyconfig{} can be used to override \sex{} settings in \opt{sexconfig},
-and \autoref{sec:gsparams} adjusting the \href{http://galsim-developers.github.io/GalSim/structgalsim\_1\_1\_g\_s\_params.html}{\texttt{GSParams}}.
+\autoref{sec:gsparams} describes the way in which \pyconfig{} can be used to 
+adjust \galsim{}'s \href{http://galsim-developers.github.io/GalSim/structgalsim\_1\_1\_g\_s\_params.html}{\texttt{GSParams}},
+and \autoref{sec:sexoverride} addressing overriding \sex{} settings in \opt{sexconfig},
 As an aid while reading this section, 
 we strongly encourage users to open one of the example \pyconfig{} files shipped with \balrog{},
 \codett{\$INSTALLDIR/config.py} or \codett{\$INSTALLDIR/config2.py}.
@@ -1015,7 +1022,7 @@ As mentioned in \autoref{tab:def}, \codett{\$INSTALLDIR} is the directory where 
 
 Within the \pyconfig{} file, the definitions for custom command line arguments occur inside the \argsfunc{} function.
 Passed to \argsfunc{}  as a function argument is \argsparser{},
-an object made by \codett{python}'s
+an object made by \py{}'s
 \codett{argparse.ArgumentParser()}. Arguments
 can be added to parser according to the usual
 \codett{argparse} syntax.
@@ -1053,7 +1060,7 @@ def CustomParseArgs(args):
 
 \noindent As the example demonstrates, one feature of the \parsefunc{} is a convenient
 way for users to effectively define new defaults for \balrog{} using
-commonly-known ordinary python syntax.
+commonly-known ordinary \py{} syntax.
 More generally, different \balrog{} runs are now capable of recognizing and appropriately parsing
 completely different sets of input parameters. 
 
@@ -1066,7 +1073,7 @@ Inside \pyconfig{}, users are allowed to modify the attributes of \parseargs{} d
 if they so desire.
 However, in order to prevent changes from potentially causing unhandled exceptions later in \balrog{},
 any modifications will not propagate outside \parsefunc{}.
-\balrog{}'s native arguments will behave according to how they were specified at the command line.
+Downstream, \balrog{}'s native arguments will behave according to how they were specified at the command line.
 Thus, allowing changes to the native attributes is more of a local convenience than anything else.
 
 \parseargs{} will be given as a function argument to the \simfunc{}, \gspfunc, and \sexfunc{} functions.
@@ -1109,17 +1116,17 @@ As discussed in \autoref{sec:user},
 \rules{g2} & Reduced shear, $g_2$ component \\
 \rules{magnification} & Magnification, $1 + \kappa$ \\
 \rules{sersicindex} & \sersic{} index \\
-\rules{halflightradus} & \sersic{} half light radius [arcsec] \\
+\rules{halflightradus} & \sersic{} half light radius (along major axis) [arcsec] \\
 \rules{magnitude} & Brightness [mag] \\
 \rules{axisratio} & Minor to major axis ratio \\
-\rules{beta} & Orientation angle of major axis (measured from $x$-axis) [degrees] \\ \bottomrule %\bottomrule
+\rules{beta} & Orientation angle of major axis (measured from $\hat{x}$-axis) [degrees] \\ \bottomrule %\bottomrule
 \end{tabular}
 \end{table}
 
 \autoref{sec:galsim} laid out the parameters which characterize each simulated object.
 Briefly recapitulating, each object is made up of one or \sersic{} profiles.
 Each \sersic{} profile is composed of five components: 
-\sersic{} index ($n$), half light radius ($r_e$), brightness ($m$), minor to major axis ratio ($b/a$), 
+\sersic{} index ($n$), half light radius along the major axis($r_e$), brightness ($m$), minor to major axis ratio ($b/a$), 
 and orientation angle counter-clockwise from the $\hat{x}$-direction ($\beta$).
 Furthermore, a simulated object also shares fives additional parameters among each \sersic{} profile:
 two centroid position coordinates, $(x,y)$, two reduced shear coordinates $(g_1,g_2)$, and magnification ($\mu$).
@@ -1147,6 +1154,29 @@ Function & \codett{rules.y = Function(function=rand, args=[args.xmin,args.xmax,a
 \end{tabular}
 \end{table}
 
+
+\begin{table}
+\caption{Defaults for the \simrules{} object, i.e. defaults for how to generate simulated object properties in the \texttt{pyconfig} file.}  \label{tab:default}
+\rowcolors{1}{gray1}{white}
+\begin{tabular}{l l} \toprule %\toprule
+\rowcolor{gray2} \textbf{Attribute} & \textbf{Default} \\ \midrule
+\rules{x} & \codett{np.random.uniform(args.xmin, args.xmax, args.ngal)} \\
+\rules{y} & \codett{np.random.uniform(args.ymin, args.ymax, args.ngal)} \\
+\rules{g1} & 0 \\
+\rules{g2} & 0 \\
+\rules{magnification} & 1 \\ 
+\rowcolor{white} & \\
+%\catline{\sersic{}} \\ 
+\multicolumn{2}{p{6in}}{\dfill \sersic{} \dfill} \\ 
+\rowcolor{white} \multicolumn{2}{c}{(If \sersic{} attributes are multi-component, each list element uses  this default)} \\ \\
+\rules{sersicindex} & \codett{Catalog(`cosmos.fits',1,`SERSIC_INDEX')} \\
+\rules{halflightradius} & \codett{Catalog(`cosmos.fits',1,`HALF_LIGHT_RADIUS')} \\
+\rules{magnitude} & \codett{Catalog(`cosmos.fits',1,`IMAG')} \\
+\rules{axisratio} & 1 \\
+\rules{beta} & 0 \\ \bottomrule %\bottomrule
+\end{tabular}
+\end{table}
+
 Users overwrite each of the \simrules{} object's attributes to define their sampling of simulation parameters.
 Assignments can assume four (or possibly five depending how categorized) types of statements. 
 The syntax for each is designed to be straightforward, intuitive, and \py{}esque.
@@ -1156,7 +1186,7 @@ will have the same value for the selected parameter, e.g. \codett{rules.g1 = 0}.
 Second, rule types can also be given as an array, equal in length to the number of simulated objects. 
 Simulated object $i$ for the chosen parameter then assumes the value in element $i$ of the array.
 The example in \autoref{tab:simtype} is given as \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)},
-meaning objects will be evenly spaced along the $x$-axis across the image.
+meaning objects will be evenly spaced along the $\hat{x}$-axis across the image.
 
 The third available type for \simrules{} is sampling from a catalog. 
 This makes use of a function \balrog{} has defined called \codett{Catalog}. 
@@ -1172,7 +1202,7 @@ As a convenience for sampling multiple columns from the same catalog,
 we have created a shortcut function called \codett{Table}.
 \codett{Table} takes two arguments: \codett{file} and \codett{ext},
 and returns an object that behaves like \codett{Catalog},
-which can be given any of the column names as an argument.
+which can be given any of the column names as a single argument.
 We have summarized the \codett{Catalog}/\codett{Table} functionality below.
 
 \begin{code}
@@ -1187,7 +1217,7 @@ Last but not least, the fourth assignable sampling type to \simrules{} is a func
 Users write their own function according to usual \py{} syntax,
 then feed this function and its necessary arguments as the arguments to
 \balrog{}'s \codett{Function} command. 
-The one requirement of sampling functions is they must return an array equal in 
+The one requirement of sampling functions is that they must return an array equal in 
 length to the number of simulated objects.
 Like the array sampling type, object $i$ will use element $i$ of the returned array as its truth parameter.
 Here, we provide an example code snippet, illustrative of how one could place the simulated objects at random image positions. 
@@ -1209,7 +1239,7 @@ Let us now return to the \simsamp{} object which is passed to \simfunc{} as an a
 \simsamp{} is used in conjunction with \simrules{} to define one parameter's rule in terms of another's.
 Conceptually speaking, \simsamp{} can be thought of an object whose attributes are arrays that 
 have been set equal to the simulated object parameters post sampling.
-One might consider \simsamp{} its own sampling type, but at the same time, its also functionally equivalent to an array.
+One might consider \simsamp{} its own sampling type, but at the same time, it is also functionally equivalent to an array.
 This is why a Sampled type has been added as a fifth entry in \autoref{tab:simtype}, in parentheses directly under the Array line.
 To better understand \simsamp{}, consider the following code sample:
 
@@ -1244,14 +1274,14 @@ As a further example, one could apply position dependent lensing effects in a si
 
 Thus far we have been operating with single component \sersic{} models.
 However, two or more components can be implemented.
-Doing so requires a call to a \balrog{} function called \codett{InitialSersic}
+Doing so requires a call to a \balrog{} function called \codett{InitializeSersic}
 before any of \codett{rules}'s five \sersic{} attributes 
 (\codett{sersicindex}, \codett{halflightradius}, \codett{magnitude}, \codett{axisratio}, \codett{beta})
 are reassigned.
-\codett{InitialSersic} takes \simrules{} and \simsamp{} as arguments as well as \codett{nProfiles},
-the number of superimposed \sersic{} models, e.g.\\
+\codett{InitializeSersic} takes \simrules{} and \simsamp{} as arguments as well as \codett{nProfiles},
+the number of superimposed \sersic{} models, e.g.
 \codett{InitializeSersic(rules, sampled, nProfiles=2)}.
-This has recast the \sersic{} components of \codett{rules} and \codett{sampled} as length two list.
+This has recast the \sersic{} components of \codett{rules} and \codett{sampled} as length two lists.
 Now the elements of these attributes of \codett{rules} must be updated accordingly,
 using syntax akin to that of any other \py{} list. For example, the following builds
 galaxies as bulge + disk models, using an exponential disk ($n = 1$) and a de Vaucouleurs bulge ($n = 4$).
@@ -1282,46 +1312,25 @@ The values for the half light radius and magnitude are sampled from the catalog 
 The axis ratios and orientations angles are random, as are the centroid positions.
 No lensing is applied.
 We direct the reader's attention to the final two lines.
-Conceptually one would often think of these in the opposite order, but either is permissible 
+One might ordinarily think of these as needing to be in the opposite order, but either is permissible 
 and equivalent in \balrog{}.
 Also notice that the \codett{x}, \codett{y}, \codett{g1}, \codett{g2}, and \codett{magnification}
 attributes are unaffected by the \codett{InitializeSersic} statement. These attributes are never lists.
 
 
 All attributes of \simrules{} have a default, which will be used if the attribute is not overwritten.
-Any time a default must be used a warning message is issued.
+Any time a default must be used, a warning message is issued.
 The defaults themselves are listed in \autoref{tab:default}.
 Notice that in some cases, the default is to sample from the \codett{cosmos.fits} catalog which
 ships with \balrog{}.
 These should create realistic populations.
-By default a single component \sersic{} model is adopted.
-If the \sersic{} mode is multi-components, each element of an attribute's list assumes the default in \autoref{tab:default}.
+By default a single component \sersic{} model is adopted by \balrog{}.
+If the users sets the \sersic{} mode to multi-components, each element of an attribute's list assumes the default in \autoref{tab:default}.
 Whenever one uses \codett{InitializeSersic}, the \sersic{} attributes 
 are reinitialized to their defaults, so be careful if \codett{InitializeSersic} is called more than once
 in \simfunc{}.
 
 
-\begin{table}
-\caption{Defaults for the \simrules{} object, i.e. defaults for how to generate simulated object properties in the \texttt{pyconfig} file.}  \label{tab:default}
-\rowcolors{1}{gray1}{white}
-\begin{tabular}{l l} \toprule %\toprule
-\rowcolor{gray2} \textbf{Attribute} & \textbf{Default} \\ \midrule
-\rules{x} & \codett{np.random.uniform(args.xmin, args.xmax, args.ngal)} \\
-\rules{y} & \codett{np.random.uniform(args.ymin, args.ymax, args.ngal)} \\
-\rules{g1} & 0 \\
-\rules{g2} & 0 \\
-\rules{magnification} & 1 \\ 
-\rowcolor{white} & \\
-%\catline{\sersic{}} \\ 
-\multicolumn{2}{p{6in}}{\dfill \sersic{} \dfill} \\ 
-\rowcolor{white} \multicolumn{2}{c}{(If \sersic{} attributes are multi-component, each list element uses  this default)} \\ \\
-\rules{sersicindex} & \codett{Catalog(`cosmos.fits',1,`SERSIC_INDEX')} \\
-\rules{halflightradius} & \codett{Catalog(`cosmos.fits',1,`HALF_LIGHT_RADIUS')} \\
-\rules{magnitude} & \codett{Catalog(`cosmos.fits',1,`IMAG')} \\
-\rules{axisratio} & 1 \\
-\rules{beta} & 0 \\ \bottomrule %\bottomrule
-\end{tabular}
-\end{table}
 
 Previously we mentioned we would elaborate further on some finer details of using \codett{Function} to sample.
 We now do so.
@@ -1381,10 +1390,10 @@ def SimulationRules(args, rules, sampled, TruthCat):
     rules.sersicindex = n
 
 def exact(item, i2=None):
-    if item2==None:
+    if i2==None:
         return item
     else:
-        return item + item2
+        return item + i2
 
 def g(avg, std, ngal, add):
     gaus = gaussian(avg, std, ngal)
@@ -1405,7 +1414,7 @@ The other two arguments are \codett{name} and \codett{fmt}.
 \codett{name} sets the column name in the output catalog, and \codett{fmt} sets its FITS datatype 
 (\cf{} \href{http://www.ast.uct.ac.za/~ims/teaching/comp\_astron/python\_manuals/pyfits\_manual.pdf}{Section 4.4 of the PyFITS manual}).
 With \codett{Catalog}/\codett{Table}, \codett{name} and \codett{fmt} are optional, and read from the FITS header if not given.
-Here are a couple example:
+Here are a couple examples:
 \begin{code}
 def SimulationRules(args, rules, sampled, TruthCat):
     tab = Table(file=args.catalog, ext=args.ext)
@@ -1415,10 +1424,10 @@ def SimulationRules(args, rules, sampled, TruthCat):
 \end{code}
 
 \simfunc{} is written to be handle errors.
-When users try to enter a sampling specification that \balrog{} does not understand an exception is raised.
+An exception is raised When users try to enter a sampling specification that \balrog{} does not understand.
 Exceptions are also raised if users attempt to reassign attributes of \simsamp{} or 
 access an attribute of \simrules{} or \simsamp{} which does not actually exist.
-The mentioned exceptions cause \balrog{} to terminate.
+Such exceptions cause \balrog{} to terminate.
 The logic is that any \balrog{} \pyconfig{} syntax errors are treated like ordinary \py{} syntax
 errors and thus force the execution thread to exit.
 The traceback will include line numbers for where the process was terminated.
@@ -1429,7 +1438,7 @@ The traceback will include line numbers for where the process was terminated.
 
 The final consideration to make about generating simulated objects is the function \gspfunc{}.
 This function is passed three arguments: \codett{args}, \codett{gsparams}, and \codett{galaxies}.
-\codett{args} is the same parsed command line argument object as passed given to \simfunc{}.
+\codett{args} is the same parsed command line argument object as passed to \simfunc{}.
 Likewise, \codett{galaxies} is the same object as \codett{sampled}.
 It has just been renamed.
 \codett{galaxies} is a slight misnomer, the simulated objects can be anything, not just galaxies.
@@ -1446,9 +1455,9 @@ Understanding all the \codett{gsparams} attributes is a fairly technical subject
 refer users who need to adjust them to 
 \galsim{}'s \href{http://galsim-developers.github.io/GalSim/structgalsim\_1\_1\_g\_s\_params.html}{reference page}
 for the complete details.
-In the context of \balrog{} these parameters are relevant for drawing the objectss into postage stamp images.
+In the context of \balrog{} these parameters are relevant for drawing the objects into postage stamp images.
 \codett{alias\_threshold}, for example, determines what maximum fraction of the object's flux may be lost outside the boundaries
-of the postage stamp when determining how large of a postage stamp is needed for drawing the objects.
+of the postage stamp when determining how large of a postage stamp is needed for drawing the object.
 Convolution with the PSF is done in Fourier Space.
 \codett{maxk\_theshold} determines the maximum $k$ used in FFTs such that $k$-values must fall below \codett{maxk\_threshold}
 before cutting off the FFT. We will mention, there are also parameters for setting target accuracies.
@@ -1585,7 +1594,7 @@ The inconsistency of this behavior should be changed in the future.
 
 \balrog{} writes up to three catalog files:
 \codett{*.measuredcat.nosim.fits}, \codett{*.measuredcat.sim.fits}, and \path{*.truthcat.sim.fits}.
-The truth catalog, \codett{*.truthcat.sim.fits}, is always made, unless \codett{--nodraw} is set.
+The truth catalog, \codett{*.truthcat.sim.fits}, is always written, unless \codett{--nodraw} is set.
 The catalog contains a column for each of the attributes of listed in \autoref{tab:attr}
 Five of the columns are named exactly as they appear in \autoref{tab:attr}: 
 \codett{x}, \codett{y}, \codett{g1}, \codett{g2}, and \codett{magnification}.
@@ -1614,6 +1623,7 @@ The truth catalog will also contain any \hyperlink{hyper:addtruth}{user-defined 
 \codett{*.measuredcat.nosim.fits} and \codett{*.measuredcat.sim.fits} are the two \sex{} catalogs.
 \path{*.measuredcat.sim.fits} includes the simulated galaxies and \codett{*.measuredcat.nosim.fits} does not.
 If \opt{nonosim} is flagged, there will not be a \codett{.nosim.fits} file.
+If \opt{imageonly} is flagged, neither file will exist.
 When using association mode, the catalogs are made up solely of simulated galaxies, 
 modulo blending effects (c.f \autoref{sec:processing}). Likely all the simulated galaxies will not
 be detected so there usually will not be as many rows as simulated galaxies.
@@ -1624,39 +1634,41 @@ There are keywords \codett{V\%i} and \codett{VUNIT\%i}, which will match the nam
 These are the ordered values of the \codett{VECTOR\_ASSOC} array along with their units.
 For example, we can print the relevant header information from the default example runs in \autoref{sec:quick}:
 \begin{cmdline}
-% listhead "default_example/output/balrog_cat/example.measuredcat.sim.fits[2]" | grep V | grep " =" 
-TTYPE1  = `VECTOR_ASSOC'       / ASSOCiated parameter vector
-V0      = `g2      '
-VUNIT0  = `none    '
-V1      = `g1      '
-VUNIT1  = `none    '
-V2      = `magnification'
-VUNIT2  = `none    '
-V3      = `flux_noiseless'
-VUNIT3  = `ADU     '
-V4      = `y       '
-VUNIT4  = `pix     '
-V5      = `x       '
-VUNIT5  = `pix     '
-V6      = `flux_noised'
-VUNIT6  = `ADU     '
-V7      = `halflightradius_0'
-VUNIT7  = `arcsec  '
-V8      = `beta_0  '
-VUNIT8  = `deg     '
-V9      = `sersicindex_0'
-VUNIT9  = `none    '
-V10     = `axisratio_0'
-VUNIT10 = `none    '
-V11     = `flux_0  '
-VUNIT11 = `ADU     '
+% listhead "default_example/output/balrog_cat/example.measuredcat.sim.fits[2]" | grep V | grep " ="
+TTYPE1  = 'VECTOR_ASSOC'       / ASSOCiated parameter vector
+V0      = 'not_drawn'
+VUNIT0  = 'dimensionless'
+V1      = 'g2      '
+VUNIT1  = 'dimensionless'
+V2      = 'g1      '
+VUNIT2  = 'dimensionless'
+V3      = 'flux_noiseless'
+VUNIT3  = 'ADU     '
+V4      = 'magnification'
+VUNIT4  = 'dimensionless'
+V5      = 'balrog_index'
+VUNIT5  = 'dimensionless'
+V6      = 'y       '
+VUNIT6  = 'pix     '
+V7      = 'x       '
+VUNIT7  = 'pix     '
+V8      = 'flux_noised'
+VUNIT8  = 'ADU     '
+V9      = 'halflightradius_0'
+VUNIT9  = 'arcsec  '
+V10     = 'beta_0  '
+VUNIT10 = 'deg     '
+V11     = 'sersicindex_0'
+VUNIT11 = 'dimensionless'
+V12     = 'axisratio_0'
+VUNIT12 = 'dimensionless'
+V13     = 'flux_0  '
+VUNIT13 = 'ADU     '
 \end{cmdline}
 Think of \codett{`V'} as shorthand for \codett{`VECTOR'}. The indices then label the components of this vector.
 Since a truth catalog itself is written by \balrog{} it is not strictly necessary to include the truth
 vector in the measured catalog. However, it is convenient and essentially comes for free with \balrog{}'s
 association mode setup. 
-If \opt{imageonly} is flagged in \balrog{}'s command line, no \sex{} catalogs will be written.
-
 
 
 \section{\sex{} Configuration Files}
@@ -1684,7 +1696,7 @@ Any settings unrelated to association mode remain unchanged.
 \section{Log Files}
 \label{sec:logs}
 
-\balrog{} saves four files to the \codett{balrog\_sexconfig/} directory.
+\balrog{} saves four files to the \codett{balrog\_log/} directory.
 The first is an exact copy of the user's \pyconfig{} file.
 Next, as its name would suggest, \codett{run.log.txt} is a \balrog{} \emph{run log}.
 Any errors or warnings \balrog{} raised would be directed to this file.
@@ -1697,7 +1709,7 @@ and \codett{sex.log.txt} logs exaclty how \sex{} was called, including all the c
 \codett{args.log.txt} and \codett{sex.log.txt} include comment lines specifying 
 what is being printed in that section.
 
-The easiest way for users to familiarize themselves with the entirety \codett{args.log.txt}'s contents is to
+The easiest way for users to familiarize themselves with the entirety of \codett{args.log.txt}'s contents is to
 open the file and have a look themselves.
 Quickly summarizing, \codett{args.log.txt} contains the exact call \balrog{} was
 instantiated with from the command line, the values \balrog{} initially assumed

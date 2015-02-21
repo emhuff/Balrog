@@ -30,12 +30,12 @@ Section heading lines are linked to text throughout the document with furter det
 
 \headline{\hyperref[sec:out]{Output File Organization}} \lskip
 \tabargc{outdir}{o}{\codett{\$INSTALLDIR/default\_example/output/}}{Toplevel directory for \balrog{} output files. Files will be organized into intuitively named directories under \opt{outdir}.}{gray1} \lskip
-\tabarg{clean}{c}{Unflagged $\implies$ False}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) after catalogs have been written.} \llskip
+\tabarg{clean}{c}{Unflagged $\implies$ False}{Delete intermediate image files (those in \opt{outdir}\codett{/balrog\_image}) when \balrog{} exits.} \llskip
 
 \headline{\hyperref[sec:logs]{Logging}} \\
 \multicolumn{2}{c}{\small
 $\left(
-\begin{tabular}{l l p{3in}}
+\begin{tabular}{l l p{4.75in}}
 \multicolumn{3}{c}{\underline{\opt{stdverbosity}/\opt{logverbosity} options:}} \\
 \codett{q} & Quiet & Errors only. (\opt{logverbosity} \codett{q} does not exist.) \\
 \codett{n} & Normal & Errors and warnings \\
@@ -128,12 +128,16 @@ $\left\{
 \multicolumn{2}{p{\linefactor}}{(\small Refer to the \href{https://www.astromatic.net/pubsvn/software/sextractor/trunk/doc/sextractor.pdf}{\sex{} user manual} or \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guide2source\_extractor.pdf}{Source Extractor for Dummies} for more help. We have also added a brief \hyperref[sec:quicksex]{\sex{} appendix}.)} \lskip
 \tabargc{sexpath}{sex}{\codett{sex}}{Path to \sex{} executable.}{gray1} \lskip
 \tabarg{sexconfig}{sc}{\codett{\$INSTALLDIR/astro\_config/sex.config}}{Config file for running \sex{}.} \lskip
-\tabargc{sexparam}{sp}{\codett{\$INSTALLDIR/astro\_config/bulge.param}. This performs a single component \sersic{} model fit to each galaxy with free S\'{e}rsic index.}{Param file specifying which measurements \sex{} outputs.}{gray1} \lskip
+\tabargc{sexparam}{sp}{\codett{\$INSTALLDIR/astro\_config/bulge.param}}
+%This performs a single component \sersic{} model fit to each galaxy with free S\'{e}rsic index.}
+{Param file specifying which measurements \sex{} outputs.}{gray1} \lskip
 \tabarg{sexnnw}{sn}{\codett{\$INSTALLDIR/astro\_config/sex.nnw}}{\sex{} neural network file for star-galaxy separation} \lskip
 \tabargc{sexconv}{sf}{\codett{\$INSTALLDIR/astro\_config/sex.conv}}{\sex{} filter convolution file when making detections.}{gray1} \lskip
 \tabarg{noassoc}{na}{Unflagged $\implies$ use association mode.}{Do not run \sex{} in association mode.} \lskip
 \tabargc{nonosim}{nn}{Unflagged $\implies$ perform the \sex{} run}{Skip \sex{} run over the original image, prior to any simulation.}{gray1} \lskip
-\tabarg{nosimsexparam}{nsp}{\codett{\$INSTALLDIR/astro\_config/sex.param}. This does not do model fitting.}{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation.} \lskip
+\tabarg{nosimsexparam}{nsp}{\codett{\$INSTALLDIR/astro\_config/sex.param}.}
+%This does not do model fitting.}
+{Param file specifying which measurements \sex{} outputs during run over the original image, prior to any simulation.} \lskip
 \tabargc{catfitstype}{ct}{\codett{ldac}}{Type of FITS catalog file \sex{} writes out. \opt{catfitstype} $\in$ \{\codett{ldac}, \codett{1.0}\}.}{gray1}\lskip 
 \tabarg{indexstart}{is}{0}{Identifying index for first \balrog{} simulated object, i.e. where to start \hyperref[sec:catalogs]{\texttt{balrog\_index}}.} \lskip
 \tabargc{imageonly}{io}{Unflagged $\implies$ False}{Do not run \sex{} in \balrog{}. No measurement catalogs will be written.}{gray1} \lskip
