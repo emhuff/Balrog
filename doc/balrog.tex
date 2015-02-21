@@ -35,8 +35,8 @@
 
 \definecolor{bluegrey}{rgb}{0.92,0.95,0.98}
 \definecolor{pinkgrey}{rgb}{0.95,0.92,0.95}
-\definecolor{gray1}{gray}{0.9}
-\definecolor{gray2}{gray}{0.7}
+\definecolor{gray1}{gray}{0.95}
+\definecolor{gray2}{gray}{0.87}
 
 \lstset{
 aboveskip=15pt,
@@ -206,7 +206,7 @@ The functionality of \balrog{}'s \sex{} implementation is considered in \autoref
 \draw node [sex, left=0.5cm of mconf, align=center, text width=2cm] (rm1) {\textbf{\hyperref[sec:processing]{Run measurement software}}};
 \draw node [sex, right=0.5cm of mconf, align=center, text width=2cm] (rm2) {\textbf{\hyperref[sec:processing]{Run measurement software}}};
 \draw node [output, above=0.5cm of rm2, align=center, text width=3cm] (truth) {\textbf{\hyperref[sec:catalogs]{Simulated objects truth catalog}}};
-\draw node [com, right=3.2cm of truth, align=center, text width=2.5cm] (parse) {\textbf{\hyperref[sec:pyconfig]{Parse simulation configuration}}};
+\draw node [com, right=3.4cm of truth, align=center, text width=2.5cm] (parse) {\textbf{\hyperref[sec:pyconfig]{Parse simulation configuration}}};
 \draw node [gs, below=0.7cm of parse, align=center, text width=3.5cm] (draw) {\textbf{\hyperref[sec:galsim]{Draw simulated objects into image}}};
 \draw node [input, above=0.5cm of parse, align=center, text width=3.5cm] (pyconfig) {\textbf{\hyperref[sec:pyconfig]{Object simulation configuration file}}};
 \draw node [input, above=2.9cm of mconf, align=center, text width=3.5cm] (imaging) {\textbf{\hyperref[sec:data]{Data: image, weight map, PSF, zeropoint, gain}}};
@@ -221,7 +221,7 @@ The functionality of \balrog{}'s \sex{} implementation is considered in \autoref
 \draw[->](mconf) -- node {} (rm2);
 \draw[->](truth) -| node {} (rm1);
 \draw[->](truth) -- node {} (rm2);
-\draw[->](imaging) -- ($(imaging.east) + (10.3,0)$) |- node {} (draw);
+\draw[->](imaging) -- ($(imaging.east) + (10.5,0)$) |- node {} (draw);
 \draw[->](draw) -- node {} (simimage);
 \draw[->](simimage) -- node {} (rm2);
 \draw[->](imaging) -- ($(imaging.west) - (3.0,0)$) |- node {} (rm1);
@@ -305,12 +305,12 @@ described in \autoref{sec:cmdline}.
 
 
 \begin{table}
-\caption{Brief summary of imaging inputs to \balrog{}}
+\caption{Brief summary of imaging inputs to \balrog{}.}
 \label{tab:input}
 \rowcolors{1}{gray1}{white}
 \begin{longtabu} to \textwidth {l X}
 \toprule %\toprule
-\textbf{Input} & \textbf{Usage} \\ \midrule
+\rowcolor{gray2} \textbf{Input} & \textbf{Usage} \\ \midrule
 Image & Draw simulated objects into this image\\
 Weight map & Used by \sex{} in measurements; \balrog{} does not change the weight map\\
 PSF & Convolved with object to transform intrinsic brightness profile to observed profile\\
@@ -496,6 +496,7 @@ The colors and shapes are consistent with \autoref{fig:flowoverview}:
 green parallelograms are \balrog{} inputs, the teal parallelogram is a \balrog{} output,
 orange rectangles call \galsim{} commands, and gray nodes are \py{} code in \balrog{}.
 Diamonds are decision points.
+Blue text hyperlinks to further documentation.
 This figure is effectively a ``zoom in'' of the ``Draw simulated objects into image'' node of \autoref{fig:flowoverview}.}
 \label{fig:flowsim}
 \end{figure}
@@ -506,7 +507,7 @@ The color coding of the nodes is the same as \autoref{fig:flowoverview}:
 green parallelograms are \balrog{} inputs and the teal parallelogram is a \balrog{} output.
 Commands are inside rectangles, where the orange ones call \galsim{} and the gray ones do not.
 Diamonds are decision points.
-Blue text is hyperlinked to \galsim{} documentation.
+Blue text is hyperlinked to \galsim{} documentation or other sections of this document.
 The text lines in the orange nodes are not necessary valid \galsim{} commands as written, 
 but meant to be indicative of the actual commands, presented here in a compact form.
 
@@ -566,6 +567,7 @@ or the so-called \href{http://astroa.physics.metu.edu.tr/MANUALS/sextractor/Guid
 for \sex{} help.
 We have also written a brief \hyperref[sec:quicksex]{\sex{} appendix}.
 
+\hypertarget{hyper:assoc}{}
 \balrog{}'s default behavior is to run \sex{} in \emph{association mode}.
 Association mode means \sex{} will only make possible measurements at a predefined list of coordinates.
 Here, the list is given as the simulated objects' locations,
@@ -605,6 +607,7 @@ then coadd the set of resultant output \balrog{} images to make a ``\balrog{} de
 This could then be given as the detection image to a dual image \balrog{} run over any of the single band images,
 where the run has been configured to generate simulated objects in the same positions as before.
 
+\hypertarget{hyper:sexfiles}{}
 The \sex{} configuration settings are an important component of a \sex{} run.
 Users are free to give \balrog{} their own configuration files, and \balrog{} will configure \sex{} to use them.
 Two files which require further explanation are the \texttt{param} file and the \texttt{config} file.
@@ -789,12 +792,12 @@ Additionally, \balrog{} logs the exact value of each command line argument  in \
 and directs all \sex{}'s \codett{stdout}/\codett{stderr} to \codett{sex.log.txt}.
 
 \begin{table}
-\caption{Definitions used throughout this manual.}
+\caption{Definitions used throughout this manual to facilitate ease of command line calls.}
 \label{tab:def}
 \rowcolors{1}{gray1}{white}
 \begin{tabular}{l l}
 \toprule %\toprule
-\textbf{Name} & \textbf{Meaning} \\ \midrule
+\rowcolor{gray2} \textbf{Name} & \textbf{Meaning} \\ \midrule
 \codett{\$INSTALLDIR} & Directory \codett{git} clones for \balrog{}, i.e. where \balrog{} is installed \\
 \codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\ \bottomrule %\bottomrule
 \end{tabular}
@@ -932,7 +935,7 @@ These have been summarized in \autoref{tab:b2s}.
 \rowcolors{1}{white}{gray1}
 \begin{tabular}{l l l} \toprule %\toprule
 
-\rowcolor{gray1} \textbf{\balrog{}} & & \textbf{\sex{}} \\ \midrule 
+\rowcolor{gray2} \textbf{\balrog{}} & & \textbf{\sex{}} \\ \midrule 
 \rowcolor{white} & & \\
 %\rowcolor{white} \multicolumn{2}{c}{\dfill} & Explicit \hspace{0.3cm} \dfill \\
 \multicolumn{3}{c}{\balrog{} arguments used to set \sex{} arguments} \\
@@ -948,7 +951,7 @@ These have been summarized in \autoref{tab:b2s}.
 \opt{sexconv} & $\rightarrow$ & \codett{FILTER\_NAME} \\ 
 
 \rowcolor{white} & & \\
-\multicolumn{3}{c}{\balrog{}'s association mode configuration} \\
+\multicolumn{3}{c}{\balrog{}'s \hyperlink{hpyer:assoc}{association mode} configuration} \\
 \rowcolor{gray1} \codett{if !--noassoc:} & & \\
 \rowcolor{gray1} \texttt{truth} & $\rightarrow$ & \codett{ASSOC\_DATA} \\
 \rowcolor{gray1} \texttt{truth['x'],truth['y']} & $\rightarrow$ & \codett{ASSOC\_PARAMS} \\
@@ -956,7 +959,7 @@ These have been summarized in \autoref{tab:b2s}.
 \rowcolor{gray1} & & \codett{ASSOC\_TYPE = NEAREST} \\
 \rowcolor{gray1} & & \codett{ASSOCSELEC\_TYPE = MATCHED} \\
 \rowcolor{white} & & \\
-\multicolumn{3}{c}{Files slightly modified by \balrog{} to turn association mode on/off.} \\
+\multicolumn{3}{c}{Files \hyperlink{hyper:sexfiles}{slightly modified} by \balrog{} to turn association mode on/off.} \\
 \opt{sexconfig} & $\rightarrow$  &\codett{c} \\
 \opt{sexparam} & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ 
 \opt{nosimsexparam} & $\rightarrow$  &\codett{PARAMETERS\_NAME} \\ \bottomrule
@@ -1095,11 +1098,11 @@ As discussed in \autoref{sec:user},
 \simrules{}, \simsamp{}, and \codett{TruthCat}'s usage will become clearer to follow.
 
 \begin{table}
-\caption{Attributes of the \simrules{} object defining the simulated object properties.} \label{tab:attr}
+\caption{Attributes of the \simrules{} object in the \texttt{pyfconfig} file, defining the simulated object properties.} \label{tab:attr}
 \rowcolors{1}{gray1}{white}
 \begin{tabular}{l l}
 \toprule %\toprule
-\textbf{Attribute} & \textbf{Meaning} \\ \midrule
+\rowcolor{gray2} \textbf{Attribute} & \textbf{Meaning} \\ \midrule
 \rules{x} & Object centroid $x$-coordinate [pixels]\\
 \rules{y} & Object  centroid $y$-coordinate [pixels]\\
 \rules{g1} & Reduced shear, $g_1$ component \\
@@ -1131,11 +1134,11 @@ For the time being, we will continue assuming each object has been simulated as 
 We will return to handling two or more in a few paragraphs.
 
 \begin{table} 
-\caption{Syntax examples for each of the simulation types \balrog{} understands.} \label{tab:simtype}
+\caption{Syntax examples for each of the simulation parameter sampling types \balrog{} understands.} \label{tab:simtype}
 \rowcolors{1}{gray1}{white}
 \begin{tabular} {l l}
 \toprule %\toprule
-\textbf{Type} & \textbf{Example} \\ \midrule
+\rowcolor{gray2} \textbf{Type} & \textbf{Example} \\ \midrule
 Constant & \codett{rules.g1 = 0} \\
 Array & \codett{rules.x =  np.linspace(args.xmin, args.xmax, args.ngal)} \\
 (Sampled  & \codett{rules.y = sampled.x}) \\
@@ -1297,11 +1300,12 @@ Whenever one uses \codett{InitializeSersic}, the \sersic{} attributes
 are reinitialized to their defaults, so be careful if \codett{InitializeSersic} is called more than once
 in \simfunc{}.
 
+
 \begin{table}
-\caption{\simrules{} defaults.}  \label{tab:default}
+\caption{Defaults for the \simrules{} object, i.e. defaults for how to generate simulated object properties in the \texttt{pyconfig} file.}  \label{tab:default}
 \rowcolors{1}{gray1}{white}
 \begin{tabular}{l l} \toprule %\toprule
-\textbf{Attribute} & \textbf{Default} \\ \midrule
+\rowcolor{gray2} \textbf{Attribute} & \textbf{Default} \\ \midrule
 \rules{x} & \codett{np.random.uniform(args.xmin, args.xmax, args.ngal)} \\
 \rules{y} & \codett{np.random.uniform(args.ymin, args.ymax, args.ngal)} \\
 \rules{g1} & 0 \\
@@ -1548,10 +1552,11 @@ The inconsistency of this behavior should be changed in the future.
 \begin{table}
 \caption{\balrog{}'s output truth catalog.}
 \label{tab:truth}
-\rowcolors{1}{gray1}{white}
+%\rowcolors{1}{gray1}{white}
+\rowcolors{1}{white}{gray1}
 \begin{longtabu} to \textwidth {l l X}
 \toprule %\toprule
-Name & Units & Meaning \\ \midrule
+\rowcolor{gray2} Name & Units & Meaning \\ \midrule
 \texttt{balrog\_index} &  & Unique identifying index for each object\\
 \texttt{x} & pixel & Centroid $x$-coordinate\\
 \texttt{y} & pixel & Centroid $y$-coordinate\\
