@@ -150,19 +150,26 @@ def CopyAssoc(BalrogSetup, outfile):
 def ReadImages(BalrogSetup):
     image = galsim.fits.read(BalrogSetup.image, hdu=BalrogSetup.imageext)
     weight = galsim.fits.read(BalrogSetup.weight, hdu=BalrogSetup.weightext)
-    if image.wcs==galsim.PixelScale(1):
+    if BalrogSetup.scampheader is not None:
+        h=pyfits.Header()
+        h.fromTxtFile(BalrogSetup.scampheader)
+        wcs=galsim.wcs.readFromFitsHeader(h)[0]   #readFromFitsHeader returns a tuple for some reason, hence the index 0
+    elif image.wcs==galsim.PixelScale(1):
         thisdir = os.path.dirname( os.path.realpath(__file__) )
         file = os.path.join(thisdir, 'fiducialwcs.fits')
-        image.wcs = galsim.GSFitsWCS(file)
-        weight.wcs = image.wcs
+        wcs =  galsim.GSFitsWCS(file)
         BalrogSetup.wcshead = file
         BalrogSetup.runlogger.warning('No WCS was found in the input image header. Using default pixel scale of 0.263 arcsec/pixel.')
-    wcs = image.wcs
+    else:
+        wcs=image.wcs
 
+    image.wcs = wcs
+    weight.wcs = image.wcs
+        
     subBounds = galsim.BoundsI(BalrogSetup.xmin,BalrogSetup.xmax,BalrogSetup.ymin,BalrogSetup.ymax)
     image = image[subBounds]
     weight = weight[subBounds]
-    psfmodel = galsim.des.DES_PSFEx(BalrogSetup.psf, BalrogSetup.wcshead)
+    psfmodel = galsim.des.DES_PSFEx(BalrogSetup.psf, wcs=wcs)
 
     return image, weight, psfmodel, wcs
 
@@ -237,8 +244,10 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             continue
 
-        ix = int(simulatedgals.galaxy['x'][i])
-        iy = int(simulatedgals.galaxy['y'][i])
+        x = float(simulatedgals.galaxy['x'][i])
+        y = float(simulatedgals.galaxy['y'][i])
+        ix = int(x)
+        iy = int(y)
    
         '''
         smallImage = galsim.Image(postageStampSize,postageStampSize)
@@ -246,14 +255,18 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         smallImage.wcs = bigImage.wcs
         smallImage = combinedObjConv.draw(image=smallImage)
         '''
-       
-        pos = galsim.PositionD(simulatedgals.galaxy['x'][i], simulatedgals.galaxy['y'][i])
+        dx = x-ix
+        dy = y-iy
+
+        pos = galsim.PositionD(x, y)
         local = wcs.local(image_pos=pos)
-        localscale = np.sqrt(local.dudx * local.dvdy)
+        #localscale = np.sqrt(local.dudx * local.dvdy)
+        #localscale = np.sqrt(np.abs(local.dudx * local.dvdy))
+        #print 'localscale',localscale
         #smallImage = combinedObjConv.draw(scale=localscale)
 
         try:
-            smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
+            smallImage = combinedObjConv.draw(wcs=local, use_true_center=False, offset=(ix,iy))
         except:
             simulatedgals.galaxy['not_drawn'][i] = 1
             print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
@@ -1433,6 +1446,7 @@ def DefaultArgs(parser):
 
     parser.add_argument( "-p", "--psf", help="PSF of the input image.", type=str, default=None)
     parser.add_argument( "-dp", "--detpsf", help="PSF of the input detimage.", type=str, default=None)
+    parser.add_argument( "-sh", "--scampheader", help="Use the wcs in this scamp header file, rather than whatever is in the image header",type=str,default=None)
 
     # Properties you want your simulated image to have
     parser.add_argument( "-x1", "--xmin", help="Minimum column index for subsampling, >=1.", type=int, default=1)

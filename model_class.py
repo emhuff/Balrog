@@ -525,17 +525,20 @@ class nComponentSersic(object):
 
         x = float(self.galaxy['x'][i])
         y = float(self.galaxy['y'][i])
+        """
         ix = int(x) 
         iy = int(y)
         dx = x-ix
         dy = y-iy
-
+        """
         pos = galsim.PositionD(x,y)
         local = wcs.local(image_pos=pos)
+
+        """
         localscale = np.sqrt(local.dudx * local.dvdy)
         #combinedObj.applyShift(dx*local.dudx, dy*local.dvdy)
         combinedObj.applyShift(dx*localscale, dy*localscale)
-
+        """
         psf = psfmodel.getPSF(pos, gsparams=gsparams)
         psf.setFlux(1.)
         psf_centroid = psf.centroid()
