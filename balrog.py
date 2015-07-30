@@ -175,6 +175,7 @@ def ReadImages(BalrogSetup):
 
 
 def WriteImages(BalrogSetup, image, weight, nosim=False):
+
     weightout = BalrogSetup.weightout
     if nosim:
         imageout = BalrogSetup.nosim_imageout
@@ -239,9 +240,10 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         try:
             combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
-        except:
+        except Exception as e:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            print i,"failed GetConvoloved(), error printed below:",simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            print e
             continue
 
         x = float(simulatedgals.galaxy['x'][i])
@@ -260,16 +262,18 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         pos = galsim.PositionD(x, y)
         local = wcs.local(image_pos=pos)
+        print local
         #localscale = np.sqrt(local.dudx * local.dvdy)
         #localscale = np.sqrt(np.abs(local.dudx * local.dvdy))
         #print 'localscale',localscale
         #smallImage = combinedObjConv.draw(scale=localscale)
 
         try:
-            smallImage = combinedObjConv.draw(wcs=local, use_true_center=False, offset=(ix,iy))
-        except:
+            smallImage = combinedObjConv.drawImage(wcs=local, use_true_center=False, offset=(dx,dy))
+        except Exception as e:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            print i,"failed draw() , error printed below:", simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            print e
             continue
 
         smallImage.setCenter(ix,iy)
@@ -1059,16 +1063,16 @@ class DerivedArgs():
         SystemCall(['cp', file, outname])
 
         
-class BalrogConfig():
+class BalrogConfig(dict):
     def __init__(self, cargs, dargs):
         cdict = vars(cargs)
         for key in cdict.keys():
             exec "self.%s = cdict['%s']" %(key, key)
-
+            self[key] = cdict[key]
         ddict = vars(dargs)
         for key in ddict.keys():
             exec "self.%s = ddict['%s']" %(key, key)
-
+            self[key] = ddict[key]
 
 def SetLevel(h, choice):
     if choice=='q':
