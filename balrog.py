@@ -207,7 +207,7 @@ def WritePsf(BalrogSetup, psfin, psfout):
 
 
 
-def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs, gspcatalog):
+def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs, gspcatalog, return_wcs_list=False):
     #psizes, athresh = simulatedgals.GetPSizes(BalrogSetup, wcs)
 
     t0 = datetime.datetime.now()
@@ -221,7 +221,14 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
     simulatedgals.galaxy['flux_noiseless'] = np.zeros( len(simulatedgals.galaxy['x']) )
     simulatedgals.galaxy['not_drawn'] = np.array( [0]*len(simulatedgals.galaxy['x']) )
 
+    if return_wcs_list:
+        wcs_list=[]
+
     for i in range(BalrogSetup.ngal):
+        print 'galaxy',i
+        x = float(simulatedgals.galaxy['x'][i])
+        y = float(simulatedgals.galaxy['y'][i])
+
         start = datetime.datetime.now()
 
         #postageStampSize = int(psizes[i])
@@ -238,16 +245,18 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
                     d[key] = gspcatalog.galaxy[key][i]
         gsparams = galsim.GSParams(**d)
 
+        pos = galsim.PositionD(x, y)
+        local = wcs.local(image_pos=pos)
+        wcs_list.append(local)
+
         try:
             combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
         except Exception as e:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print i,"failed GetConvoloved(), error printed below:",simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            print "object %d failed GetConvoloved(), error printed below:"%i,simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             print e
             continue
 
-        x = float(simulatedgals.galaxy['x'][i])
-        y = float(simulatedgals.galaxy['y'][i])
         ix = int(x)
         iy = int(y)
    
@@ -260,9 +269,6 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         dx = x-ix
         dy = y-iy
 
-        pos = galsim.PositionD(x, y)
-        local = wcs.local(image_pos=pos)
-        print local
         #localscale = np.sqrt(local.dudx * local.dvdy)
         #localscale = np.sqrt(np.abs(local.dudx * local.dvdy))
         #print 'localscale',localscale
@@ -272,16 +278,20 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             smallImage = combinedObjConv.drawImage(wcs=local, use_true_center=False, offset=(dx,dy))
         except Exception as e:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print i,"failed draw() , error printed below:", simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            print "object %d failed draw() , error printed below:"%i, simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             print e
             continue
 
         smallImage.setCenter(ix,iy)
+        if (smallImage.bounds.xmin<bigImage.bounds.xmin or smallImage.bounds.xmax>bigImage.bounds.xmax or 
+            smallImage.bounds.ymin<bigImage.bounds.ymin or smallImage.bounds.ymax>bigImage.bounds.ymax):
+            print 'object %d out of bounds'%i
+            simulatedgals.galaxy['not_drawn'][i] = 1
+            continue
 
         t1 = datetime.datetime.now()
         dt = t1 - t0
         micro = long( (dt.days*24*60*60 + dt.seconds)*1.0e6 + dt.microseconds ) + rt + i
-
         bounds = smallImage.bounds & bigImage.bounds
         simulatedgals.galaxy['flux_noiseless'][i] = smallImage.added_flux 
         
@@ -309,7 +319,10 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         end = datetime.datetime.now()
         #print (end - start).total_seconds(), simulatedgals.component[0]['sersicindex'][i], simulatedgals.component[0]['halflightradius'][i], simulatedgals.component[0]['axisratio'][i], simulatedgals.component[0]['flux'][i]; sys.stdout.flush()
 
-    return bigImage
+    if return_wcs_list:
+        return bigImage,wcs_list
+    else:
+        return bigImage
 
 
 def IsValidLine(line):
