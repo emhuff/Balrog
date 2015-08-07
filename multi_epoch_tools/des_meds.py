@@ -36,6 +36,7 @@ class MultiExposureObject(object):
     @param orig_start_cols
     @param cutout_rows
     @param cutout_cols
+    @param image_ids
 
     Attributes
     ----------
@@ -54,6 +55,7 @@ class MultiExposureObject(object):
     self.orig_start_cols
     self.cutout_rows
     self.cutout_cols
+    self.image_ids
 
     Module level variables
     ----------------------
@@ -65,7 +67,7 @@ class MultiExposureObject(object):
     """
 
     def __init__(self, images, weights=None, badpix=None, segs=None, wcs=None, id=0, number=0, orig_rows=None,
-                 orig_cols=None, orig_start_rows=None, orig_start_cols=None, cutout_rows=None, cutout_cols=None):
+                 orig_cols=None, orig_start_rows=None, orig_start_cols=None, cutout_rows=None, cutout_cols=None, image_ids=None):
 
         # assign the ID
         self.id = id
@@ -80,7 +82,7 @@ class MultiExposureObject(object):
         self.box_size = self.images[0].array.shape[0]
         self.n_cutouts = len(self.images)
 
-        for entry in ["orig_rows","orig_cols","orig_start_rows","orig_start_cols","cutout_rows","cutout_cols"]:
+        for entry in ["orig_rows","orig_cols","orig_start_rows","orig_start_cols","cutout_rows","cutout_cols","image_ids"]:
             if eval(entry) is None:
                 setattr(self,entry,[-1]*self.n_cutouts)
             else:
@@ -209,6 +211,7 @@ def write_meds(file_name, obj_list, clobber=True):
     cat['dudcol'] = []
     cat['dvdrow'] = []
     cat['dvdcol'] = []
+    cat['image_id'] = []
 
     # initialise the image vectors
     vec = {}
@@ -226,7 +229,7 @@ def write_meds(file_name, obj_list, clobber=True):
     for obj in obj_list:
 
         # initialise the start indices for each image
-        start_rows = numpy.ones(MAX_NCUTOUTS)*EMPTY_START_INDEX
+        start_row = numpy.ones(MAX_NCUTOUTS)*EMPTY_START_INDEX
         dudrow = numpy.ones(MAX_NCUTOUTS)*EMPTY_JAC_diag 
         dudcol = numpy.ones(MAX_NCUTOUTS)*EMPTY_JAC_offdiag
         dvdrow = numpy.ones(MAX_NCUTOUTS)*EMPTY_JAC_offdiag
@@ -237,6 +240,7 @@ def write_meds(file_name, obj_list, clobber=True):
         orig_start_col = numpy.ones(MAX_NCUTOUTS)*EMPTY_SHIFT
         cutout_row = numpy.ones(MAX_NCUTOUTS)*EMPTY_SHIFT
         cutout_col = numpy.ones(MAX_NCUTOUTS)*EMPTY_SHIFT
+        image_id = numpy.ones(MAX_NCUTOUTS)*-999
 
         # get the number of cutouts (exposures)
         n_cutout = obj.n_cutouts
@@ -248,11 +252,12 @@ def write_meds(file_name, obj_list, clobber=True):
 
         # loop over cutouts
         for i in range(n_cutout):
-
+            
             # assign the start row to the end of image vector
-            start_rows[i] = n_vec
+            start_row[i] = n_vec
             # update n_vec to point to the end of image vector
             n_vec += len(obj.images[i].array.flatten()) 
+
 
             # append the image vectors
             vec['image'].append(obj.images[i].array.flatten())
@@ -265,8 +270,13 @@ def write_meds(file_name, obj_list, clobber=True):
             dudcol[i] = obj.wcs[i].dudx
             dvdrow[i] = obj.wcs[i].dvdy
             dvdcol[i] = obj.wcs[i].dvdx
-            #row0[i]   = obj.wcs[i].origin.x
-            #col0[i]   = obj.wcs[i].origin.y
+            orig_row[i] = obj.orig_rows[i]
+            orig_col[i]= obj.orig_cols[i]
+            orig_start_row[i]= obj.orig_start_rows[i]
+            orig_start_col[i]= obj.orig_start_cols[i]
+            cutout_row[i]= obj.cutout_rows[i]
+            cutout_col[i]= obj.cutout_rows[i]
+            image_id[i]= obj.image_ids[i]
 
             # check if we are running out of memory
             if sys.getsizeof(vec) > MAX_MEMORY:
@@ -275,19 +285,20 @@ def write_meds(file_name, obj_list, clobber=True):
                     '- you can increase the limit by changing MAX_MEMORY')
 
         # update the start rows fields in the catalog
-        cat['start_row'].append(start_rows)
+        cat['start_row'].append(start_row)
 
         # add lists of Jacobians
         cat['dudrow'].append(dudrow)
         cat['dudcol'].append(dudcol)
         cat['dvdrow'].append(dvdrow)
         cat['dvdcol'].append(dvdcol)
-        cat['orig_row'].append(obj.orig_rows)
-        cat['orig_col'].append(obj.orig_cols)
-        cat['orig_start_row'].append(obj.orig_start_rows)
-        cat['orig_start_col'].append(obj.orig_start_cols)
-        cat['cutout_row'].append(obj.cutout_rows)
-        cat['cutout_col'].append(obj.cutout_cols)
+        cat['orig_row'].append(orig_row)
+        cat['orig_col'].append(orig_col)
+        cat['orig_start_row'].append(orig_start_row)
+        cat['orig_start_col'].append(orig_start_col)
+        cat['cutout_row'].append(cutout_row)
+        cat['cutout_col'].append(cutout_col)
+        cat['image_id'].append(image_id)
 
     # concatenate list to one big vector
     vec['image'] = numpy.concatenate(vec['image'])
@@ -297,13 +308,16 @@ def write_meds(file_name, obj_list, clobber=True):
     # get the primary HDU
     primary = pyfits.PrimaryHDU()
 
+    print "****************"
+    print cat['orig_row']
+
     # second hdu is the object_data
     cols = []
-    cols.append( pyfits.Column(name='ncutout', format='i4', array=cat['ncutout'] ) )
-    cols.append( pyfits.Column(name='id', format='i4', array=cat['id'] ) )
-    cols.append( pyfits.Column(name='box_size', format='i4', array=cat['box_size'] ) )
-    cols.append( pyfits.Column(name='file_id', format='i4', array=[1]*n_obj) )
-    cols.append( pyfits.Column(name='start_row', format='%dI' % MAX_NCUTOUTS,
+    cols.append( pyfits.Column(name='ncutout', format='I', array=cat['ncutout'] ) )
+    cols.append( pyfits.Column(name='id', format='K', array=cat['id'] ) )
+    cols.append( pyfits.Column(name='box_size', format='I', array=cat['box_size'] ) )
+    cols.append( pyfits.Column(name='file_id', format='I', array=[1]*n_obj) )
+    cols.append( pyfits.Column(name='start_row', format='%dJ' % MAX_NCUTOUTS,
                                array=numpy.array(cat['start_row'])) )
     cols.append( pyfits.Column(name='orig_row', format='%dD' % MAX_NCUTOUTS, array=numpy.array(cat['orig_row'])) )
     cols.append( pyfits.Column(name='orig_col', format='%dD' % MAX_NCUTOUTS, array=numpy.array(cat['orig_col'])) )
@@ -328,6 +342,7 @@ def write_meds(file_name, obj_list, clobber=True):
 
     # third hdu is image_info
     cols = []
+    cols.append( pyfits.Column(name='image_id', format='%dI' % MAX_NCUTOUTS, array=numpy.array(cat['image_id'])) )
     cols.append( pyfits.Column(name='image_path', format='A256',   array=['generated_by_galsim'] ) )
     cols.append( pyfits.Column(name='sky_path',   format='A256',   array=['generated_by_galsim'] ) )
     cols.append( pyfits.Column(name='seg_path',   format='A256',   array=['generated_by_galsim'] ) )
