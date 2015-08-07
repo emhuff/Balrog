@@ -14,7 +14,7 @@ import subprocess
 COADD_TABLE="Y1A1_COADD"
 query_template=Template("select $columns from $tables where $conditions")
 balrog_bin="/home/maccrann/code/Balrog/balrog.py"
-funpack_bin="/home/maccrann/code/cfitsio/funpack"
+funpack_bin="funpack"
 
 def funpack(fz_file):
     subprocess.call([funpack_bin,fz_file])
