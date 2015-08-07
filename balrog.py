@@ -283,8 +283,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             continue
 
         smallImage.setCenter(ix,iy)
-        if (smallImage.bounds.xmin<bigImage.bounds.xmin or smallImage.bounds.xmax>bigImage.bounds.xmax or 
-            smallImage.bounds.ymin<bigImage.bounds.ymin or smallImage.bounds.ymax>bigImage.bounds.ymax):
+        if (smallImage.bounds.xmax<bigImage.bounds.xmin or smallImage.bounds.xmin>bigImage.bounds.xmax or 
+            smallImage.bounds.ymax<bigImage.bounds.ymin or smallImage.bounds.ymin>bigImage.bounds.ymax):
             print 'object %d out of bounds'%i
             simulatedgals.galaxy['not_drawn'][i] = 1
             continue
