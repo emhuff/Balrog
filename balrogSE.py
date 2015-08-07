@@ -1,11 +1,10 @@
 from balrog import * #DefaultArgs, CreateSubDir, SetupLogger, RaiseException
-import pywcs
 import os
-import pyfits
+#import pyfits
 import argparse
 import sys
 import shutil
-import astropy.io.fits as astropyfits
+import astropy.io.fits as pyfits
 import multi_epoch_tools.coords as coords
 import multi_epoch_tools.file_tools as file_tools
 import multi_epoch_tools.des_meds as des_meds
@@ -25,11 +24,15 @@ class SEBalrogSetup(dict):
         #For now save single epoch images in copy of red directory
         imgdir=os.path.dirname(srclist_entry['red_image'])+"_balrog_image"
         img_path=srclist_entry['red_image']
+        sky_path=srclist_entry['red_bkg']
         if funpack:
             #funpack dat shit
             file_tools.funpack(srclist_entry['red_image'])
+            file_tools.funpack(srclist_entry['red_bkg'])
+            self['sky_path']=sky_path.strip(".fz")            
             img_path=img_path.strip(".fz")
             img_suffix=".fits"
+            self['skyext']=0
             self['imageext']=0
             self['weigtext']=1
         else:
@@ -42,10 +45,10 @@ class SEBalrogSetup(dict):
         if not os.path.isdir(imgdir):
             os.mkdir(imgdir)
         self['logdir']=os.path.dirname(srclist_entry['red_image'])+"_balrog_log"
-        self["logs"] = SetupLogger(known)
-        self.runlogger = self["logs"][0]
-        self.sexlogger = self["logs"][1]
-        self.arglogger = self["logs"][2]
+        #self["logs"] = SetupLogger(known)
+        #self.runlogger = self["logs"][0]
+        #self.sexlogger = self["logs"][1]
+        #self.arglogger = self["logs"][2]
 
         if not os.path.isdir(self['logdir']):
             os.mkdir(self['logdir'])
@@ -105,7 +108,6 @@ class SEBalrogSetup(dict):
         for key,val in self.iteritems():
             setattr(self,key,val)
 
-        print self.sexconfig, self.sexdir
         shutil.copy(self.sexconfig, self.sexdir)
         shutil.copy(self.sexparam, self.sexdir)
         shutil.copy(self.sexnnw, self.sexdir)
@@ -122,23 +124,21 @@ class SEBalrogSetup(dict):
         #Set keys as attributes:
         for key,val in self.iteritems():
             setattr(self,key,val)
-        print self.arglog
 
     def ReadImages(self):
         _,self.input_hdulist,_=galsim.fits.readFile(self.image)
-        print self.input_hdulist
         image = galsim.fits.read(hdu_list=self.input_hdulist,hdu=self.imageext)#,compression='rice')
         weight = galsim.fits.read(hdu_list=self.input_hdulist,hdu=self.weightext)#,compression='rice') 
         badpix = galsim.fits.read(hdu_list=self.input_hdulist,hdu=self.weightext+1)
+        sky = galsim.fits.read(file_name=self.sky_path, hdu=self.skyext)
         if self.scampheader is not None:
-            h=pyfits.Header()
-            h.fromTxtFile(self.scampheader)
+            #h=pyfits.Header()
+            #h.fromTxtFile(self.scampheader)
+            h=pyfits.Header.fromtextfile(self.scampheader)
             wcs=galsim.wcs.readFromFitsHeader(h)[0]
         else:
             wcs=image.wcs
-        print image.wcs
         image.wcs = wcs
-        print image.wcs
         weight.wcs = image.wcs
 
         subBounds = galsim.BoundsI(self.xmin,self.xmax,self.ymin,self.ymax)
@@ -146,10 +146,9 @@ class SEBalrogSetup(dict):
         weight = weight[subBounds]
         badpix = badpix[subBounds]
         psfmodel = galsim.des.DES_PSFEx(self.psf, wcs=wcs)
-        return image, weight, badpix, psfmodel, wcs
+        return image, weight, badpix, sky, psfmodel, wcs
 
     def WriteImages(self, image, nosim=False):
-        print 'nosim',nosim
         if nosim:
             imageout = self.nosim_imageout
         else:
@@ -157,9 +156,7 @@ class SEBalrogSetup(dict):
 
         #Replace image hdu data
         self.input_hdulist[self.imageext].data=np.zeros_like(image.array)
-        print self.input_hdulist
         #Write to imageout
-        print  imageout
         galsim.fits.writeFile(imageout,self.input_hdulist)
 
         if not self.psf_written:
@@ -281,8 +278,9 @@ class MedsInput(dict):
         self['orig_start_cols']=[]
         self['cutout_rows']=[]
         self['cutout_cols']=[]
+        self['image_ids']=[]
 
-    def add(self,image,weight,badpix,seg,wcs,orig_row,orig_col,orig_start_row,orig_start_col,cutout_row,cutout_col):
+    def add(self,image,weight,badpix,seg,wcs,orig_row,orig_col,orig_start_row,orig_start_col,cutout_row,cutout_col,image_id):
         self['images'].append(image)
         self['weights'].append(weight)
         self['badpixs'].append(badpix)
@@ -294,15 +292,16 @@ class MedsInput(dict):
         self['orig_start_cols'].append(orig_start_col)
         self['cutout_rows'].append(cutout_row)
         self['cutout_cols'].append(cutout_col)
+        self['image_ids'].append(image_id)
 
     def make_MEobj(self):
         return des_meds.MultiExposureObject(images=self['images'], weights=self['weights'], badpix=self['badpixs'], segs=self['segs'], 
                                             wcs=self['wcss'], id=self['id'], number=0, orig_rows=self['orig_rows'],
                                             orig_cols=self['orig_cols'], orig_start_rows=self['orig_start_rows'], 
                                             orig_start_cols=self['orig_start_cols'], cutout_rows=self['cutout_rows'], 
-                                            cutout_cols=self['cutout_cols'])
+                                            cutout_cols=self['cutout_cols'],image_ids=self['image_ids'])
 
-def get_stamp(image,x_pos,y_pos,stamp_size,offset=(0,0),scale=1.):
+def get_stamp_old(image,x_pos,y_pos,stamp_size,offset=(0,0),scale=1.):
     "Get postage stamp to run im3shape on"
     "Expects galsim image, SExtractor X_IMAGE,Y_IMAGE and stamp size as input"
     "Returns stamp, x0 and y0 - coordinates of object in stamp (starting from 0)"
@@ -314,10 +313,31 @@ def get_stamp(image,x_pos,y_pos,stamp_size,offset=(0,0),scale=1.):
     stamp = image[subBounds] * scale
     x0,y0 = x_pos - x_min, y_pos - y_min
     return stamp, x0, y0, subBounds
+
+def get_stamp(image,x_pos,y_pos,stamp_size,offset=(0,0),scale=1.,int_stamp=False):
+    "Get postage stamp to run im3shape on"
+    "Expects galsim image, SExtractor X_IMAGE,Y_IMAGE and stamp size as input"
+    "Returns stamp, x0 and y0 - coordinates of object in stamp (starting from 0)"
+    "and galsim bounds object"
+    half=stamp_size/2
+    x_center,y_center = int(x_pos+offset[0]),int(y_pos+offset[1])
+    x_min,x_max,y_min,y_max = int(x_pos+offset[0]-half),int(x_pos+offset[0]+half),int(y_pos+offset[1]-half),int(y_pos+offset[1]+half)
+    #over_edge = (x_min<0) | (y_min<0) | (x_max>image.array.shape[1]) | (y_max>image.array.shape[0])
+    subBounds = galsim.BoundsI(x_min,x_max-1,y_min,y_max-1)
+    if not int_stamp:
+        stamp = galsim.ImageD(stamp_size,stamp_size)
+    else:
+        stamp = galsim.ImageI(stamp_size,stamp_size)
+    stamp.setCenter(x_center,y_center)
+    bounds=stamp.bounds & image.bounds
+    stamp[bounds]=image[bounds] * scale
+    #stamp = image[subBounds] * scale
+    x0,y0 = x_pos - x_min, y_pos - y_min    
+    return stamp, x0, y0, subBounds
         
 def RunBalrog(parser, known):
 
-    boxsize=64
+    boxsize=96
     #First step is to read in the coadd and generate the truth catalog based on this:
 
     # Find the user's config file
@@ -330,7 +350,6 @@ def RunBalrog(parser, known):
     coadd=file_tools.setup_tile(known.tilename, band=known.band, sync=known.sync_coadd)
     coadd.funpack()
     known.coadd = coadd
-    #print coadd
 
     # Parse the command line arguments and interpret the user's settings for the simulation
     cmdline_opts, CoaddSetup = NativeParse(parser, known)
@@ -345,7 +364,7 @@ def RunBalrog(parser, known):
             meds_inputs.append(MedsInput(id=i))
 
     # Insert galaxies into coadd. For now just do one band. Next step would be to insert into all detection bands
-    print CoaddSetup
+    print "CoaddSetup", CoaddSetup
     bigImage, subWeight, psfmodel, wcs = ReadImages(CoaddSetup)
 
     if not CoaddSetup.imageonly:
@@ -365,13 +384,18 @@ def RunBalrog(parser, known):
         if catalog.galaxy['not_drawn'][i]:
             continue
         image_stamp,x0,y0,bounds=get_stamp(bigImage,x,y,boxsize)
-        print 'type(image)',type(image_stamp)
+        print image_stamp,x0,y0,bounds
+        print image_stamp.array
+        print image_stamp.array.shape
+        old=get_stamp_old(bigImage,x,y,boxsize)
+        print old
+        print old[0].array
+        print old[0].array.shape
         weight_stamp,_,_,_=get_stamp(subWeight,x,y,boxsize)
         seg_stamp=badpix_stamp=galsim.ImageI(np.zeros_like(image_stamp.array))
-        meds_inputs[i].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,wcs_list_coadd[i],y-1,x-1,bounds.ymin-1,bounds.xmin-1,y0,x0)
-        pylab.imshow(image_stamp.array,interpolation='nearest',origin='lower')
-        pylab.show()
-
+        meds_inputs[i].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,wcs_list_coadd[i],y-1,x-1,bounds.ymin-1,bounds.xmin-1,y0,x0,coadd['image_id'])
+        #pylab.imshow(image_stamp.array,interpolation='nearest',origin='lower')
+        #pylab.show()
 
     """
     else:
@@ -390,15 +414,21 @@ def RunBalrog(parser, known):
     LogDerivedOpts(cmdline_opts, CoaddSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
     """
     #Print out the runs needed to get all the single exposures for this tile
-    runs=[]
-    for s in coadd.srclist:
-        runs.append(s['run'])
-    print np.unique(runs)
-
+    runs=np.array([s['run'] for s in coadd.srclist])
+    expnames=np.array([s['expname'] for s in coadd.srclist])
+    exp_unique,inds_unique=np.unique(expnames,return_index=True)
+    print exp_unique,inds_unique
+    if known.sync_red:
+        for exp,run in zip(exp_unique,runs[inds_unique]):
+            subprocess.call(["/global/homes/m/maccrann/DES/balrog/des-sync-red",run,exp])
+    
     # get galaxy ra,dec
-    header=pyfits.getheader(coadd['image_url_funpacked'])
+    #header=pyfits.getheader(coadd['image_url_funpacked'])
     coadd_x,coadd_y=catalog.galaxy['x'],catalog.galaxy['y']
-    catalog.galaxy['ra'],catalog.galaxy['dec']=coords.get_wcoords(coadd_x,coadd_y,header)
+    catalog.galaxy['ra'],catalog.galaxy['dec']=coords.get_wcoords(coadd_x,coadd_y,wcs)
+    print 'galaxy world coordinates:',catalog.galaxy['ra'],catalog.galaxy['dec']
+
+
     """
     print 'coadd_x, coadd_y:', coadd_x,coadd_y
     print 'ra, dec:',catalog.galaxy['ra'],catalog.galaxy['dec']
@@ -407,22 +437,22 @@ def RunBalrog(parser, known):
     #If in meds mode, we also want to add image, weight etc. postage stamp to the appropriate lists, with which a
     #meds object will be created afterwards
     
-    for i,se_info in enumerate(coadd.srclist[0:15]):
-        print i,se_info
+    for i,se_info in enumerate(coadd.srclist):
+        print "***********************************"
+        print 'image %d info:'%i,se_info
         BalrogSetup=SEBalrogSetup(CoaddSetup,se_info)
-        print BalrogSetup['zeropoint']
+
         #print '**************************'
         #for key,val in BalrogSetup.iteritems():
         #    print key,val
 
         # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
-        bigImage, subWeight, badpix, psfmodel, wcs = BalrogSetup.ReadImages()
+        bigImage, subWeight, badpix, sky, psfmodel, wcs = BalrogSetup.ReadImages()
         #print bigImage.array.shape
-        bigImage=galsim.ImageD(np.zeros_like(bigImage.array))
         # Get x and y for this exposure
         x,y=coords.get_pcoords(catalog.galaxy['ra'],catalog.galaxy['dec'],wcs)
         catalog.galaxy['x'],catalog.galaxy['y']=x,y
-        print catalog.galaxy['x'],catalog.galaxy['y']
+        print "x,y:",catalog.galaxy['x'],catalog.galaxy['y']
         """
         if not BalrogSetup.imageonly:
             # If desired, run sextractor over the image prior to inserting any simulated galaxies.
@@ -432,26 +462,38 @@ def RunBalrog(parser, known):
         # Insert simulated galaxies.
         if not BalrogSetup.nodraw:
             bigImage,wcs_list = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog, return_wcs_list=True)
-            BalrogSetup.WriteImages(bigImage)
-            WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
+            #BalrogSetup.WriteImages(bigImage)
+            #WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
         else:
             BalrogSetup.WriteImages(bigImage, subWeight)
         
         #If making meds on the fly, need to get image, weight and badpix cutouts
         #First calculate scaling factor to set to magzp_ref
         scale=10**(0.4*(MAGZP_REF-se_info['magzp']))
+        #print 'zp scale',scale
         for i,(x,y) in enumerate(zip(catalog.galaxy['x'],catalog.galaxy['y'])):
-            print i
+            print "getting stamp for object %d"%i
             if catalog.galaxy['not_drawn'][i]:
                 continue
-            image_stamp,x0,y0,bounds=get_stamp(bigImage,x,y,boxsize,offset=(5,0),scale=scale)
-            print 'type(image)',type(image_stamp)
+            image_stamp,x0,y0,bounds=get_stamp(bigImage,x,y,boxsize)
+            print image_stamp.array.shape
             weight_stamp,_,_,_=get_stamp(subWeight,x,y,boxsize)
             badpix_stamp,_,_,_=get_stamp(badpix,x,y,boxsize)
+            sky_stamp,_,_,_=get_stamp(sky,x,y,boxsize)
+            #sky subtract, rescale image stamp and set badpix to zero
+            image_stamp-=sky_stamp
+            image_stamp*=scale
+            image_stamp_array=image_stamp.array
+            badpix_array=badpix_stamp.array
+            print badpix_array
+            #image_stamp_array[badpix_array!=0]=0.
+            image_stamp=galsim.ImageD(image_stamp_array)
             seg_stamp=galsim.ImageI(np.zeros_like(image_stamp.array))
-            meds_inputs[i].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,wcs_list[i],y-1,x-1,bounds.ymin-1,bounds.xmin-1,y0,x0)
-            pylab.imshow(image_stamp.array,interpolation='nearest',origin='lower')
-            pylab.show()
+            meds_inputs[i].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,wcs_list[i],y-1,x-1,
+                               bounds.ymin-1,bounds.xmin-1,y0,x0,se_info['id'])
+            #pylab.imshow(image_stamp.array,interpolation='nearest',origin='lower')
+            #pylab.colorbar()
+            #pylab.show()
 
 
         # If chosen, clean up image files you don't need anymore
@@ -461,13 +503,14 @@ def RunBalrog(parser, known):
         # Log some  extra stuff Balrog used along the way
         #LogDerivedOpts(cmdline_opts, BalrogSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
     MEobjs=[]
+    print "making meds"
     for i,meds_input in enumerate(meds_inputs):
         if len(meds_input['images'])<1: 
             print "no exposures for galaxy",i
             continue
         print "type(meds_input['images'][0])",type(meds_input['images'][0])
         MEobjs.append(meds_input.make_MEobj())
-        des_meds.write_meds('meds_test', MEobjs, clobber=True)
+    des_meds.write_meds('meds_test', MEobjs, clobber=True)
 
 
     '''
@@ -485,6 +528,7 @@ if __name__ == "__main__":
 
     #import resource
     parser = GetNativeOptions()
+    parser.add_argument('--sync_red',action='store_true',default=False)
     known = GetKnown(parser)
     print parser
     print known
