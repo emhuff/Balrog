@@ -1,5 +1,6 @@
 import numpy
 import galsim
+import os
 
 # these image stamp sizes are available in MEDS format
 BOX_SIZES = [32,48,64,96,128,192,256]
@@ -66,11 +67,16 @@ class MultiExposureObject(object):
     than MAX_NCUTOUTS (default 11).
     """
 
-    def __init__(self, images, weights=None, badpix=None, segs=None, wcs=None, id=0, number=0, orig_rows=None,
-                 orig_cols=None, orig_start_rows=None, orig_start_cols=None, cutout_rows=None, cutout_cols=None, image_ids=None):
-
+    def __init__(self, images, weights=None, badpix=None, segs=None, wcs=None, id=0, orig_rows=None,
+                 orig_cols=None, orig_start_rows=None, orig_start_cols=None, cutout_rows=None, cutout_cols=None, 
+                 file_ids=None, number=None):
+        
         # assign the ID
         self.id = id
+        if number==None:
+            self.number = id+1
+        else:
+            self.number = number
 
         # check if images is a list
         if not isinstance(images,list):
@@ -82,9 +88,9 @@ class MultiExposureObject(object):
         self.box_size = self.images[0].array.shape[0]
         self.n_cutouts = len(self.images)
 
-        for entry in ["orig_rows","orig_cols","orig_start_rows","orig_start_cols","cutout_rows","cutout_cols","image_ids"]:
+        for entry in ["orig_rows","orig_cols","orig_start_rows","orig_start_cols","cutout_rows","cutout_cols","file_ids"]:
             if eval(entry) is None:
-                setattr(self,entry,[-1]*self.n_cutouts)
+                setattr(self,entry,[-9999]*self.n_cutouts)
             else:
                 assert len(eval(entry))==self.n_cutouts
                 setattr(self,entry,eval(entry))
@@ -107,26 +113,8 @@ class MultiExposureObject(object):
         # check segmaps
         if segs != None:
             self.segs = segs
-            # I think eventually, the meds files will have some more sophisticated pixel map
-            # where the segmentation info and bad pixel info are separately coded.
-            # However, for now, we just set to 0 any bad pixels.
-            # (Not that GalSim has any mechanism yet for generating bad pixels, so this is
-            # usually a null op, but it's in place for when there is something to do.)
-            if badpix != None:
-                if len(self.segs) != len(badpix):
-                    raise ValueError("segs and badpix are different lengths")
-                for i in range(len(self.segs)):
-                    if (self.segs[i].array.shape != badpix[i].array.shape):
-                        raise ValueError("segs[%d] and badpix[%d] have different shapes."%(i,i))
-                    self.segs[i].array[:,:] &= (badpix[i].array == 0)
-        elif badpix != None:
-            self.segs = badpix
-            # Flip the sense of the bits 0 -> 1, other -> 0
-            # Again, this might need to become more sophisticated at some point...
-            for i in range(len(self.segs)):
-                self.segs[i].array[:,:] = (badpix[i].array == 0)
         else:
-            self.segs = [galsim.ImageI(self.box_size, self.box_size, init_value=1)]*self.n_cutouts
+            self.segs = [galsim.ImageI(self.box_size, self.box_size, init_value=self.number)]*self.n_cutouts
 
         # check wcs
         if wcs != None:
@@ -162,7 +150,7 @@ class MultiExposureObject(object):
                     raise ValueError('%s should be square and is %d x %d' % (extname,nx,ny))
 
                 # check if box size is correct
-                if nx != self.box_size:
+
                     raise ValueError('%s object %d has size %d and should be %d' % 
                             ( extname,icutout,nx,self.box_size ) )
 
@@ -179,7 +167,7 @@ class MultiExposureObject(object):
                 raise TypeError('wcs list should contain AffineTransform or LocalWCS objects')
             
 
-def write_meds(file_name, obj_list, clobber=True):
+def write_meds(file_name, obj_list, srclist=None, clobber=True):
     """
     @brief Writes the galaxy, weights, segmaps images to a MEDS file.
 
@@ -207,11 +195,12 @@ def write_meds(file_name, obj_list, clobber=True):
     cat['cutout_row']=[]
     cat['cutout_col']=[]
     cat['id'] = []
+    cat['number'] = []
     cat['dudrow'] = []
     cat['dudcol'] = []
     cat['dvdrow'] = []
     cat['dvdcol'] = []
-    cat['image_id'] = []
+    cat['file_id'] = []
 
     # initialise the image vectors
     vec = {}
@@ -240,7 +229,7 @@ def write_meds(file_name, obj_list, clobber=True):
         orig_start_col = numpy.ones(MAX_NCUTOUTS)*EMPTY_SHIFT
         cutout_row = numpy.ones(MAX_NCUTOUTS)*EMPTY_SHIFT
         cutout_col = numpy.ones(MAX_NCUTOUTS)*EMPTY_SHIFT
-        image_id = numpy.ones(MAX_NCUTOUTS)*-999
+        file_id = numpy.ones(MAX_NCUTOUTS)*-9999
 
         # get the number of cutouts (exposures)
         n_cutout = obj.n_cutouts
@@ -249,6 +238,7 @@ def write_meds(file_name, obj_list, clobber=True):
         cat['ncutout'].append(n_cutout)
         cat['box_size'].append(obj.box_size)
         cat['id'].append(obj.id)
+        cat['number'].append(obj.number)
 
         # loop over cutouts
         for i in range(n_cutout):
@@ -276,7 +266,7 @@ def write_meds(file_name, obj_list, clobber=True):
             orig_start_col[i]= obj.orig_start_cols[i]
             cutout_row[i]= obj.cutout_rows[i]
             cutout_col[i]= obj.cutout_rows[i]
-            image_id[i]= obj.image_ids[i]
+            file_id[i]= obj.file_ids[i]
 
             # check if we are running out of memory
             if sys.getsizeof(vec) > MAX_MEMORY:
@@ -298,7 +288,7 @@ def write_meds(file_name, obj_list, clobber=True):
         cat['orig_start_col'].append(orig_start_col)
         cat['cutout_row'].append(cutout_row)
         cat['cutout_col'].append(cutout_col)
-        cat['image_id'].append(image_id)
+        cat['file_id'].append(file_id)
 
     # concatenate list to one big vector
     vec['image'] = numpy.concatenate(vec['image'])
@@ -315,8 +305,9 @@ def write_meds(file_name, obj_list, clobber=True):
     cols = []
     cols.append( pyfits.Column(name='ncutout', format='I', array=cat['ncutout'] ) )
     cols.append( pyfits.Column(name='id', format='K', array=cat['id'] ) )
-    cols.append( pyfits.Column(name='box_size', format='I', array=cat['box_size'] ) )
-    cols.append( pyfits.Column(name='file_id', format='I', array=[1]*n_obj) )
+    cols.append( pyfits.Column(name='number', format='K', array=cat['number'] ) )
+    cols.append( pyfits.Column(name='box_size', format='J', array=cat['box_size'] ) )
+    cols.append( pyfits.Column(name='file_id', format='%dI' % MAX_NCUTOUTS, array=cat['file_id']) )
     cols.append( pyfits.Column(name='start_row', format='%dJ' % MAX_NCUTOUTS,
                                array=numpy.array(cat['start_row'])) )
     cols.append( pyfits.Column(name='orig_row', format='%dD' % MAX_NCUTOUTS, array=numpy.array(cat['orig_row'])) )
@@ -342,8 +333,14 @@ def write_meds(file_name, obj_list, clobber=True):
 
     # third hdu is image_info
     cols = []
-    cols.append( pyfits.Column(name='image_id', format='%dI' % MAX_NCUTOUTS, array=numpy.array(cat['image_id'])) )
-    cols.append( pyfits.Column(name='image_path', format='A256',   array=['generated_by_galsim'] ) )
+    if srclist is not None:
+        image_ids=[entry['id'] for entry in srclist]
+        image_paths=[entry['red_image'] for entry in srclist]
+        cols.append( pyfits.Column(name='image_id', format='J', array=numpy.array(image_ids)) )
+        cols.append( pyfits.Column(name='image_path', format='A256',   array=numpy.array(image_paths) ) )
+    else:
+        cols.append( pyfits.Column(name='image_id', format='I', array=numpy.array([0])))
+        cols.append( pyfits.Column(name='image_path', format='A256',   array= ['not_set']) )
     cols.append( pyfits.Column(name='sky_path',   format='A256',   array=['generated_by_galsim'] ) )
     cols.append( pyfits.Column(name='seg_path',   format='A256',   array=['generated_by_galsim'] ) )
     image_info = pyfits.new_table(pyfits.ColDefs(cols))
@@ -351,6 +348,7 @@ def write_meds(file_name, obj_list, clobber=True):
 
     # fourth hdu is metadata
     cols = []
+    cols.append( pyfits.Column(name='DESDATA',       format='A256', array=[os.environ['DESDATA']] ))
     cols.append( pyfits.Column(name='cat_file',      format='A256', array=['generated_by_galsim'] ))
     cols.append( pyfits.Column(name='coadd_file',    format='A256', array=['generated_by_galsim'] ))
     cols.append( pyfits.Column(name='coadd_hdu',     format='A1',   array=['x']                   ))
@@ -394,6 +392,7 @@ import galsim.config
 
 # Make this a valid output type:
 galsim.config.process.valid_output_types['des_meds'] = (
+
     'galsim.des.BuildMEDS',      # Function that builds the objects using config
     'galsim.des.GetNObjForMEDS', # Function that calculates the number of objects
     True,   # Takes nproc argument
@@ -469,4 +468,3 @@ def GetNObjForMEDS(config, file_num, image_num):
     # The MEDS file is considered to only have a single image, so the list has only 1 element.
     nobj = [ ntot ]
     return nobj
-
