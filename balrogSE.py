@@ -452,7 +452,6 @@ def RunBalrog(parser, known):
     #Loop through single epoch images, inserting galaxies
     #If in meds mode, we also want to add image, weight etc. postage stamp to the appropriate lists, with which a
     #meds object will be created afterwards
-    coadd.srclist=coadd.srclist[1:2]
     for i,se_info in enumerate(coadd.srclist):
         file_id=i+1
         print "***********************************"

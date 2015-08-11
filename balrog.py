@@ -275,7 +275,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         #smallImage = combinedObjConv.draw(scale=localscale)
 
         try:
-            smallImage = combinedObjConv.drawImage(wcs=local, use_true_center=False, offset=(dx,dy))
+            #Note 'no_pixel' since we're using PSFEx which already include the pixel convolution
+            smallImage = combinedObjConv.drawImage(wcs=local, use_true_center=False, offset=(dx,dy), method='no_pixel')
         except Exception as e:
             simulatedgals.galaxy['not_drawn'][i] = 1
             print "object %d failed draw() , error printed below:"%i, simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
