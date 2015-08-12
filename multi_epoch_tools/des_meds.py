@@ -265,7 +265,7 @@ def write_meds(file_name, obj_list, srclist=None, clobber=True):
             orig_start_row[i]= obj.orig_start_rows[i]
             orig_start_col[i]= obj.orig_start_cols[i]
             cutout_row[i]= obj.cutout_rows[i]
-            cutout_col[i]= obj.cutout_rows[i]
+            cutout_col[i]= obj.cutout_cols[i]
             file_id[i]= obj.file_ids[i]
 
             # check if we are running out of memory

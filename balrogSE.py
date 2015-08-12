@@ -136,6 +136,7 @@ class SEBalrogSetup(dict):
             #h.fromTxtFile(self.scampheader)
             h=pyfits.Header.fromtextfile(self.scampheader)
             wcs=galsim.wcs.readFromFitsHeader(h)[0]
+            print 'got wcs from scampheader'
         else:
             wcs=image.wcs
         image.wcs = wcs
@@ -312,7 +313,7 @@ def get_stamp_old(image,x_pos,y_pos,stamp_size,offset=(0,0),scale=1.):
     "Returns stamp, x0 and y0 - coordinates of object in stamp (starting from 0)"
     "and galsim bounds object"
     half=stamp_size/2
-    x_min,x_max,y_min,y_max = int(x_pos+offset[0]-half),int(x_pos++offset[0]+half),int(y_pos+offset[1]-half),int(y_pos+offset[1]+half)
+    x_min,x_max,y_min,y_max = int(x_pos+offset[0]-half),int(x_pos+offset[0]+half),int(y_pos+offset[1]-half),int(y_pos+offset[1]+half)
     #over_edge = (x_min<0) | (y_min<0) | (x_max>image.array.shape[1]) | (y_max>image.array.shape[0])
     subBounds = galsim.BoundsI(x_min,x_max-1,y_min,y_max-1)
     stamp = image[subBounds] * scale
@@ -325,8 +326,8 @@ def get_stamp(image,x_pos,y_pos,stamp_size,offset=(0,0),scale=1.,int_stamp=False
     "Returns stamp, x0 and y0 - coordinates of object in stamp (starting from 0)"
     "and galsim bounds object"
     half=stamp_size/2
-    x_center,y_center = int(x_pos+offset[0]),int(y_pos+offset[1])
-    x_min,x_max,y_min,y_max = int(x_pos+offset[0]-half),int(x_pos+offset[0]+half),int(y_pos+offset[1]-half),int(y_pos+offset[1]+half)
+    x_center,y_center = int(x_pos+0.5+offset[0]),int(y_pos+0.5+offset[1])
+    x_min,x_max,y_min,y_max = x_center-half,x_center+half,y_center-half,y_center+half
     out_of_bounds = (x_pos<image.bounds.xmin or x_pos>image.bounds.xmax or y_pos<image.bounds.ymin or y_pos>image.bounds.ymax)
     if out_of_bounds: raise OutOfBoundsError(0,0,x_pos,y_pos)
     subBounds = galsim.BoundsI(x_min,x_max-1,y_min,y_max-1)
@@ -389,9 +390,9 @@ def RunBalrog(parser, known):
     if not CoaddSetup.nodraw:
         bigImage,wcs_list_coadd = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, CoaddSetup, wcs, 
                                                     gspcatalog, return_wcs_list=True)
-        WriteImages(CoaddSetup, bigImage, subWeight)
+        #WriteImages(CoaddSetup, bigImage, subWeight)
         WriteCatalog(catalog, CoaddSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
-        RunSextractor(CoaddSetup, extra_sex_config, catalog)
+        #RunSextractor(CoaddSetup, extra_sex_config, catalog)
 
     #If making meds on the fly, need to get image, weight and badpix cutouts
     for i,(x,y) in enumerate(zip(catalog.galaxy['x'],catalog.galaxy['y'])):
@@ -452,6 +453,7 @@ def RunBalrog(parser, known):
     #Loop through single epoch images, inserting galaxies
     #If in meds mode, we also want to add image, weight etc. postage stamp to the appropriate lists, with which a
     #meds object will be created afterwards
+    coadd.srclist.sort(key=lambda x: x['red_cat'])
     for i,se_info in enumerate(coadd.srclist):
         file_id=i+1
         print "***********************************"
@@ -479,12 +481,13 @@ def RunBalrog(parser, known):
         """
         # Insert simulated galaxies.
         if not BalrogSetup.nodraw:
-            bigImage,wcs_list = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog, return_wcs_list=True)
+            bigImage, wcs_list = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog, return_wcs_list=True)
             #BalrogSetup.WriteImages(bigImage)
             #WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
         else:
             BalrogSetup.WriteImages(bigImage, weight)
-        
+
+        print wcs_list
         #If making meds on the fly, need to get image, weight and badpix cutouts
         #First calculate scaling factor to set to magzp_ref
         scale=10**(0.4*(MAGZP_REF-se_info['magzp']))
@@ -496,6 +499,7 @@ def RunBalrog(parser, known):
                 image_stamp,x0,y0,bounds=get_stamp(bigImage,x,y,box_size[i_obj])
             except OutOfBoundsError:
                 continue
+            print "i_obj,x,y,x0,y0:",i_obj,x,y,x0,y0            
             print "getting stamp for object %d"%i_obj
             weight_stamp,_,_,_=get_stamp(weight,x,y,box_size[i_obj])
             if known.no_noise:
@@ -516,6 +520,7 @@ def RunBalrog(parser, known):
             if (known.ncutout_max is None) or (len(meds_inputs[i_obj]['images'])<known.ncutout_max+1):
                 meds_inputs[i_obj].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,wcs_list[i_obj],y-1,x-1,
                                        bounds.ymin-1,bounds.xmin-1,y0,x0,file_id)
+            print meds_inputs[i_obj]
             #pylab.imshow(image_stamp.array,interpolation='nearest',origin='lower')
             #pylab.colorbar()
             #pylab.show()

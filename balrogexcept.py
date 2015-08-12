@@ -74,7 +74,6 @@ class BaseException(Exception):
     def __str__(self):
         return repr(self.msg)
 
-
 class OutdirWriteError(BaseException):
     def init(self, dir, fdir):
         self.msg = "ERROR code: %i. Attempting to create --outdir %s failed. Could not create %s" %(self.code,dir,fdir)
@@ -268,3 +267,7 @@ class TableAssignmentError(BaseException):
 class TableUnknownType(BaseException):
     def init(self, name):
         self.msg = 'ERROR code: %i. Cannot determine type of column %s when ngal=0. No contents of array to take type from.' %(self.code, name)
+
+class OutOfBoundsError(BaseException):
+    def init(self, ind, x_pos, y_pos):
+        self.msg = 'ERROR code: %i. Object %d with x,y=(%f,%f) outside image'%(self.code,ind,x_pos,y_pos)
