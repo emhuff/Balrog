@@ -43,7 +43,9 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
             unit = 'ADU'
         else:
             unit = 'dimensionless'
-        col = pyfits.Column(name=name, array=arr,format='E', unit=unit)
+
+        #col = pyfits.Column(name=name, array=arr,format='E', unit=unit)
+        col = pyfits.Column(name=name, array=arr,format='D', unit=unit)
         columns.append(col)
 
     if TruthCatExtra!=None:
