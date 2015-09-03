@@ -146,7 +146,6 @@ def CopyAssoc(BalrogSetup, outfile):
     mhdus.close() 
 
 
-
 def ReadImages(BalrogSetup):
     image = galsim.fits.read(BalrogSetup.image, hdu=BalrogSetup.imageext)
     weight = galsim.fits.read(BalrogSetup.weight, hdu=BalrogSetup.weightext)
@@ -207,7 +206,7 @@ def WritePsf(BalrogSetup, psfin, psfout):
 
 
 
-def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs, gspcatalog, return_wcs_list=False):
+def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs, gspcatalog, return_wcs_list=False, out_of_bounds_threshold=None):
     #psizes, athresh = simulatedgals.GetPSizes(BalrogSetup, wcs)
 
     t0 = datetime.datetime.now()
@@ -225,7 +224,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         wcs_list=[]
 
     for i in range(BalrogSetup.ngal):
-        print 'galaxy',i
+
         x = float(simulatedgals.galaxy['x'][i])
         y = float(simulatedgals.galaxy['y'][i])
 
@@ -247,8 +246,15 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         pos = galsim.PositionD(x, y)
         local = wcs.local(image_pos=pos)
-        wcs_list.append(local)
+        
+        if return_wcs_list:
+            wcs_list.append(local)
 
+        if out_of_bounds_threshold is not None:
+            if (x<bigImage.bounds.xmin-out_of_bounds_threshold or x>bigImage.bounds.xmax+out_of_bounds_threshold or 
+                y<bigImage.bounds.ymin-out_of_bounds_threshold or y>bigImage.bounds.ymax+out_of_bounds_threshold):
+                simulatedgals.galaxy['not_drawn'][i] = 1
+                continue
         try:
             combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
         except Exception as e:
@@ -257,8 +263,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             print e
             continue
 
-        ix = int(x)
-        iy = int(y)
+        ix = int(x+0.5)
+        iy = int(y+0.5)
    
         '''
         smallImage = galsim.Image(postageStampSize,postageStampSize)
@@ -276,7 +282,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         try:
             #Note 'no_pixel' since we're using PSFEx which already include the pixel convolution
-            smallImage = combinedObjConv.drawImage(wcs=local, use_true_center=False, offset=(dx,dy), method='no_pixel')
+            smallImage = combinedObjConv.drawImage(wcs=local, use_true_center=True, offset=(dx,dy), method='no_pixel')
         except Exception as e:
             simulatedgals.galaxy['not_drawn'][i] = 1
             print "object %d failed draw() , error printed below:"%i, simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
@@ -286,7 +292,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         smallImage.setCenter(ix,iy)
         if (smallImage.bounds.xmax<bigImage.bounds.xmin or smallImage.bounds.xmin>bigImage.bounds.xmax or 
             smallImage.bounds.ymax<bigImage.bounds.ymin or smallImage.bounds.ymin>bigImage.bounds.ymax):
-            print 'object %d out of bounds'%i
+            #print 'object %d out of bounds'%i
             simulatedgals.galaxy['not_drawn'][i] = 1
             continue
 
