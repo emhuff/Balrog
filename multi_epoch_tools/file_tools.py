@@ -127,9 +127,7 @@ class Coadd(desdb.files.Coadd):
 
 def tilename_to_id(conn,tilename,band):
     query=query_template.substitute(columns="id",tables=COADD_TABLE,conditions="tilename='%s' and band='%s'"%(tilename,band))
-    print query
     d=conn.quick(query)
-    print d
     return d[0]['id']
 
 def sync_coadd(run):
@@ -180,7 +178,6 @@ def main():
     tilename="DES0356-5331"   #One of the Y1A1 testbed tiles!
     band="i"
     c=setup_tile(tilename,band='i')
-    print len(c.srclist),c.srclist[0]
     #Run balrog on coadd...
     #c.call_balrog(o="coadd",pc="config_coadd.py")
     balrog_SE(c.srclist[0],o="se",pc="config.py")

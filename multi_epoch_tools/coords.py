@@ -11,10 +11,8 @@ def get_wcoords(x, y, header):
 def get_wcoords(xs, ys, wcs):
     wcoords=np.zeros((2,xs.shape[0]))
     for i,(x,y) in enumerate(zip(xs,ys)):
-        print type(x),type(y)
         im_pos=galsim.PositionD(np.float(x),np.float(y))
         wcoords_galsim=wcs.toWorld(im_pos)
-        print wcoords_galsim.ra,wcoords_galsim.dec
         wcoords[0,i],wcoords[1,i]=wcoords_galsim.ra/galsim.degrees,wcoords_galsim.dec/galsim.degrees
     return wcoords
 

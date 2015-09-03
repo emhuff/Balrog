@@ -16,6 +16,75 @@ EMPTY_JAC_diag    = 1
 EMPTY_JAC_offdiag = 0
 EMPTY_SHIFT = 0
 
+class MedsInput(dict):
+    def __init__(self,id=0):
+        self['id']=id
+        self['images']=[]
+        self['weights']=[]
+        self['badpixs']=[]
+        self['segs']=[]
+        self['wcss']=[]
+        self['orig_rows']=[]
+        self['orig_cols']=[]
+        self['orig_start_rows']=[]
+        self['orig_start_cols']=[]
+        self['cutout_rows']=[]
+        self['cutout_cols']=[]
+        self['file_ids']=[]
+
+    def add(self,image,weight,badpix,seg,wcs,orig_row,orig_col,orig_start_row,orig_start_col,cutout_row,cutout_col,file_id):
+        self['images'].append(image)
+        self['weights'].append(weight)
+        self['badpixs'].append(badpix)
+        self['segs'].append(seg)
+        self['wcss'].append(wcs)
+        self['orig_rows'].append(orig_row)
+        self['orig_cols'].append(orig_col)
+        self['orig_start_rows'].append(orig_start_row)
+        self['orig_start_cols'].append(orig_start_col)
+        self['cutout_rows'].append(cutout_row)
+        self['cutout_cols'].append(cutout_col)
+        self['file_ids'].append(file_id)
+
+    def add_SEObject(self, se):
+        self['images'].append(se.image)
+        self['weights'].append(se.weight)
+        self['badpixs'].append(se.badpix)
+        self['segs'].append(se.seg)
+        self['wcss'].append(se.wcs)
+        self['orig_rows'].append(se.orig_row)
+        self['orig_cols'].append(se.orig_col)
+        self['orig_start_rows'].append(se.orig_start_row)
+        self['orig_start_cols'].append(se.orig_start_col)
+        self['cutout_rows'].append(se.cutout_row)
+        self['cutout_cols'].append(se.cutout_col)
+        self['file_ids'].append(se.file_id)
+
+    def make_MEobj(self,dummy_segs=False):
+        if dummy_segs:
+            self['segs']=None
+        return MultiExposureObject(images=self['images'], weights=self['weights'], badpix=self['badpixs'], segs=self['segs'], 
+                                            wcs=self['wcss'], id=self['id'], orig_rows=self['orig_rows'],
+                                            orig_cols=self['orig_cols'], orig_start_rows=self['orig_start_rows'], 
+                                            orig_start_cols=self['orig_start_cols'], cutout_rows=self['cutout_rows'], 
+                                            cutout_cols=self['cutout_cols'],file_ids=self['file_ids'])
+
+class SEObject(object):
+    def __init__(self, image,weight,badpix,seg,wcs,orig_row,orig_col,orig_start_row,
+                 orig_start_col,cutout_row,cutout_col,file_id):
+        self.image=image
+        self.weight=weight
+        self.badpix=badpix
+        self.seg=seg
+        self.wcs=wcs
+        self.orig_row=orig_row
+        self.orig_col=orig_col
+        self.orig_start_row=orig_start_row
+        self.orig_start_col=orig_start_col
+        self.cutout_row=cutout_row
+        self.cutout_col=cutout_col
+        self.file_id=file_id
+
 class MultiExposureObject(object):
     """
     A class containing exposures for single object, along with other information.
@@ -162,7 +231,6 @@ class MultiExposureObject(object):
         # check each Jacobian
         for jac in self.wcs:
             # should ba an AffineTransform instance
-            print type(jac)
             if not (isinstance(jac, galsim.AffineTransform) or isinstance(jac, galsim.wcs.LocalWCS)):
                 raise TypeError('wcs list should contain AffineTransform or LocalWCS objects')
             
@@ -297,9 +365,6 @@ def write_meds(file_name, obj_list, srclist=None, clobber=True):
 
     # get the primary HDU
     primary = pyfits.PrimaryHDU()
-
-    print "****************"
-    print cat['orig_row']
 
     # second hdu is the object_data
     cols = []
