@@ -136,6 +136,7 @@ def sync_coadd(run):
     But can be more selective when optimizing all this."""
     subprocess.call(["./des-sync-coadd-nm",run]) #Gets the coadd images, catalogs and psf catalogs
     subprocess.call(["./des-sync-coadd-nm","-a",run]) #Gets the astro_refine headers too
+    subprocess.call(["./des-sync-coadd-nm","-q",run]) #Gets the segmaps
 
     
 def setup_tile(tilename,band='i',sync=False):
