@@ -71,7 +71,10 @@ class SEBalrogSetup(dict):
         self['detweight']=img_path
         self['assoc_nosimfile']=os.path.join(imgdir,img_basename.replace(img_suffix,'.assoc.nosim.txt'))
         self['psf']= img_path.replace(img_suffix,'_psfcat.psf')
-        self['gain'] = srclist_entry['gaina']
+        if not CoaddSetup.no_noise:
+            self['gain'] = srclist_entry['gaina']
+        else:
+            self['gain'] = None
         self['sexdir']= sexconfigdir
         self['scampheader']=srclist_entry['astro_refine']
         self['detimage']= self['image']
@@ -170,6 +173,11 @@ def SetupCoadd(args, log, known):
     args.detweightext = 1
     args.psf = known.coadd['psf_path']
     args.detpsf = args.psf
+
+    #Also set path to segmentation map
+    imgdir = os.path.dirname(known.coadd['image_url'])
+    imgbase = os.path.basename(known.coadd['image_url'])
+    args.seg = os.path.join(os.path.dirname(imgdir),'QA','segmap',imgbase.replace('.fits.fz','_seg.fits.fz'))
 
     attrs, ss, eattrs, ess, codes = get_check_array_ext(args)
     for attr,s, eattr,es, code in zip(attrs,ss, eattrs,ess, codes):
@@ -328,13 +336,26 @@ def CoaddRun(CoaddSetup):
     truth_data=catalog_to_table(catalog, CoaddSetup, TruthCatExtra=CoaddSetup.TruthCatExtra, extracatalog=extracatalog)
     RunSextractor(CoaddSetup, CoaddSetup.extra_sex_config, catalog)            
 
+    #Get new combined seg
+    seg, blended_with_orig=combined_seg(CoaddSetup)
+
     sex_data=astropy.table.Table(pyfits.getdata(CoaddSetup.catalogmeasured, CoaddSetup.catext))
     #replace vector_assoc with balrog_index
-    balrog_index=sex_data['VECTOR_ASSOC'][:,CoaddSetup.assocnames.index('balrog_index')].astype(int)
-    col=astropy.table.Column(balrog_index, name='balrog_index')
+    balrog_index_det=sex_data['VECTOR_ASSOC'][:,CoaddSetup.assocnames.index('balrog_index')].astype(int)
+    col=astropy.table.Column(balrog_index_det, name='balrog_index')
     sex_data.remove_column('VECTOR_ASSOC')
     sex_data.add_column(col)
     CoaddSetup.runlogger.info("Saved images and ran SExtractor")
+
+    #Make new column specifying whether object is blended with original object (using seg map)
+    blended_with_orig=list(blended_with_orig)
+    new_sex_ids=np.array(sex_data['NUMBER'])
+    col_data=np.zeros_like(new_sex_ids)
+    for i,new_id in enumerate(new_sex_ids):
+        if new_id in blended_with_orig:
+            col_data[i]=1        
+    blended_with_orig_col=astropy.table.Column(col_data, name='blended_with_orig')
+    sex_data.add_column(blended_with_orig_col)
 
     #Set boxsize to be same for all objects for now
     try: 
@@ -344,8 +365,18 @@ def CoaddRun(CoaddSetup):
     catalog.galaxy['box_size']=box_size
 
     #If making meds on the fly, need to get image, weight and badpix cutouts
+    #Also need to give each meds entry the correct 'number' - this the SExtractor object number,
+    #and should correspond to the value of the detection pixels in the seg map
+    balrog_index_list=list(balrog_index_det)
+    sex_numbers=np.array(sex_data['NUMBER'].astype(int))
     if not CoaddSetup.no_meds:
         for i,(x,y) in enumerate(zip(catalog.galaxy['x'],catalog.galaxy['y'])):
+            try:
+                sex_cat_ind=balrog_index_list.index(catalog.galaxy['balrog_index'][i])
+                number=sex_numbers[sex_cat_ind]
+            except ValueError:
+                number=0
+            meds_inputs[i]['number']=number
             if catalog.galaxy['not_drawn'][i]:
                 continue
             try:
@@ -353,7 +384,8 @@ def CoaddRun(CoaddSetup):
             except OutOfBoundsError:
                 continue
             weight_stamp,_,_,_=get_stamp(CoaddSetup.subWeight,x,y,box_size[i])
-            seg_stamp=badpix_stamp=galsim.ImageI(np.zeros_like(image_stamp.array))
+            seg_stamp,_,_,_=get_stamp(seg,x,y,box_size[i])
+            badpix_stamp=galsim.ImageI(np.zeros_like(image_stamp.array))
             meds_inputs[i].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,wcs_list_coadd[i],y-1,x-1,bounds.ymin-1,bounds.xmin-1,y0,x0,0)
 
     coadd_not_drawn=np.copy(catalog.galaxy['not_drawn'])
@@ -368,6 +400,35 @@ def CoaddRun(CoaddSetup):
     CoaddSetup.runlogger.info("Copied output files to sim dir")
     
     return catalog, sex_data, truth_data, meds_inputs, gspcatalog
+
+def combined_seg(BalrogSetup):
+    """We normally run SExtractor in association mode on image simulated with balrog
+    The downside to this is that the segmentation map produced does not inculde any of
+    the objects in the original image. So combine the original seg map with the new one,
+    by setting all pixels in the new seg map to -1, if there is an object detected there
+    in the original seg map. If a pixel in the new seg map had a detection in the old seg map
+    do not set to -1, but create a new blended_with_orig flag
+
+    returns:
+    seg - new combiend seg map
+    blended_with_orig - list of simulated object ids which are blended with old objects
+    """
+    #Read original seg map
+    seg=galsim.fits.read(BalrogSetup.seg,hdu=1)
+    #Read new seg map
+    seg_new=galsim.fits.read(BalrogSetup.extra_sex_config['CHECKIMAGE_NAME'])
+    assert seg.array.shape==seg_new.array.shape
+    new_obj_ids=np.unique(seg_new.array)
+    #First find new objects which are blended with old ones
+    blended_with_orig_pixels=(seg_new.array>0)*(seg.array>0)
+    blended_with_orig=np.unique(seg_new.array[blended_with_orig_pixels]) #list of new ids which are blended with original objects
+
+    #Start with original seg map, setting all detections to -1
+    seg.array[seg.array>0]=-1
+    #Then simply overwrite pixels where there are new detections
+    seg.array[seg_new.array>0]=seg_new.array[seg_new.array>0]
+    return seg, blended_with_orig
+
 
 def SERun(catalog, se_info, BalrogSetup):
 
@@ -455,8 +516,9 @@ def Run(parser,known, comm=None):
     CoaddSetup.rules, CoaddSetup.extra_sex_config, CoaddSetup.cmdline_opts_copy, CoaddSetup.TruthCatExtra = CustomParse(cmdline_opts, CoaddSetup, config)
 
     # Add sex options to save seg mask
+    CoaddSetup.segout=CoaddSetup.imageout.replace('.fits','_seg.fits')
     CoaddSetup.extra_sex_config['CHECKIMAGE_TYPE']='SEGMENTATION'
-    CoaddSetup.extra_sex_config['CHECKIMAGE_NAME']=CoaddSetup.imageout.replace('.fits','_seg.fits')
+    CoaddSetup.extra_sex_config['CHECKIMAGE_NAME']=CoaddSetup.segout
 
     #Calculate how many coadd sims each process has to do. If none, set idle to True
     idle=False
@@ -594,7 +656,7 @@ def Run(parser,known, comm=None):
                 if not_drawn[i]:
                     print 'object %d not drawn in coadd, skipping'%i
                     continue
-                MEobjs.append(meds_input.make_MEobj(dummy_segs=True))
+                MEobjs.append(meds_input.make_MEobj(dummy_segs=False))
             #append coadd info to srclist
             meds_name=os.path.join(known.parent_output,"%s-%s-meds.%d.fits")%(known.tilename,known.band,i_sim)
             des_meds.write_meds(meds_name, MEobjs, srclist=srclist, clobber=True)
