@@ -307,8 +307,8 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         if np.sum(cut > 0):
             print 'nan in smallImage'
         '''
-
-        smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(micro)))
+        if BalrogSetup.gain is not None:
+            smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(micro)))
         flux_noised = np.sum(smallImage.array.flatten())
         simulatedgals.galaxy['flux_noised'][i] = flux_noised
 
@@ -553,6 +553,8 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
 
 def Cleanup(BalrogSetup):
     files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout]
+    if hasattr(BalrogSetup, 'segout'):
+        files.append(BalrogSetup.segout)
     for file in files:
         if os.path.lexists(file):
             #subprocess.call(['rm',file])
