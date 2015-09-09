@@ -1,0 +1,118 @@
+#!/bin/bash
+# Download DES coadd files. 
+#
+# Use -h to see usage and documentation.
+#
+# Author
+#   Erin Sheldon, Brookhaven National Laboratory
+# Changes
+#   2013-06-19:
+#       option to give project       
+#   2013-01-13:
+#       login and password should be stored in ~/.netrc
+#
+#           machine {host} login {login} password {password}
+#   
+#
+
+function usage_and_exit {
+    echo "
+Usage 
+        des-wget-coadd run
+
+Description
+
+        Download images and catalogs for the input run, optionally
+        limiting to a particular exposure
+
+            \$DESDATA/\${project}/coadd/\${run}/\${subdir}/
+        
+        where \$DESDATA is an environment variable pointing to the base of your
+        DES data area.  You should set \$DESREMOTE is the url of the server.
+
+        The default project is OPS.
+
+        The default subdirectory is red.  Send -q to pull the QA/segmap
+        directory, which holds the seg maps and bleed files.
+"
+    exit 1
+}
+
+if [[ ${DESDATA:+1} == "" ]]; then
+    echo "set DESDATA environment variable"
+    exit 1
+fi
+if [[ ${DESREMOTE:+1} == "" ]]; then
+    echo "set DESREMOTE environment variable"
+    exit 1
+fi
+
+
+project="OPS"
+subdir="coadd"
+cut_dirs=6
+
+while getopts "qp:a" Option
+  do
+  case $Option in
+      p) project=$OPTARG ;;
+      q) subdir="QA/segmap"
+         cut_dirs=7 ;;      
+      a) subdir="QA/coadd_astrorefine_head"
+         cut_dirs=7 ;;
+      [?]) usage_and_exit ;;  
+  esac
+done
+shift $(($OPTIND - 1))
+
+echo subdir $subdir
+
+if [[ $# -lt 1 ]]; then
+    usage_and_exit
+fi
+
+run="$1"
+
+local_url="${DESDATA}/${project}/coadd/${run}/${subdir}"
+remote_url="${DESREMOTE}/${project}/coadd/${run}/${subdir}"
+
+reject="*.log"
+
+echo "
+    run:     $run
+    remote:  $remote_url
+    local:   $local_url
+"
+
+if [[ ! -e $local_url ]]; then
+    echo "making dir: $local_url"
+    mkdir -p "$local_url"
+    if [[ $? != "0" ]]; then
+        echo "failed to make dir, exiting"
+        exit 1
+    fi
+fi
+
+echo "chdir to dir $local_url"
+cd "$local_url"
+if [[ "$?" != "0" ]]; then
+    echo "Failed to chdir to: $local_url"
+    exit 1
+fi
+
+# No following slash on URL or it won't work!
+# -c means continue downloading, as opposed to name.1 business
+# -nH no host directories
+# use -nv for non-verbose 
+#    --progress=dot:mega     \
+wget                        \
+    --no-check-certificate  \
+    -c                      \
+    -N                      \
+    --mirror                \
+    -nH                     \
+    --cut-dirs=$cut_dirs    \
+    --no-parent             \
+    --tries 50              \
+    --reject "$reject"      \
+    "$remote_url/"
