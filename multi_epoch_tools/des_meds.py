@@ -31,6 +31,7 @@ class MedsInput(dict):
         self['cutout_rows']=[]
         self['cutout_cols']=[]
         self['file_ids']=[]
+        self['number']=None
 
     def add(self,image,weight,badpix,seg,wcs,orig_row,orig_col,orig_start_row,orig_start_col,cutout_row,cutout_col,file_id):
         self['images'].append(image)
@@ -63,11 +64,12 @@ class MedsInput(dict):
     def make_MEobj(self,dummy_segs=False):
         if dummy_segs:
             self['segs']=None
-        return MultiExposureObject(images=self['images'], weights=self['weights'], badpix=self['badpixs'], segs=self['segs'], 
-                                            wcs=self['wcss'], id=self['id'], orig_rows=self['orig_rows'],
-                                            orig_cols=self['orig_cols'], orig_start_rows=self['orig_start_rows'], 
-                                            orig_start_cols=self['orig_start_cols'], cutout_rows=self['cutout_rows'], 
-                                            cutout_cols=self['cutout_cols'],file_ids=self['file_ids'])
+        return MultiExposureObject(images=self['images'], weights=self['weights'], badpix=self['badpixs'], 
+                                   segs=self['segs'], 
+                                   wcs=self['wcss'], id=self['id'], orig_rows=self['orig_rows'],
+                                   orig_cols=self['orig_cols'], orig_start_rows=self['orig_start_rows'], 
+                                   orig_start_cols=self['orig_start_cols'], cutout_rows=self['cutout_rows'], 
+                                   cutout_cols=self['cutout_cols'],file_ids=self['file_ids'],number=self['number'])
 
 class SEObject(object):
     def __init__(self, image,weight,badpix,seg,wcs,orig_row,orig_col,orig_start_row,
@@ -182,6 +184,9 @@ class MultiExposureObject(object):
         # check segmaps
         if segs != None:
             self.segs = segs
+            for i,seg in enumerate(self.segs):
+                if seg is None:
+                    segs[i]=galsim.ImageI(self.box_size, self.box_size, init_value=self.number)
         else:
             self.segs = [galsim.ImageI(self.box_size, self.box_size, init_value=self.number)]*self.n_cutouts
 
@@ -408,6 +413,8 @@ def write_meds(file_name, obj_list, srclist=None, clobber=True):
         cols.append( pyfits.Column(name='image_path', format='A256',   array= ['not_set']) )
     cols.append( pyfits.Column(name='sky_path',   format='A256',   array=['generated_by_galsim'] ) )
     cols.append( pyfits.Column(name='seg_path',   format='A256',   array=['generated_by_galsim'] ) )
+    #Set image flags to zero for now.
+    cols.append( pyfits.Column(name='image_flags', format='J', array=numpy.zeros(len(srclist)) ) )
     image_info = pyfits.new_table(pyfits.ColDefs(cols))
     image_info.update_ext_name('image_info')
 
