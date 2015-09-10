@@ -1,3 +1,15 @@
 * The doc/ directory has a PDF file. All the documenation is there.
 * If you're in DES, you can check out our wiki page: https://cdcvs.fnal.gov/redmine/projects/deswlwg/wiki/Balrog.
 * Some utils for Balrog, used in DES, but possibly useful otherwise too: https://github.com/suchyta1/BalrogUtils.
+
+##To make a meds file with balrogSE.py##
+
+- First you need the data. Use Balrog/sync_tile.py (python sync_tile.py <tilename> <band> <mode>) with mode=all to get all
+the required data for a given tile. This wraps some of esheldon's desdb binaries, so make sure you have 
+<path-to>/desdb/desdb/bin in your $PATH. You'll also need to set the environment variables DESDATA (local root directory for DES
+data), DESREMOTE (root directory DESDM), and DESPROJ (=OPS).
+
+- Try running balrogSE.py. Required arguments are <tilename> (e.g. DES0346-5331 for a Y1 testbed tile) and an output directory.
+Use the config file 'config_y1.py' (-pc <path-to>/Balrog/config_y1.py). By default it assumes you have the CMC morphology catalog 
+'CMC_allband_upsample.fits' in your Balrog directory, you can use the 'cosmos.fits' that comes with Balrog instead using the -cs 
+option as usual.
