@@ -666,15 +666,14 @@ def Run(parser,known, comm=None):
             
 def TileArgs(parser):
     parser.add_argument("tilename",type=str)
+    parser.add_argument("parent_output",type=str,help="the output directory (each simulation will be saved to a different directory within this one")
     parser.add_argument("--no_mpi", default=False, action='store_true', help="run on single core")
     parser.add_argument("--band",type=str,default='i')
     parser.add_argument("--coadd_nproc",type=int,default=None,
                         help='limit the coadd part (more memory intensive??) to this many processes')
     parser.add_argument("--no_meds",action='store_true',default=False)
     parser.add_argument("--no_noise",action='store_true',default=False,help="make 'noiseless' images i.e. set background image to zero everywhere")
-    parser.add_argument("--ncutout_max",type=int,default=None,help="limit meds to this number of cutouts per object...for testing")
     parser.add_argument("--n_sims",type=int,default=1, help="number of simulations (of same tile)")
-    parser.add_argument("--parent_output",type=str,default="det_output")
 
 def main(parser, known):
 
