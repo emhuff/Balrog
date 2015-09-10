@@ -11,5 +11,4 @@ data), DESREMOTE (root directory DESDM), and DESPROJ (=OPS).
 
 - Try running balrogSE.py. Required arguments are <tilename> (e.g. DES0346-5331 for a Y1 testbed tile) and an output directory.
 Use the config file 'config_y1.py' (-pc <path-to>/Balrog/config_y1.py). By default it assumes you have the CMC morphology catalog 
-'CMC_allband_upsample.fits' in your Balrog directory, you can use the 'cosmos.fits' that comes with Balrog instead using the -cs 
-option as usual.
+'CMC_allband_upsample.fits' in your Balrog directory.
