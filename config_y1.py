@@ -16,6 +16,9 @@ def CustomArgs(parser):
                          type=str, default=os.path.join(thisdir,"CMC_allband_upsample.fits"))
     parser.add_argument( "-ext", "--ext", help="Index of the data extension for sampling catalog", type=int, default=1)
     parser.add_argument( "-mag", "--mag", help="Column name when drawing magnitude from catalog", type=str, default=None)
+    parser.add_argument( "-hlr", "--hlr", help="Column name when drawing half-light radius from catalog", type=str, default="halflightradius")
+    parser.add_argument( "--sersic", help="Column name when drawing half-light radius from catalog", type=str, default="sersicindex")
+    parser.add_argument( "-ax","--axisratio", help="Column name when drawing axis-ratio from catalog", type=str, default="axisratio")
 
 
 def CustomParseArgs(args):
@@ -33,11 +36,11 @@ def SimulationRules(args, rules, sampled, TruthCat):
     
     # Being precise, halflightradius is along the major axis
     tab = Table(file=args.catalog, ext=args.ext)
-    rules.halflightradius = tab.Column("halflightradius")
+    rules.halflightradius = tab.Column(args.hlr)
     rules.magnitude = tab.Column(args.mag)
-    rules.sersicindex = 1. #tab.Column("sersicindex")
+    rules.sersicindex = tab.Column(args.sersic)
     rules.beta = Function(function=rand, args=[0., 360., args.ngal])
-    rules.axisratio = tab.Column("axisratio")
+    rules.axisratio = tab.Column(args.axisratio)
 
 ### Adjust the galsim GSParams
 def GalsimParams(args, gsparams, galaxies):

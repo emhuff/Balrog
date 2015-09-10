@@ -10,11 +10,13 @@ import desdb
 import numpy as np
 from string import Template
 import subprocess
+import os
 
 COADD_TABLE="Y1A1_COADD"
 query_template=Template("select $columns from $tables where $conditions")
 balrog_bin="/home/maccrann/code/Balrog/balrog.py"
 funpack_bin="funpack"
+this_dir=os.path.dirname(os.path.realpath(__file__))
 
 def funpack(fz_file):
     subprocess.call([funpack_bin,fz_file])
@@ -134,9 +136,10 @@ def sync_coadd(run):
     """Use desdb des-sync-coadd to sync coadd stuff
     This actually syncs all the bands and all the astro_refine headers which is overkill really...
     But can be more selective when optimizing all this."""
-    subprocess.call(["./des-sync-coadd-nm",run]) #Gets the coadd images, catalogs and psf catalogs
-    subprocess.call(["./des-sync-coadd-nm","-a",run]) #Gets the astro_refine headers too
-    subprocess.call(["./des-sync-coadd-nm","-q",run]) #Gets the segmaps
+    sync_bin=os.path.join(this_dir,"des-sync-coadd-nm")
+    subprocess.call([sync_bin,run]) #Gets the coadd images, catalogs and psf catalogs
+    subprocess.call([sync_bin,"-a",run]) #Gets the astro_refine headers too
+    subprocess.call([sync_bin,"-q",run]) #Gets the segmaps
 
     
 def setup_tile(tilename,band='i',sync=False):
@@ -155,34 +158,3 @@ def setup_tile(tilename,band='i',sync=False):
     #Set psf path
     c.load_psf_path()
     return c
-
-def balrog_SE(srclist_entry,**kwargs):
-    balrog_args=['-ie','0','-we','1','-ft','-n','5']
-    subprocess.call([funpack_bin,srclist_entry['red_image']])
-    srclist_entry['red_image_funpacked']=(srclist_entry['red_image']).rsplit('.',1)[0]
-    balrog_args+=['-i',srclist_entry['red_image_funpacked']]
-    balrog_args+=['-w',srclist_entry['red_image_funpacked']]
-    balrog_args+=['-p',srclist_entry['red_image'].replace(".fits.fz","_psfcat.psf")]
-    balrog_args+=['-sh',srclist_entry['astro_refine']]
-    
-    for key,value in kwargs.iteritems():
-        if type(value)==bool:
-            balrog_args.append("-%s"%key)
-        else:
-            balrog_args+=["-%s"%key,value]
-    subprocess_args=[balrog_bin]+balrog_args
-    print subprocess_args
-    subprocess.call(subprocess_args)
-
-def main():
-
-    tilename="DES0356-5331"   #One of the Y1A1 testbed tiles!
-    band="i"
-    c=setup_tile(tilename,band='i')
-    #Run balrog on coadd...
-    #c.call_balrog(o="coadd",pc="config_coadd.py")
-    balrog_SE(c.srclist[0],o="se",pc="config.py")
-
-if __name__=="__main__":
-    main()
-    
