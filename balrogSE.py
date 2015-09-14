@@ -18,9 +18,17 @@ BALROG_DESDATA="/home/maccrann/balrog_desdata"
 
 class SEBalrogSetup(dict):
     def __init__(self,CoaddSetup,srclist_entry,funpack=True):
+        #Use same logging files as CoaddSetup        
         #for now copy all coadd settings to get defaults
-        for key in CoaddSetup.keys():
-            self[key]=CoaddSetup[key]
+        #for key in CoaddSetup.keys():
+        #    self[key]=CoaddSetup[key]
+        #self.logdir=CoaddSetup.logdir
+        #self.logs=SetupLogger(self,mode='a')
+        self.runlogger = CoaddSetup.runlogger
+        self.sexlogger = CoaddSetup.sexlogger
+        self.arglogger = CoaddSetup.arglogger
+        self.gspcatalog = CoaddSetup.gspcatalog
+        self.ngal = CoaddSetup.ngal
 
         #Now overwrite the relevant ones
         img_path=srclist_entry['red_image']
@@ -82,14 +90,16 @@ class SEBalrogSetup(dict):
         self['nosim_detimageout']= self['image']
         self['nosim_catalogmeasured']=os.path.join(imgdir,img_basename.replace(img_suffix,'.measuredcat.nosim.fits'))
         self['nosim_imageout']=os.path.join(imgdir,img_basename.replace(img_suffix,'.nosim.fits'))
+        self['xmin']=1
+        self['ymin']=1
         self['xmax']=pyfits.open(self['image'])[self['imageext']].header['NAXIS1']
         self['ymax']=pyfits.open(self['image'])[self['imageext']].header['NAXIS2']
         for key,val in self.iteritems():
             setattr(self,key,val)
-        if self['catfitstype']=='FITS_LDAC':
-            self['catext'] = 2
-        elif self['catfitstype']=='FITS_1.0':
-            self['catext'] = 1
+        #if self['catfitstype']=='FITS_LDAC':
+        #    self['catext'] = 2
+        #elif self['catfitstype']=='FITS_1.0':
+        #    self['catext'] = 1
 
         #Set keys as attributes:
         for key,val in self.iteritems():
@@ -502,6 +512,12 @@ def Run(parser,known, comm=None):
     # Add the user's command line options
     AddCustomOptions(parser, config, known.logs[0])
 
+    if known.pickle_seobjects:
+        known.se_obj_dir=os.path.join(known.parent_output,'se_objects')
+        import pickle
+        if rank==0:
+            os.mkdir(known.se_obj_dir)
+
     #Setup coadd object to get coadd path etc.
     coadd=file_tools.setup_tile(known.tilename, band=known.band, sync=False)
     known.coadd = coadd
@@ -593,7 +609,7 @@ def Run(parser,known, comm=None):
     coadd_not_drawn_allsims = [np.copy(c.galaxy['not_drawn']) for c in catalogs_allsims]
     #Also send gspcatalog (galsim parameters)
     gspcatalog = comm.bcast(gspcatalog, root=0)
-    CoaddSetup['gspcatalog']=gspcatalog
+    CoaddSetup.gspcatalog = gspcatalog
 
     #Now split se images across available processes - the idea is that each process gets a 
     #certain number of single-epoch images, and then for each image, loops through all the 
@@ -628,8 +644,18 @@ def Run(parser,known, comm=None):
             BalrogSetup.runlogger.info('%d objects in image %s'%(len(sim_se_objects),se_info['red_image']))
             for s in sim_se_objects:
                 local_se_objects.append((i_sim, s[0], s[1]))
+            if known.pickle_seobjects and rank!=0:
+                se_filename=os.path.join(known.se_obj_dir,'se_objects.rank.%d'%rank)
+                with open(se_filename, 'wb') as f:
+                    pickle.dump(local_se_objects, f)
+                            
         Cleanup(BalrogSetup)
-
+    if rank != 0:
+        if known.pickle_seobjects:
+            comm.send(se_filename)
+        else:
+            comm.send(local_se_objects)
+            
     #Again, rank 0 collects outputs - in this case single-epoch objects to be added to multi-epoch objects, which
     #are then added to meds file.
     if rank==0:
@@ -638,31 +664,53 @@ def Run(parser,known, comm=None):
         BalrogSetup.runlogger.info('rank, # of objects')
         BalrogSetup.runlogger.info('0, %d'%len(se_objects))
         for i in range(1,size):
-            se_objects += comm.recv(source=i)
+            if known.pickle_seobjects:
+                se_filename_rank = comm.recv(source=i)
+                se_obj_list=pickle.load( open(se_filename_rank, 'rb') )
+                se_objects += se_obj_list
+                os.remove(se_filename_rank)
+            else:
+                se_objects += comm.recv(source=i)
             BalrogSetup.runlogger.info('%d, %d'%(i,len(se_objects)))
         for se_obj in se_objects:
             i_sim,i_obj=se_obj[0],se_obj[1]
             meds_inputs_allsims[i_sim][i_obj].add_SEObject(se_obj[2])
-
+        
+        #prepend coadd info to source list
         srclist=[{'id':coadd['image_id'], 'red_image':coadd['image_url']}]+coadd.srclist
-
-        for i_sim,meds_inputs in enumerate(meds_inputs_allsims):
+        
+        if not known.single_meds:
+            for i_sim,meds_inputs in enumerate(meds_inputs_allsims):
+                MEobjs=[]
+                not_drawn=coadd_not_drawn_allsims[i_sim]
+                for i,meds_input in enumerate(meds_inputs):
+                    if len(meds_input['images'])<1: 
+                        BalrogSetup.runlogger.info("no exposures for galaxy",i)
+                        continue
+                    if not_drawn[i]:
+                        print 'object %d not drawn in coadd, skipping'%i
+                        continue
+                    MEobjs.append(meds_input.make_MEobj(dummy_segs=False))
+                meds_name=os.path.join(known.parent_output,"%s-%s-meds.%d.fits")%(known.tilename,known.band,i_sim)
+                des_meds.write_meds(meds_name, MEobjs, srclist=srclist, clobber=True)
+                BalrogSetup.runlogger.info("wrote %d objects to meds file %s"%(len(meds_inputs),meds_name))
+        
+        else:
             MEobjs=[]
-            not_drawn=coadd_not_drawn_allsims[i_sim]
-            for i,meds_input in enumerate(meds_inputs):
-                if len(meds_input['images'])<1: 
-                    BalrogSetup.runlogger.info("no exposures for galaxy",i)
-                    continue
-                if not_drawn[i]:
-                    print 'object %d not drawn in coadd, skipping'%i
-                    continue
-                MEobjs.append(meds_input.make_MEobj(dummy_segs=False))
-            #append coadd info to srclist
-            meds_name=os.path.join(known.parent_output,"%s-%s-meds.%d.fits")%(known.tilename,known.band,i_sim)
+            for i_sim,meds_inputs in enumerate(meds_inputs_allsims):
+                not_drawn=coadd_not_drawn_allsims[i_sim]
+                for i,meds_input in enumerate(meds_inputs):
+                    if len(meds_input['images'])<1: 
+                        BalrogSetup.runlogger.info("no exposures for galaxy",i)
+                        continue
+                    if not_drawn[i]:
+                        print 'object %d not drawn in coadd, skipping'%i
+                        continue
+                    MEobjs.append(meds_input.make_MEobj(dummy_segs=False))
+            meds_name=os.path.join(known.parent_output,"%s-%s-meds.all.fits")%(known.tilename,known.band)
             des_meds.write_meds(meds_name, MEobjs, srclist=srclist, clobber=True)
-            BalrogSetup.runlogger.info("wrote %d objects to meds file %s"%(len(meds_inputs),meds_name))
-    else:
-        comm.send(local_se_objects)
+            BalrogSetup.runlogger.info("wrote %d objects to meds file %s"%(len(MEobjs),meds_name))
+
             
 def TileArgs(parser):
     parser.add_argument("tilename",type=str)
@@ -674,6 +722,8 @@ def TileArgs(parser):
     parser.add_argument("--no_meds",action='store_true',default=False)
     parser.add_argument("--no_noise",action='store_true',default=False,help="make 'noiseless' images i.e. set background image to zero everywhere")
     parser.add_argument("--n_sims",type=int,default=1, help="number of simulations (of same tile)")
+    parser.add_argument("--pickle_seobjects",action='store_true',help="Save each SE image's list SEObjects as a pickle, then have master process read them in and construct meds file")
+    parser.add_argument("--single_meds",action='store_true',help="Save all sims to a single meds file")
 
 def main(parser, known):
 
