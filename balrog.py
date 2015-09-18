@@ -125,8 +125,6 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         np.savetxt(txt, np.dstack(d)[0], fmt='%.5f')
         BalrogSetup.assocnames = data.columns.names
 
-
-
 def CopyAssoc(BalrogSetup, outfile):
     mhdus = pyfits.open(outfile, mode='update')
     mhead = mhdus[BalrogSetup.catext].header
@@ -441,7 +439,6 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     afile = None
     weightout = BalrogSetup.weightout
     detweightout = BalrogSetup.detweightout
-
     if nosim:
         catalogmeasured = BalrogSetup.nosim_catalogmeasured
         imageout = BalrogSetup.nosim_imageout
@@ -502,7 +499,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     sexlogger = open(BalrogSetup.sexlog, 'a')
     sexlogger.write('\n\n' + msg)
     sexlogger.close()
-    eng.run(logger=BalrogSetup.sexlog)
+    eng.run(logger=BalrogSetup.sexlogger)
 
     if not BalrogSetup.noassoc: #and not nosim:
         CopyAssoc(BalrogSetup, catalogmeasured)

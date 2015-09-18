@@ -142,7 +142,7 @@ def sync_coadd(run):
     subprocess.call([sync_bin,"-q",run]) #Gets the segmaps
 
     
-def setup_tile(tilename,band='i',sync=False):
+def setup_tile(tilename,band='i',sync=False, funpack=False):
     
     conn=desdb.Connection()
     id=tilename_to_id(conn,tilename,band)
@@ -154,6 +154,9 @@ def setup_tile(tilename,band='i',sync=False):
     #Sync coadd if necessary
     if sync:
         sync_coadd(c['coadd_run'])
+
+    if funpack:
+        c.funpack()
 
     #Set psf path
     c.load_psf_path()

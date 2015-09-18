@@ -158,7 +158,7 @@ class SextractorEngine():
                 args.append( '-%s' %key )
             args.append( str(self.config[key]) )
    
-        '''
+
         logger.info('# Exact command call')
         logger.info(' '.join(args))
         logger.info('\n# sextractor command line output')
@@ -167,8 +167,8 @@ class SextractorEngine():
         logger.info(stdout)
         logger.info(stderr)
         logger.info('\n')
-        '''
 
+        '''
         log = open(logger, mode='a')
         log.write('\n# Exact command call\n')
         cmd = ' '.join(args)
@@ -177,3 +177,4 @@ class SextractorEngine():
         log.close()
         oscmd = '%s >> %s 2>&1' %(cmd, logger)
         os.system(oscmd) 
+        '''

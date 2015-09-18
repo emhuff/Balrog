@@ -408,6 +408,10 @@ class nComponentSersic(object):
 
 
     def Sample(self, BalrogSetup):
+        if hasattr(BalrogSetup, 'magcol'):
+            magcol=BalrogSetup.magcol
+        else:
+            magcol='flux'
         used = self.SimpleSample(BalrogSetup)
         for i in range(len(self.component)):
             for key in self.component[i].keys():
@@ -421,9 +425,9 @@ class nComponentSersic(object):
         np.seterr(over='ignore')
         for i in range(len(self.component)):
             
-            bad = ( (BalrogSetup.zeropoint - self.component[i]['flux']) > 50 )
+            bad = ( (BalrogSetup.zeropoint - self.component[i][magcol]) > 50 )
             self.component[i]['flux'][bad] = 0
-            self.component[i]['flux'][-bad] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i]['flux'][-bad]) / 2.5)
+            self.component[i]['flux'][-bad] = np.power(10.0, (BalrogSetup.zeropoint - self.component[i][magcol][-bad]) / 2.5)
             if np.sum(bad) > 0:
                 BalrogSetup.runlogger.warning('Magnitude value caused overflow when computing flux. Its flux was set to 0. This may not be a problem if a large negative value for magnitude means no detection, e.g. -100')
 
@@ -543,7 +547,7 @@ class nComponentSersic(object):
         psf.setFlux(1.)
         psf_centroid = psf.centroid()
         psf.applyShift(-psf_centroid.x, -psf_centroid.y)
-        #psf.applyShift(psf_centroid.x, psf_centroid.y)
+        psf.applyShift(psf_centroid.x, psf_centroid.y)
 
         #pix = galsim.Box(width=local.dudx, height=local.dvdy, gsparams=gsparams)
         #pix = galsim.Pixel(scale=localscale, gsparams=gsparams)
