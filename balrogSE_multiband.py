@@ -757,9 +757,10 @@ def Run(parser, known, comm=None):
             coadd_size = size-1
         else:
             coadd_size = known.coadd_nproc
+        gspcatalog=None
         if not master:
             catalogs_allsims=None
-            gspcatalog=None
+            #gspcatalog=None
             local_sim_inds=np.array_split(sim_inds,coadd_size)[rank-1]
             print 'rank,local_sim_inds',rank, local_sim_inds
             if len(local_sim_inds)>0:
@@ -784,11 +785,11 @@ def Run(parser, known, comm=None):
 
         print 'checkpoint 1',comm.Get_rank()
         catalogs_allsims=comm.bcast(catalogs_allsims, root=0)
-        if not master:
-            gspcatalog=comm.bcast(gspcatalog, root=1)
-            if idle:
-                print rank, 'received gspcatalog'
-                coaddsetup_base.gspcatalog=gspcatalog
+
+        gspcatalog=comm.bcast(gspcatalog, root=1)
+        if idle:
+            print rank, 'received gspcatalog'
+            coaddsetup_base.gspcatalog=gspcatalog
 
         comm.Barrier()
     else:
