@@ -2,8 +2,8 @@
 
 import os
 import numpy as np
-import pywcs
-import pyfits
+#import pywcs
+#import pyfits
 from model_class import *
 
 thisdir = os.path.dirname( os.path.realpath(__file__) )

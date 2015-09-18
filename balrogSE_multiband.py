@@ -8,16 +8,17 @@ import astropy.io.fits as pyfits
 import multi_epoch_tools.coords as coords
 import multi_epoch_tools.file_tools as file_tools
 import multi_epoch_tools.des_meds as des_meds
-import pylab
-import psutil
-import functools
+#import pylab
+#import psutil
+#import functools
 import copy
 import subprocess
 from mpi4py import MPI
 
 MAGZP_REF=30.
 BALROG_DESDATA="/home/maccrann/balrog_desdata"
-RunConfig={'swarp_config_default':"/home/maccrann/code/BalrogMPI/astro_config/sva1/default.swarp",
+thisdir=os.path.dirname(os.path.realpath(__file__))
+RunConfig={'swarp_config_default':os.path.join(thisdir,"astro_config/sva1/default.swarp"),
 'swarp':"swarp"}
 
 def Mkdir(dirname):
@@ -709,6 +710,8 @@ def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0
 
 def Run(parser, known, comm=None):
 
+    print 'rank %d starting Run()'%(comm.Get_rank())
+
     #First step is to read in the coadd and generate the truth catalog based on this:
     # Find the user's config file
     config = GetConfig(known)
@@ -719,10 +722,11 @@ def Run(parser, known, comm=None):
     #Setup coadd object to get coadd path etc.
     if comm is not None:
         rank = comm.Get_rank()
-        if rank==0:
+        if rank==0:            
             known.coadds=[file_tools.setup_tile(known.tilename, band=band, sync=False, funpack=True) for band in known.bands]
         else:
             known.coadds=[file_tools.setup_tile(known.tilename, band=band, sync=False, funpack=False) for band in known.bands]
+            print 'rank %d got coadd info'%(comm.Get_rank())
         comm.Barrier()
     else:
         known.coadds=[file_tools.setup_tile(known.tilename, band=band, sync=False, funpack=True) for band in known.bands]
