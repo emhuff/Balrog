@@ -422,7 +422,10 @@ def write_meds(file_name, obj_list, srclist=None, clobber=True):
     cols = []
     cols.append( pyfits.Column(name='DESDATA',       format='A256', array=[os.environ['DESDATA']] ))
     cols.append( pyfits.Column(name='cat_file',      format='A256', array=['generated_by_galsim'] ))
-    cols.append( pyfits.Column(name='coadd_file',    format='A256', array=['generated_by_galsim'] ))
+    if srclist is not None:
+        cols.append( pyfits.Column(name='coadd_file',    format='A256', array=[srclist[0]['red_image']] ))
+    else:
+        cols.append( pyfits.Column(name='coadd_file',      format='A256', array=['generated_by_galsim'] ))
     cols.append( pyfits.Column(name='coadd_hdu',     format='A1',   array=['x']                   ))
     cols.append( pyfits.Column(name='coadd_seg_hdu', format='A1',   array=['x']                   ))
     cols.append( pyfits.Column(name='coadd_srclist', format='A256', array=['generated_by_galsim'] ))
