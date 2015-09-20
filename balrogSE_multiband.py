@@ -616,6 +616,7 @@ def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0
     catalogs_allsims, sex_data_allbands_allsims, meds_inputs_allbands_allsims = [],[],[]
     for i_sim in sim_inds:
         coaddsetup.runlogger.info('sim %d',i_sim)
+        coaddsetup.indexstart = i_sim * coaddsetup.ngal
         catalogs=[]
         #For each band, get catalog of simulated galaxies (only the flux column changes currently), inserting
         #simulated galaxies, and saving images.
@@ -692,6 +693,10 @@ def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0
             #coadd_not_drawn=np.copy(catalog.galaxy['not_drawn'])
             #coaddsetup.runlogger.info("%d objects not drawn"%(coadd_not_drawn).sum())
             #Cleanup(coaddsetup)
+
+        #Also clean up det image and weight
+        for file in [detimg,detweight]:
+            os.remove(file)
 
         #print meds_inputs_allbands
         
