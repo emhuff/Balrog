@@ -507,12 +507,20 @@ def coadd_extract(coaddsetup, catalog, sim_img, sim_weight, sim_wcs_list):
     sex_data.write(coaddsetup.catalogmeasured, overwrite=True)
 
     Cleanup(coaddsetup)
+
+    Mkdir(coaddsetup.sim_outdir)
+    for cat in [coaddsetup.catalogtruth,coaddsetup.catalogmeasured]:
+        shutil.move(cat, coaddsetup.sim_outdir)
+    coaddsetup.catalogtruth=os.path.join(coaddsetup.sim_outdir,os.path.basename(coaddsetup.catalogtruth))
+    coaddsetup.catalogmeasured=os.path.join(coaddsetup.sim_outdir,os.path.basename(coaddsetup.catalogmeasured))
+    """
     try:
         shutil.copytree(coaddsetup.outdir,coaddsetup.sim_outdir)
     except OSError:
         shutil.rmtree(coaddsetup.sim_outdir)
         shutil.copytree(coaddsetup.outdir,coaddsetup.sim_outdir)
-    coaddsetup.runlogger.info("Copied output files to sim dir")
+    """
+    coaddsetup.runlogger.info("Moved output files to sim ouput dir")
 
     #Now make meds inputs
     #Set boxsize to be same for all objects for now
@@ -550,7 +558,7 @@ def coadd_extract(coaddsetup, catalog, sim_img, sim_weight, sim_wcs_list):
             seg_stamp,_,_,_=get_stamp(seg,x,y,box_size[i])
             badpix_stamp=galsim.ImageI(np.zeros_like(image_stamp.array))
             meds_inputs[i].add(image_stamp,weight_stamp,badpix_stamp,seg_stamp,sim_wcs_list[i],y-1,x-1,bounds.ymin-1,bounds.xmin-1,y0,x0,0)
-    return sex_data, meds_inputs
+    return sex_data, meds_inputs, coaddsetup.catalogtruth, coaddsetup.catalogmeasured
 
 def SERun(catalog, se_info, BalrogSetup):
 
@@ -604,7 +612,7 @@ def SERun(catalog, se_info, BalrogSetup):
 
     return se_objects
 
-def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0):
+def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0, shears=[[0.,0.]]):
     #First read in image etc. - if doing more than 1 sim, don't want to do this more than once
     ImageOrig=[]
     for i_band,band in enumerate(coaddsetup.bands):
@@ -617,95 +625,116 @@ def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0
     for i_sim in sim_inds:
         coaddsetup.runlogger.info('sim %d',i_sim)
         coaddsetup.indexstart = i_sim * coaddsetup.ngal
+        first_shear=True
         catalogs=[]
-        #For each band, get catalog of simulated galaxies (only the flux column changes currently), inserting
-        #simulated galaxies, and saving images.
-        #band_setups=[]
-        det_imgouts=[]
-        meds_inputs_allbands={}
-        sex_data_allbands={}
-        coadd_images=[]
-        coadd_weights=[]
-        coadd_wcs_lists=[]
+        for i_shear,shear in enumerate(shears):
+            print 'shear',shear
+            print 'catalogs',catalogs
+            det_imgouts=[]
+            meds_inputs_allbands={}
+            sex_data_allbands={}
+            coadd_images=[]
+            coadd_weights=[]
+            coadd_wcs_lists=[]
 
-        first_band=True
-        coaddsetup.runlogger.info('Getting simulated galaxy catalogs, and making simulated coadd images')
-        for i_band,band in enumerate(coaddsetup.bands):
-            print 'band',band
-            coaddsetup.runlogger.info('band: %s'%band)
-            coaddsetup.init_coadd(known.coadds[i_band])
-            if first_band:
-                coaddsetup.rules, coaddsetup.extra_sex_config, coaddsetup.cmdline_opts_copy, coaddsetup.TruthCatExtra = CustomParse(coaddsetup, coaddsetup, coaddsetup.config, coaddsetup.bands)
-                coaddsetup.magcol='magnitude_%s'%band
-                catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(coaddsetup, coaddsetup.rules, 
-                                                                                    coaddsetup.config, 
-                                                                                    coaddsetup.cmdline_opts_copy, 
-                                                                                    coaddsetup.TruthCatExtra)
-                coaddsetup.gspcatalog=gspcatalog
-                first_band=False
+            #For each band, get catalog of simulated galaxies (only the flux column changes currently), inserting
+            #simulated galaxies, and saving images.
+            #band_setups=[]
+            first_band=True
+            coaddsetup.runlogger.info('Getting simulated galaxy catalogs, and making simulated coadd images')
+            for i_band,band in enumerate(coaddsetup.bands):
+                print 'band',band
+                coaddsetup.runlogger.info('band: %s'%band)
+                coaddsetup.init_coadd(known.coadds[i_band])
+                if first_shear:
+                    if first_band:
+                        coaddsetup.rules, coaddsetup.extra_sex_config, coaddsetup.cmdline_opts_copy, coaddsetup.TruthCatExtra = CustomParse(coaddsetup, coaddsetup, coaddsetup.config, coaddsetup.bands)
+                        coaddsetup.magcol='magnitude_%s'%band
+                        catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(coaddsetup, coaddsetup.rules, 
+                                                                                        coaddsetup.config, 
+                                                                                        coaddsetup.cmdline_opts_copy, 
+                                                                                        coaddsetup.TruthCatExtra)
+                        coaddsetup.gspcatalog=gspcatalog
+                        first_band
+                    else:
+                        catalog.component[0]['flux']=mag2flux(catalog.component[0]['magnitude_%s'%band],coaddsetup.zeropoint)
+
+                else:
+                    catalog=catalogs[i_band]
+                
+                catalog.galaxy['g1'],catalog.galaxy['g2']=shear[0]*np.ones(coaddsetup.ngal),shear[1]*np.ones(coaddsetup.ngal)
+
+                #Insert galaxies
+                print 'inserting galaxies'
+                bigImage, subWeight, psfmodel, wcs = ImageOrig[i_band]
+                if coaddsetup.no_noise:
+                    bigImage *= 0 
+                coadd_x,coadd_y=catalog.galaxy['x'],catalog.galaxy['y']
+                catalog.galaxy['ra'],catalog.galaxy['dec']=coords.get_wcoords(coadd_x,coadd_y,wcs)
+                bigImage,wcs_list_coadd = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, 
+                                                              coaddsetup, wcs, 
+                                                              gspcatalog, return_wcs_list=True)
+                #Save coadd image and truth catalog
+                print 'writing image'
+                coadd_images.append(bigImage)
+                coadd_weights.append(subWeight)
+                coadd_wcs_lists.append(wcs_list_coadd)
+                WriteImages(coaddsetup, bigImage, subWeight)
+                if band in coaddsetup.detbands:
+                    det_imgouts.append(coaddsetup.imageout)
+                WriteCatalog(catalog, coaddsetup, txt=None, fits=True, TruthCatExtra=coaddsetup.TruthCatExtra, extracatalog=extracatalog)      
+                catalogs.append(copy.deepcopy(catalog))
+                #band_setups.append(coaddsetup)
+
+            first_shear=False
+
+            #Now run swarp if more than one det band, else just set det image
+            print det_imgouts
+            coaddsetup.runlogger.info('det images: %s'%str(det_imgouts))
+            if len(coaddsetup.detbands)>1:
+                swarp_call, detimg, detweight = SwarpConfig(det_imgouts, RunConfig, coaddsetup)
+                coaddsetup.runlogger.info('swarp call:')
+                coaddsetup.runlogger.info(str(swarp_call))
+                subprocess.call(swarp_call)
             else:
-                catalog.component[0]['flux']=mag2flux(catalog.component[0]['magnitude_%s'%band],coaddsetup.zeropoint)
+                detimg,detweight = det_imgouts[0],det_imgouts[0]
 
-            #Insert galaxies
-            print 'inserting galaxies'
-            bigImage, subWeight, psfmodel, wcs = ImageOrig[i_band]
-            if coaddsetup.no_noise:
-                bigImage *= 0 
-            coadd_x,coadd_y=catalog.galaxy['x'],catalog.galaxy['y']
-            catalog.galaxy['ra'],catalog.galaxy['dec']=coords.get_wcoords(coadd_x,coadd_y,wcs)
-            bigImage,wcs_list_coadd = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, 
-                                                          coaddsetup, wcs, 
-                                                          gspcatalog, return_wcs_list=True)
-            #Save coadd image and truth catalog
-            print 'writing image'
-            coadd_images.append(bigImage)
-            coadd_weights.append(subWeight)
-            coadd_wcs_lists.append(wcs_list_coadd)
-            WriteImages(coaddsetup, bigImage, subWeight)
-            if band in coaddsetup.detbands:
-                det_imgouts.append(coaddsetup.imageout)
-            WriteCatalog(catalog, coaddsetup, txt=None, fits=True, TruthCatExtra=coaddsetup.TruthCatExtra, extracatalog=extracatalog)      
-            catalogs.append(copy.deepcopy(catalog))
-            #band_setups.append(coaddsetup)
+            coaddsetup.runlogger.info('Now SExtracting and initialising MEDS inputs')
+            truthcat_files,measuredcat_files=[],[]
+            for i_band,band in enumerate(coaddsetup.bands):
+                print 'band',band
+                print 'running coadd extract'
+                catalog, sim_img, sim_weight, sim_wcs_list = catalogs[i_band], coadd_images[i_band], coadd_weights[i_band], coadd_wcs_lists[i_band]    
+                coaddsetup.init_coadd(known.coadds[i_band])
+                coaddsetup.init_det(detimg, detweight)
+                coaddsetup.sim_outdir = os.path.join(coaddsetup.parent_output,coaddsetup.tilename+".%d.%d"%(i_sim,i_shear))
+                sex_data, meds_inputs, truthcat_file, measuredcat_file = coadd_extract(coaddsetup, catalog, sim_img, sim_weight, sim_wcs_list)
+                truthcat_files.append(truthcat_file)
+                measuredcat_files.append(measuredcat_file)
+                meds_inputs_allbands[band] = meds_inputs
+                sex_data_allbands[band] = sex_data
+                #coadd_not_drawn=np.copy(catalog.galaxy['not_drawn'])
+                #coaddsetup.runlogger.info("%d objects not drawn"%(coadd_not_drawn).sum())
+                #Cleanup(coaddsetup)
 
-        #Now run swarp if more than one det band, else just set det image
-        print det_imgouts
-        coaddsetup.runlogger.info('det images: %s'%str(det_imgouts))
-        if len(coaddsetup.detbands)>1:
-            swarp_call, detimg, detweight = SwarpConfig(det_imgouts, RunConfig, coaddsetup)
-            coaddsetup.runlogger.info('swarp call:')
-            coaddsetup.runlogger.info(str(swarp_call))
-            subprocess.call(swarp_call)
-        else:
-            detimg,detweight = det_imgouts[0],det_imgouts[0]
+            #Also clean up det image and weight (if multiband)
+            if len(coaddsetup.detbands) > 1:
+                for file in [detimg,detweight]:
+                    os.remove(file)
 
-        coaddsetup.runlogger.info('Now SExtracting and initialising MEDS inputs')
-        for i_band,band in enumerate(coaddsetup.bands):
-            print 'band',band
-            print 'running coadd extract'
-            catalog, sim_img, sim_weight, sim_wcs_list = catalogs[i_band], coadd_images[i_band], coadd_weights[i_band], coadd_wcs_lists[i_band]    
-            coaddsetup.init_coadd(known.coadds[i_band])
-            coaddsetup.init_det(detimg, detweight)
-            coaddsetup.sim_outdir = os.path.join(coaddsetup.parent_output,coaddsetup.tilename+".%s.%d"%(band,i_sim))
-            sex_data, meds_inputs = coadd_extract(coaddsetup, catalog, sim_img, sim_weight, sim_wcs_list)
-            meds_inputs_allbands[band] = meds_inputs
-            sex_data_allbands[band] = sex_data
-            #coadd_not_drawn=np.copy(catalog.galaxy['not_drawn'])
-            #coaddsetup.runlogger.info("%d objects not drawn"%(coadd_not_drawn).sum())
-            #Cleanup(coaddsetup)
+            #print meds_inputs_allbands
 
-        #Also clean up det image and weight
-        for file in [detimg,detweight]:
-            os.remove(file)
-
-        #print meds_inputs_allbands
-        
-        if slave:
-            comm.send((catalogs, sex_data_allbands, meds_inputs_allbands), dest=master, tag=i_sim)
-        else:
-             catalogs_allsims.append(catalogs)
-             sex_data_allbands_allsims.append(sex_data_allbands)
-             meds_inputs_allbands_allsims.append(meds_inputs_allbands)
+            if slave:
+                #info=(i_sim,i_shear,,)
+                info={'i_sim':i_sim,
+                      'i_shear':i_shear,
+                      'truthcat_files':truthcat_files,
+                      'measuredcat_files':measuredcat_files}
+                comm.send((copy.deepcopy(catalogs), sex_data_allbands, meds_inputs_allbands, info), dest=master, tag=i_sim)
+            else:
+                 catalogs_allsims.append(catalogs)
+                 sex_data_allbands_allsims.append(sex_data_allbands)
+                 meds_inputs_allbands_allsims.append(meds_inputs_allbands)
 
     if slave and i_sim==sim_inds[-1]:
         #print 'rank %d returning gspcatalog'%(rank)
@@ -735,6 +764,12 @@ def Run(parser, known, comm=None):
         comm.Barrier()
     else:
         known.coadds=[file_tools.setup_tile(known.tilename, band=band, sync=False, funpack=True) for band in known.bands]
+
+    #Check shear_perturb settings
+    known.shears=[[0.,0.]]
+    if known.shear_perturb is not None:
+        known.shears.append(known.shear_perturb)
+    known.n_shears=len(known.shears)
 
     # Parse the command line arguments and interpret the user's settings for the simulation
     cmdline_opts = NativeParse(parser, known)
@@ -768,17 +803,19 @@ def Run(parser, known, comm=None):
             coadd_size = known.coadd_nproc
         gspcatalog=None
         if not master:
-            catalogs_allsims=None
+            catalogs_allsims,sim_nums,shear_nums=None,None,None
             #gspcatalog=None
             local_sim_inds=np.array_split(sim_inds,coadd_size)[rank-1]
             print 'rank,local_sim_inds',rank, local_sim_inds
             if len(local_sim_inds)>0:
                 coaddsetup_base.runlogger.info('Doing simulations: '+str(local_sim_inds))
-                gspcatalog=MultiBandCoaddRun(coaddsetup_base, sim_inds=local_sim_inds, slave=True, comm=comm)
+                gspcatalog=MultiBandCoaddRun(coaddsetup_base, sim_inds=local_sim_inds, slave=True, comm=comm, 
+                                             shears=known.shears)
             else:
                 idle=True
                 coaddsetup_base.runlogger.info("Fewer sims than processes, I'm idle...")
         else:
+            """
             while len(catalogs_allsims)<known.n_sims:
                 status=MPI.Status()
                 rec_data=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
@@ -788,7 +825,35 @@ def Run(parser, known, comm=None):
                 catalogs_allsims.append(rec_data[0])
                 sex_data_allbands_allsims.append(rec_data[1])
                 meds_inputs_allbands_allsims.append(rec_data[2])
+            """
+            rec_datas={}
+            sims_collected=0
+            while sims_collected<known.n_sims*known.n_shears:
+                status=MPI.Status()
+                rec_data=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+                info=rec_data[-1]
+                rec_i_sim,rec_i_shear=info['i_sim'],info['i_shear']
+                #i_sim_rec = status.Get_tag()
+                coaddsetup_base.runlogger.info('reveived data from sim %d, shear %d'%(rec_i_sim,rec_i_shear))
+                rec_datas[rec_i_sim,rec_i_shear]=rec_data
+                sims_collected+=1
+                #catalogs_allsims.append(rec_data[0])
+                #sex_data_allbands_allsims.append(rec_data[1])
+                #meds_inputs_allbands_allsims.append(rec_data[2])
+
             coaddsetup_base.runlogger.info('received data from all sims')
+            sim_nums,shear_nums=[],[]
+            truthcats,measuredcats=[],[]
+            for i_sim in range(known.n_sims):
+                for i_shear in range(known.n_shears):
+                    catalogs_allsims.append(rec_datas[i_sim,i_shear][0])
+                    sex_data_allbands_allsims.append(rec_datas[i_sim,i_shear][1])
+                    meds_inputs_allbands_allsims.append(rec_datas[i_sim,i_shear][2])
+                    sim_nums.append(i_sim)
+                    shear_nums.append(i_shear)
+                    truthcats.append(rec_datas[i_sim,i_shear][3]['truthcat_files'])
+                    measuredcats.append(rec_datas[i_sim,i_shear][3]['measuredcat_files'])
+
             #print 'catalogs_allsims, sex_data_allbands_allsims, meds_inputs_allbands_allsims'    
             #print catalogs_allsims, sex_data_allbands_allsims, meds_inputs_allbands_allsims
 
@@ -830,36 +895,50 @@ def Run(parser, known, comm=None):
                     se_setup.bigImage,se_setup.weight,se_setup.badpix,se_setup.sky,se_setup.psfmodel,se_setup.wcs = se_setup.ReadImages()
                     if known.no_noise:
                         se_setup.bigImage*=0
+                    
+                    i_cat=0
                     for i_sim in range(known.n_sims):
-                        catalog = catalogs_allsims[i_sim][i_band]
-                        #sex_data = sex_data_allbands_allsims[i_sim][band]
-                        sim_se_objects = SERun(catalog, se_info, se_setup)
-                        comm.send(sim_se_objects, dest=master, tag=i_sim)
+                        for i_shear in range(known.n_shears):
+                            catalog = catalogs_allsims[i_cat][i_band]
+                            #sex_data = sex_data_allbands_allsims[i_sim][band]
+                            sim_se_objects = SERun(catalog, se_info, se_setup)
+                            comm.send(sim_se_objects, dest=master, tag=i_cat)
+                            i_cat+=1
             else:
                 sim_se_objects=[]
                 se_returned=0
-                while se_returned<len(coadd.srclist*known.n_sims):
+                while se_returned<len(coadd.srclist*len(catalogs_allsims)):
                     status=MPI.Status()                
                     rec_data=comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-                    sim_ind=status.Get_tag()
+                    i_cat=status.Get_tag()
                     for r in rec_data:
-                        sim_se_objects.append((sim_ind,r[0],r[1]))
+                        sim_se_objects.append((i_cat,r[0],r[1]))
                     se_returned+=1
                     known.logs[0].info('se_returned: %d/%d'%(se_returned,len(coadd.srclist*known.n_sims)))
 
                 for se_obj in sim_se_objects:
-                    i_sim,i_obj = se_obj[0], se_obj[1]
-                    meds_inputs_allbands_allsims[i_sim][band][i_obj].add_SEObject(se_obj[2])
+                    i_cat,i_obj = se_obj[0], se_obj[1]
+                    meds_inputs_allbands_allsims[i_cat][band][i_obj].add_SEObject(se_obj[2])
 
                 #prepend coadd info to source list
                 srclist=[{'id':coadd['image_id'], 'red_image':coadd['image_url']}]+coadd.srclist
-                for i_sim in range(known.n_sims):
+                meds_files=[]
+                for i_cat in range(len(catalogs_allsims)):
+                    i_sim,i_shear=sim_nums[i_cat],shear_nums[i_cat]
                     MEobjs=[]
-                    for i, meds_input in enumerate(meds_inputs_allbands_allsims[i_sim][band]):
+                    for i, meds_input in enumerate(meds_inputs_allbands_allsims[i_cat][band]):
                         MEobjs.append(meds_input.make_MEobj(dummy_segs=False))
-                    meds_name = os.path.join(known.parent_output, "%s-%s-meds.%d.fits")%(known.tilename,band,i_sim)
+                    meds_name = os.path.join(known.parent_output, "%s-%s-meds.%d.%d.fits")%(known.tilename,band,i_sim,i_shear)
+                    meds_files.append(meds_name)
+                    print MEobjs
                     des_meds.write_meds(meds_name, MEobjs, srclist=srclist, clobber=True)
-                    known.logs[0].info("wrote %d objects to meds file %s"%(len(meds_inputs_allbands_allsims[i_sim][band]),meds_name))
+                    known.logs[0].info("wrote %d objects to meds file %s"%(len(meds_inputs_allbands_allsims[i_cat][band]),meds_name))
+                #Save catalogs
+                with open(os.path.join(known.parent_output,'cat_list.%s.txt'%band),'w') as f:
+                    for truth, measured, meds in zip(truthcats,measuredcats,meds_files):
+                        outline="%s\t%s\t%s\n"%(truth[i_band],measured[i_band],meds)
+                        f.write(outline)
+                    
             print comm.Get_rank()
             comm.Barrier()
 
@@ -876,6 +955,7 @@ def TileArgs(parser):
     parser.add_argument("--single_meds",action='store_true',help="Save all sims to a single meds file")
     parser.add_argument("--no_mpi", action='store_true', default=False)
     parser.add_argument("--coadd_nproc", default=None)
+    parser.add_argument("--shear_perturb", default=None, type=float, nargs=2, help="run each simulation twice, with same catalog except perturbed by a small shear")
 
 def main(parser, known):
 
