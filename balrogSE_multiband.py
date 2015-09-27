@@ -16,7 +16,7 @@ import subprocess
 from mpi4py import MPI
 
 MAGZP_REF=30.
-BALROG_DESDATA="/home/maccrann/balrog_desdata"
+BALROG_DESDATA=os.environ['BALROG_DESDATA']
 thisdir=os.path.dirname(os.path.realpath(__file__))
 RunConfig={'swarp_config_default':os.path.join(thisdir,"astro_config/sva1/default.swarp"),
 'swarp':"swarp"}
