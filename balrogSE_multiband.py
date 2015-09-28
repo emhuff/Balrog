@@ -619,7 +619,7 @@ def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0
         coaddsetup.init_coadd(coaddsetup.coadds[i_band])
         bigImage, subWeight, psfmodel, wcs = ReadImages(coaddsetup)
         #Copy big image since this will get overwritten by InsertSimulatedGalaxies
-        ImageOrig.append((bigImage.copy(), subWeight, psfmodel, wcs))
+        ImageOrig.append((bigImage, subWeight, psfmodel, wcs))
 
     catalogs_allsims, sex_data_allbands_allsims, meds_inputs_allbands_allsims = [],[],[]
     for i_sim in sim_inds:
@@ -671,7 +671,7 @@ def MultiBandCoaddRun(coaddsetup, sim_inds=[0], slave=False, comm=None, master=0
                     bigImage *= 0 
                 coadd_x,coadd_y=catalog.galaxy['x'],catalog.galaxy['y']
                 catalog.galaxy['ra'],catalog.galaxy['dec']=coords.get_wcoords(coadd_x,coadd_y,wcs)
-                bigImage,wcs_list_coadd = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, 
+                bigImage,wcs_list_coadd = InsertSimulatedGalaxies(bigImage.copy(), catalog, psfmodel, 
                                                               coaddsetup, wcs, 
                                                               gspcatalog, return_wcs_list=True)
                 #Save coadd image and truth catalog
