@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
+#import sys
+#import logging
+#import traceback
+#import numpy.lib.recfunctions
+
 import numpy as np
-import numpy.lib.recfunctions
 import astropy.io.fits as pyfits
 import galsim
 import copy
-import sys
 import os
-import logging
-import traceback
 from balrogexcept import *
 
 

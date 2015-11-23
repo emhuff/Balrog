@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import subprocess
+#import subprocess
+#import sys
+#import time
 import os
-import sys
-import time
+import balrog
 
 #import utils
 #from defaults import *
@@ -175,5 +176,8 @@ class SextractorEngine():
         log.write( cmd + '\n')
         log.write('\n# sextractor command line output\n')
         log.close()
-        oscmd = '%s >> %s 2>&1' %(cmd, logger)
-        os.system(oscmd) 
+
+        #oscmd = '%s >> %s 2>&1' %(cmd, logger)
+        #os.system(oscmd) 
+
+        balrog.SystemCall(cmd, ocmd=True, redirect=logger)

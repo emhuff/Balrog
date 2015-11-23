@@ -1378,9 +1378,36 @@ def FindSexFile(arg, log, configdir, default, label):
         arg = default
     return arg
 
-def SystemCall(cmd):
-    oscmd = subprocess.list2cmdline(cmd)
-    os.system(oscmd)
+
+def SystemCall(cmd, ocmd=False, redirect=None):
+    if not ocmd:
+        oscmd = subprocess.list2cmdline(cmd)
+    else:
+        oscmd = cmd
+
+    if SystemCallSetup.sleep > 0:
+        if redirect is None:
+            t1 = time.time()
+            rcode = os.system( '/bin/bash -c "%s; sleep %.2f"'%(oscmd, SystemCallSetup.sleep) )
+            t2 = time.time()
+        else:
+            t1 = time.time()
+            rcode = os.system( '/bin/bash -c "%s; sleep %.2f" >> %s 2>&1'%(oscmd, SystemCallSetup.sleep, redirect) )
+            t2 = time.time()
+
+        tdiff = t2 - t1
+        if tdiff < SystemCallSetup.sleep:
+            print 'Command returned to quickly:'
+            print oscmd
+            if SystemCallSetup.retry:
+                print 'Retrying the command'
+                rcode = SystemCall(cmd, ocmd=True, redirect=redirect)
+    else:
+        if redirect is not None:
+            oscmd = '%s >> %s 2>&1' %(oscmd, redirect)
+        rcode = os.system(oscmd)
+
+    return rcode
 
 
 def ParseSex(args, log, configdir):
@@ -1397,8 +1424,11 @@ def ParseSex(args, log, configdir):
     except:
         raise SextractorPathError(140, args.sexpath)
     '''
+
     cmd = 'which %s &> /dev/null' %(args.sexpath)
-    ret = os.system(cmd)
+    ret = SystemCall(cmd, ocmd=True)
+
+    #ret = os.system(cmd)
     if ret!=0:
         raise SextractorPathError(140, args.sexpath)
 
@@ -1472,7 +1502,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
 
 
-def RaiseException(log, fulltraceback=False):
+def RaiseException(log, fulltraceback=False, doraise=False):
 
     if not fulltraceback:
         exc_info = sys.exc_info()
@@ -1500,6 +1530,8 @@ def RaiseException(log, fulltraceback=False):
         log.exception('Run error caused Balrog to exit.')
         #logging.exception('Run error caused Balrog to exit.')
 
+    if doraise:
+        raise
     sys.exit()
 
 
@@ -1645,21 +1677,55 @@ def RunBalrog(parser, known):
     gc.collect()
     '''
 
+class SystemCallSetup:
+    sleep = 0
+    retry = False
+
+
+def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
+
+    if args is not None:
+        argv = [os.path.realpath(__file__)]
+        for arg in args:
+            argv.append(arg)
+        sys.argv = argv
+
+    if sleep > 0:
+        SystemCallSetup.sleep = sleep
+    if retrycmd:
+        SystemCallSetup.retry = True
+
+    # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
+    # Only a writable outdir is required to be able to get the output log file.
+
+    parser = GetNativeOptions()
+    known = GetKnown(parser)
+
+    if redirect is not None:
+        s = sys.stdout
+        e = sys.stderr
+        log = open(redirect, 'a')
+        sys.stdout = log
+        sys.stderr = log
+
+    try:
+        RunBalrog(parser, known)
+    except Exception as e:
+        if redirect is not None:
+            sys.stdout = s
+            sys.seterr = e
+            log.close()
+            RaiseException(known.logs[0], fulltraceback=known.fulltraceback, doraise=True)
+        else:
+            RaiseException(known.logs[0], fulltraceback=known.fulltraceback)
+
+   
+    if redirect is not None:
+        sys.stdout = s
+        sys.seterr = e
+        log.close()
 
 
 if __name__ == "__main__":
    
-    # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
-    # Only a writable outdir is required to be able to get the output log file.
-
-    #import resource
-
-    parser = GetNativeOptions()
-    known = GetKnown(parser)
-    try:
-        #print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
-        RunBalrog(parser, known)
-        #print resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000
-    except:
-        RaiseException(known.logs[0], fulltraceback=known.fulltraceback)
-
+    BalrogFunction()
