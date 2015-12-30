@@ -1713,7 +1713,7 @@ def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
     except Exception as e:
         if redirect is not None:
             sys.stdout = s
-            sys.seterr = e
+            sys.stderr = e
             log.close()
             RaiseException(known.logs[0], fulltraceback=known.fulltraceback, doraise=True)
         else:
@@ -1722,7 +1722,7 @@ def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
    
     if redirect is not None:
         sys.stdout = s
-        sys.seterr = e
+        sys.stderr = e
         log.close()
 
 
