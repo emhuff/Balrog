@@ -1385,6 +1385,36 @@ def SystemCall(cmd, ocmd=False, redirect=None):
     else:
         oscmd = cmd
 
+    """
+    syscmd = '/bin/bash -c "%s' %(oscmd)
+    if SystemCallSetup.sleep > 0:
+        syscmd = "%s; sleep %.2f"%(syscmd,SystemCallSetup.sleep)
+    if SystemCallSetup.touch:
+        syscmd = "%s; touch %s"%(syscmd, SystemCallSetup.touchfile)
+    syscmd = '%s"'%(syscmd)
+    if redirect is not None:
+        syscmd = '%s >> %s 2>&1'%(syscmd, redirect)
+
+    t1 = time.time()
+    rcode = os.system(syscmd)
+    t2 = time.time()
+    tdiff = t2 - t1
+
+    if (SystemCallSetup.sleep > 0) and (tdiff < SystemCallSetup.sleep):
+        print 'Command returned to quickly. sleep: %f; Time diff: %f' %(SystemCallSetup.sleep, tdiff)
+        print rcode, oscmd
+        if SystemCallSetup.retry:
+            print 'Retrying the command'
+            rcode = SystemCall(cmd, ocmd=True, redirect=redirect)
+
+    if (SystemCallSetup.touch) and (not os.path.exists(SystemCallSetup.touchfile)):
+        print 'Command did not succeed to touch file: %s' %(SystemCallSetup.touchfile)
+        print rcode, oscmd
+        if SystemCallSetup.retry:
+            print 'Retrying the command'
+            rcode = SystemCall(cmd, ocmd=True, redirect=redirect)
+    """
+
     if SystemCallSetup.sleep > 0:
         if redirect is None:
             t1 = time.time()
@@ -1401,7 +1431,7 @@ def SystemCall(cmd, ocmd=False, redirect=None):
             print oscmd
             if SystemCallSetup.retry:
                 print 'Retrying the command'
-                rcode = SystemCall(cmd, ocmd=True, redirect=redirect)
+                rcode = SystemCall(oscmd, ocmd=True, redirect=redirect)
     else:
         if redirect is not None:
             oscmd = '%s >> %s 2>&1' %(oscmd, redirect)
@@ -1680,9 +1710,10 @@ def RunBalrog(parser, known):
 class SystemCallSetup:
     sleep = 0
     retry = False
+    touch = False
 
 
-def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
+def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False, touch=False):
 
     if args is not None:
         argv = [os.path.realpath(__file__)]
@@ -1690,16 +1721,22 @@ def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
             argv.append(arg)
         sys.argv = argv
 
-    if sleep > 0:
-        SystemCallSetup.sleep = sleep
-    if retrycmd:
-        SystemCallSetup.retry = True
 
     # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
     # Only a writable outdir is required to be able to get the output log file.
 
     parser = GetNativeOptions()
     known = GetKnown(parser)
+
+
+    if sleep > 0:
+        SystemCallSetup.sleep = sleep
+    if retrycmd:
+        SystemCallSetup.retry = True
+    if touch:
+        SystemCallSetup.touch = True
+        SystemCallSetup.touchfile = os.path.join(known.logdir, 'systemcall.tmp')
+
 
     if redirect is not None:
         s = sys.stdout
@@ -1708,12 +1745,13 @@ def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
         sys.stdout = log
         sys.stderr = log
 
+
     try:
         RunBalrog(parser, known)
     except Exception as e:
         if redirect is not None:
             sys.stdout = s
-            sys.seterr = e
+            sys.stderr = e
             log.close()
             RaiseException(known.logs[0], fulltraceback=known.fulltraceback, doraise=True)
         else:
@@ -1722,7 +1760,7 @@ def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False):
    
     if redirect is not None:
         sys.stdout = s
-        sys.seterr = e
+        sys.stderr = e
         log.close()
 
 

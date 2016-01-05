@@ -2,8 +2,9 @@
 
 import os
 import numpy as np
-import pywcs
-import pyfits
+#import pywcs
+import astropy.wcs as pywcs
+#import pyfits
 from model_class import *
 
 
