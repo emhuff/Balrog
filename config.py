@@ -122,8 +122,8 @@ def GalsimParams(args, gsparams, galaxies):
 # These are extra configurations to give to sextractor which will override the ones in the config file
 # Each dictionary keyword can be one of the sextractor config file keywords
 def SextractorConfigs(args, config):
-    #config['CHECKIMAGE_TYPE'] = 'NONE'
-    config['CHECKIMAGE_TYPE'] = 'SEGMENTATION'
+    config['CHECKIMAGE_TYPE'] = 'NONE'
+    #config['CHECKIMAGE_TYPE'] = 'SEGMENTATION'
 
 
 
