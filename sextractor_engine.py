@@ -5,6 +5,7 @@
 #import time
 import os
 import balrog
+import copy
 
 #import utils
 #from defaults import *
@@ -77,7 +78,7 @@ class SextractorEngine():
     ############ You should not need to used any of these functions. They are things which helping under the hood.
     
     def _catalog_name(self, image, catalog_name):
-        if catalog_name==None:
+        if catalog_name is None:
             self.config['CATALOG_NAME'] = os.path.join( os.getcwd(), image.strip().split('/')[-1].replace('.fits','.cat.fits') )
         else:
             self.config['CATALOG_NAME'] = catalog_name
@@ -101,7 +102,7 @@ class SextractorEngine():
     ################################################################################################3
 
 
-    def __init__(self, IMAGE=DEFAULT.IMAGE, WEIGHT_IMAGE=DEFAULT.WEIGHT, CATALOG_NAME=None, c=DEFAULT.SEX_CONFIG, PARAMETERS_NAME=DEFAULT.SEX_PARAM, STARNNW_NAME=DEFAULT.SEX_NNW, FILTER_NAME=DEFAULT.SEX_CONV, CHECKIMAGE_TYPE=DEFAULT.CHECK, CHECKIMAGE_NAME=DEFAULT.CHECK_NAME):
+    def __init__(self, IMAGE=DEFAULT.IMAGE, WEIGHT_IMAGE=DEFAULT.WEIGHT, CATALOG_NAME=None, c=DEFAULT.SEX_CONFIG, PARAMETERS_NAME=DEFAULT.SEX_PARAM, STARNNW_NAME=DEFAULT.SEX_NNW, FILTER_NAME=DEFAULT.SEX_CONV, CHECKIMAGE_TYPE=DEFAULT.CHECK, CHECKIMAGE_NAME=DEFAULT.CHECK_NAME, setup=None):
         #print locals()
 
         self.config = {}
@@ -116,6 +117,7 @@ class SextractorEngine():
         self._checkimage(CHECKIMAGE_TYPE, CHECKIMAGE_NAME)
 
         self.path = 'sex'
+        self.setup = setup
 
 
     def Path(self, path):
@@ -138,7 +140,7 @@ class SextractorEngine():
 
         for i in range(len(tlist)):
             file = stripped + tlist[i]
-            if dir==None:
+            if dir is None:
                 d = cat_dir
             elif type(dir)==str:
                 d = dir
@@ -150,7 +152,7 @@ class SextractorEngine():
         self.config['CHECKIMAGE_NAME'] = nstr
     
 
-    def run(self, logger=None):
+    def run(self, logger=None, after=None, msg=None):
         args = [self.path, self.config['IMAGE']]
         for key in self.config.keys():
             if key=='IMAGE':
@@ -159,25 +161,12 @@ class SextractorEngine():
                 args.append( '-%s' %key )
             args.append( str(self.config[key]) )
    
-        '''
-        logger.info('# Exact command call')
-        logger.info(' '.join(args))
-        logger.info('\n# sextractor command line output')
-        p = subprocess.Popen( args, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-        stdout, stderr = p.communicate()
-        logger.info(stdout)
-        logger.info(stderr)
-        logger.info('\n')
-        '''
 
-        log = open(logger, mode='a')
-        log.write('\n# Exact command call\n')
+        if self.setup is not None:
+            self.setup.redirect = logger
+
         cmd = ' '.join(args)
-        log.write( cmd + '\n')
-        log.write('\n# sextractor command line output\n')
-        log.close()
-
-        #oscmd = '%s >> %s 2>&1' %(cmd, logger)
-        #os.system(oscmd) 
-
-        balrog.SystemCall(cmd, ocmd=True, redirect=logger)
+        if msg is not None:
+            balrog.SysInfoPrint(self.setup, msg, level='info')
+        balrog.SystemCall(cmd, setup=self.setup)
+        self.setup.redirect = after

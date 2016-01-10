@@ -28,7 +28,7 @@ def FindInCat(rule, name):
 
     return cut, hdu
 
-def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, extracatalog=None):
+def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, extracatalog=None, setup=None):
     columns = []
     for key in sample.galaxy.keys():
         name = '%s' %(key)
@@ -48,9 +48,9 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         col = pyfits.Column(name=name, array=arr,format='D', unit=unit)
         columns.append(col)
 
-    if TruthCatExtra!=None:
+    if TruthCatExtra is not None:
         for rule,name,fmt,unit in zip(TruthCatExtra.rules,TruthCatExtra.names,TruthCatExtra.fmts, TruthCatExtra.units):
-            if unit==None:
+            if unit is None:
                 if rule.type!='catalog':
                     unit = 'unspecified'
                     BalrogSetup.runlogger.info('No unit was specificed for additional truth catalog column %s' %(name))
@@ -60,7 +60,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
             if unit.strip()=='':
                 unit = 'unspecified'
 
-            if fmt==None:
+            if fmt is None:
                 if rule.type!='catalog':
                     if len(extracatalog.galaxy[name])==0:
                         #fmt = 'E'
@@ -115,10 +115,10 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         hdus = pyfits.HDUList([phdu,tbhdu])
         if os.path.lexists(BalrogSetup.catalogtruth):
             #subprocess.call(['rm',BalrogSetup.catalogtruth])
-            SystemCall( ['rm',BalrogSetup.catalogtruth] )
+            SystemCall( ['rm',BalrogSetup.catalogtruth], setup=setup )
         hdus.writeto(BalrogSetup.catalogtruth)
 
-    if txt!=None:
+    if txt is not None:
         data = tbhdu.data
         d = []
         for name in data.columns.names:
@@ -169,7 +169,7 @@ def ReadImages(BalrogSetup):
     return image, weight, psfmodel, wcs
 
 
-def WriteImages(BalrogSetup, image, weight, nosim=False):
+def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     weightout = BalrogSetup.weightout
     if nosim:
         imageout = BalrogSetup.nosim_imageout
@@ -184,19 +184,19 @@ def WriteImages(BalrogSetup, image, weight, nosim=False):
             galsim.fits.write(image=weight, file_name=weightout)
 
     if not BalrogSetup.psf_written:
-        WritePsf(BalrogSetup, BalrogSetup.psf, BalrogSetup.psfout)
+        WritePsf(BalrogSetup, BalrogSetup.psf, BalrogSetup.psfout, setup=setup)
         if BalrogSetup.detpsf!=BalrogSetup.psf:
-            WritePsf(BalrogSetup, BalrogSetup.detpsf, BalrogSetup.detpsfout)
+            WritePsf(BalrogSetup, BalrogSetup.detpsf, BalrogSetup.detpsfout, setup=setup)
         BalrogSetup.psf_written = True
 
 
-def WritePsf(BalrogSetup, psfin, psfout):
+def WritePsf(BalrogSetup, psfin, psfout, setup=None):
     psfhdus = pyfits.open(psfin)
     psfhdus[1].header['POLZERO1'] = psfhdus[1].header['POLZERO1'] - (BalrogSetup.xmin - 1)
     psfhdus[1].header['POLZERO2'] = psfhdus[1].header['POLZERO2'] - (BalrogSetup.ymin - 1)
     if os.path.lexists(psfout):
         #subprocess.call(['rm', psfout])
-        SystemCall( ['rm', psfout] )
+        SystemCall( ['rm', psfout], setup=setup )
     psfhdus.writeto(psfout)
 
 
@@ -236,7 +236,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
         except:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            #print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             continue
 
         ix = int(simulatedgals.galaxy['x'][i])
@@ -258,7 +258,7 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
             smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
         except:
             simulatedgals.galaxy['not_drawn'][i] = 1
-            print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+            #print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
             continue
 
         smallImage.setCenter(ix,iy)
@@ -270,23 +270,9 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         bounds = smallImage.bounds & bigImage.bounds
         simulatedgals.galaxy['flux_noiseless'][i] = smallImage.added_flux 
         
-        '''
-        cut = np.isnan(smallImage.array.flatten())
-        if np.sum(cut > 0):
-            print 'nan in smallImage'
-        '''
-
         smallImage.addNoise(galsim.CCDNoise(gain=BalrogSetup.gain,read_noise=0,rng=galsim.BaseDeviate(micro)))
         flux_noised = np.sum(smallImage.array.flatten())
         simulatedgals.galaxy['flux_noised'][i] = flux_noised
-
-        '''
-        cut = np.isnan(smallImage.array.flatten())
-        if np.sum(cut > 0):
-            print 'nan in noised smallImage', micro, BalrogSetup.gain, simulatedgals.galaxy['flux_noiseless'][i], simulatedgals.component[0]['flux'][i]
-        else:
-            print 'NO nans in noised smallImage', micro, BalrogSetup.gain, simulatedgals.component[0]['flux'][i]
-        '''
 
         bounds = smallImage.bounds & bigImage.bounds
         bigImage[bounds] += smallImage[bounds]
@@ -402,7 +388,7 @@ def AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, cata
         eng.config['ASSOCSELEC_TYPE'] = 'MATCHED'
    
 
-def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc_seg=False):
+def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc_seg=False, setup=None):
     afile = None
     weightout = BalrogSetup.weightout
     detweightout = BalrogSetup.detweightout
@@ -435,7 +421,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
             detweightout = detimageout
 
     if not BalrogSetup.noassoc:
-        WriteCatalog(catalog, BalrogSetup, txt=afile, fits=False)
+        WriteCatalog(catalog, BalrogSetup, txt=afile, fits=False, setup=setup)
     if sim_noassoc_seg and BalrogSetup.sim_noassoc_seg_param_file:
         param_file = BalrogSetup.sim_noassoc_seg_param_file
     else:
@@ -444,7 +430,8 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     #if not BalrogSetup.noassoc:
     config_file = WriteConfigFile(BalrogSetup, config_file, catalogmeasured)
 
-    eng = sextractor_engine.SextractorEngine()
+    eng = sextractor_engine.SextractorEngine(setup=setup)
+
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
@@ -456,72 +443,72 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
             imageout = BalrogSetup.image
 
     AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
+
     if nosim:
         msg = '# Running sextractor prior to inserting simulated galaxies\n'
     else:
-        msg = '# Running sextractor after inserting simulated galaxies\n'
-    '''
-    BalrogSetup.sexlogger.info(msg)
-    eng.run(logger=BalrogSetup.sexlogger)
-    '''
-    sexlogger = open(BalrogSetup.sexlog, 'a')
-    sexlogger.write('\n\n' + msg)
-    sexlogger.close()
-    eng.run(logger=BalrogSetup.sexlog)
+        msg = '\n\n# Running sextractor after inserting simulated galaxies\n'
+
+    if setup.kind=='system':
+        logtosend = BalrogSetup.sexlog
+    elif setup.kind=='popen':
+        logtosend = BalrogSetup.sexlogger
+
+    eng.run(logger=logtosend, after=setup.redirect, msg=msg)
 
     if not BalrogSetup.noassoc: #and not nosim:
         CopyAssoc(BalrogSetup, catalogmeasured)
 
 
-def rm_link(attr):
+def rm_link(attr, setup=None):
     if os.path.lexists(attr):
         #subprocess.call( ['rm', attr] )
-        SystemCall( ['rm', attr] )
+        SystemCall( ['rm', attr], setup=setup )
 
 
-def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog):
+def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog, setup=None):
     if BalrogSetup.subsample:
-        WriteImages(BalrogSetup, bigImage, subweight, nosim=True)
+        WriteImages(BalrogSetup, bigImage, subweight, nosim=True, setup=setup)
     else:
-        rm_link(BalrogSetup.nosim_imageout)
-        rm_link(BalrogSetup.psfout)
+        rm_link(BalrogSetup.nosim_imageout, setup=setup)
+        rm_link(BalrogSetup.psfout, setup=setup)
         
         #subprocess.call( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
-        SystemCall( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
+        SystemCall( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout], setup=setup )
         #subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
-        SystemCall( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
+        SystemCall( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout], setup=setup )
 
         if BalrogSetup.psf!=BalrogSetup.detpsf:
-            rm_link(BalrogSetup.detpsfout)
+            rm_link(BalrogSetup.detpsfout, setup=setup)
             #subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
-            SystemCall( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
+            SystemCall( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout], setup=setup )
 
         if BalrogSetup.weight!=BalrogSetup.image:
-            rm_link(BalrogSetup.weightout)
+            rm_link(BalrogSetup.weightout, setup=setup)
             #subprocess.call( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
-            SystemCall( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
+            SystemCall( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout], setup=setup )
 
         if BalrogSetup.detweight!=BalrogSetup.detimage:
-            rm_link(BalrogSetup.detweightout)
+            rm_link(BalrogSetup.detweightout, setup=setup)
             #subprocess.call( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
-            SystemCall( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
+            SystemCall( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout], setup=setup )
 
         if BalrogSetup.nosim_detimageout!=BalrogSetup.detimagein:
-            rm_link(BalrogSetup.nosim_detimageout)
+            rm_link(BalrogSetup.nosim_detimageout, setup=setup)
             #subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
-            SystemCall( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
+            SystemCall( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout], setup=setup )
 
         BalrogSetup.psf_written = True
 
-    RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=True)
+    RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=True, setup=setup)
 
 
-def Cleanup(BalrogSetup):
+def Cleanup(BalrogSetup, setup=None):
     files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout]
     for file in files:
         if os.path.lexists(file):
             #subprocess.call(['rm',file])
-            SystemCall(['rm',file])
+            SystemCall(['rm',file], setup=setup)
 
 
 def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
@@ -531,7 +518,7 @@ def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
     cmdline_args_copy = copy.copy(cmdline_args)
     TruthCatExtra = TableColumns(BalrogSetup.ngal)
 
-    if config!=None:
+    if config is not None:
         if 'CustomParseArgs' not in dir(config):
             BalrogSetup.runlogger.warning('The function CustomParseArgs was not found in your Balrog python config file: %s. Will continue without parsing any custom command line arguments.' %BalrogSetup.pyconfig)
         else:
@@ -590,7 +577,7 @@ def GetSimulatedGalaxies(BalrogSetup, simgals, config, cmdline_opts_copy, TruthC
     
     gkeys = ['minimum_fft_size','maximum_fft_size','alias_threshold','stepk_minimum_hlr','maxk_threshold','kvalue_accuracy','xvalue_accuracy','table_spacing','realspace_relerr','realspace_abserr','integration_relerr','integration_abserr']
     gsp = SimRules(BalrogSetup.ngal, gkeys, [])
-    if config!=None:
+    if config is not None:
         if 'GalsimParams' not in dir(config):
             BalrogSetup.runlogger.warning('The function GalsimParams  was not found in your Balrog python config file: %s. Add this function to manually override the Galsim GSParams.' %BalrogSetup.pyconfig)
         else:
@@ -647,10 +634,10 @@ class TableColumns(object):
     def AddColumn(self, rule=None, name=None, fmt=None, unit=None):
         rule = self._CheckRule(rule, name)
         if rule.type != 'catalog':
-            if name==None:
+            if name is None:
                 raise ColumnNameError(703)
         else:
-            if name==None:
+            if name is None:
                 name = rule.param[2]
 
         self.rules.append(rule)
@@ -737,7 +724,7 @@ class CompRules(object):
 
     def _CheckRule(self, rule, i):
         if type(rule).__name__!='Rule':
-            if rule==None:
+            if rule is None:
                 pass
             elif type(rule)==float or type(rule)==int:
                 rule = Value(float(rule))
@@ -935,7 +922,7 @@ class Results(object):
     
 
 class DerivedArgs():
-    def __init__(self,args, known):
+    def __init__(self,args, known, setup=None):
         self.imgdir = os.path.join(args.outdir, 'balrog_image')
         self.catdir = os.path.join(args.outdir, 'balrog_cat')
         #self.logdir = os.path.join(args.outdir, 'balrog_log')
@@ -1017,13 +1004,13 @@ class DerivedArgs():
 
         thisdir = os.path.dirname( os.path.realpath(__file__) )
         #config = os.path.join(thisdir, 'config.py')
-        self.CopyFile(args.sexconfig, self.sexdir)
-        self.CopyFile(args.sexparam, self.sexdir)
-        self.CopyFile(args.sexnnw, self.sexdir)
-        self.CopyFile(args.sexconv, self.sexdir)
-        self.CopyFile(args.nosimsexparam, self.sexdir)
+        self.CopyFile(args.sexconfig, self.sexdir, setup=setup)
+        self.CopyFile(args.sexparam, self.sexdir, setup=setup)
+        self.CopyFile(args.sexnnw, self.sexdir, setup=setup)
+        self.CopyFile(args.sexconv, self.sexdir, setup=setup)
+        self.CopyFile(args.nosimsexparam, self.sexdir, setup=setup)
         if os.path.lexists(args.pyconfig):
-            self.CopyFile(args.pyconfig, known.logdir)
+            self.CopyFile(args.pyconfig, known.logdir, setup=setup)
 
         if args.catfitstype=='FITS_LDAC':
             self.catext = 2
@@ -1038,14 +1025,14 @@ class DerivedArgs():
         self.arglog = known.arglogfile
 
 
-    def CopyFile(self, file, dir):
+    def CopyFile(self, file, dir, setup=None):
         basename = os.path.basename(file)
         outname = os.path.join(dir,basename)
         if os.path.exists(outname):
             #subprocess.call(['rm', outname])
-            SystemCall(['rm', outname])
+            SystemCall(['rm', outname], setup=setup)
         #subprocess.call(['cp', file, outname])
-        SystemCall(['cp', file, outname])
+        SystemCall(['cp', file, outname], setup=setup)
 
         
 class BalrogConfig():
@@ -1095,8 +1082,10 @@ def SetupLogger(known):
     SetLevel(fh, logging.INFO)
     sexlog.addHandler(fh)
 
+    '''
     if os.path.exists(known.sexlogfile):
         os.remove(known.sexlogfile)
+    '''
 
     arglog = logging.getLogger('arg')
     arglog.setLevel(logging.INFO)
@@ -1108,8 +1097,8 @@ def SetupLogger(known):
     return [runlog, sexlog, arglog]
 
 
-def ConfigureBalrog(cmdline_opts, known):
-    derived_opts = DerivedArgs(cmdline_opts, known)
+def ConfigureBalrog(cmdline_opts, known, setup=None):
+    derived_opts = DerivedArgs(cmdline_opts, known, setup=setup)
     BalrogSetup = BalrogConfig(cmdline_opts, derived_opts)
     return BalrogSetup
 
@@ -1147,7 +1136,8 @@ def CmdlineListOrdered():
             "xmin", "xmax", "ymin", "ymax","ngal", "gain", "zeropoint", "seed", 
             "imageonly","nodraw","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
-            "sim_noassoc_seg", "sim_noassoc_seg_param_file"]
+            "sim_noassoc_seg", "sim_noassoc_seg_param_file",
+            "systemcmd", "sleep", "touch", "retrycmd"]
     return args
 
 
@@ -1274,44 +1264,44 @@ def SizesOK(args, log):
 
 def FindImages(args, log, indir):
     default = os.path.join(indir, 'example.fits')
-    if args.image!=None and os.path.abspath(args.image)!=default and args.psf==None:
+    if args.image is not None and os.path.abspath(args.image)!=default and args.psf is None:
         raise PsfInputError(104, args.image)
 
-    if args.image==None:
+    if args.image is None:
         args.image = default
         log.info('No --image explicitly given. Will use the default. Setting --image = %s' %args.image)
-    if args.detimage==None:
+    if args.detimage is None:
         args.detimage = args.image
         log.info('No --detimage explicitly given. Will use the image itself. Setting --detimage = %s' %args.detimage)
-    if args.weight==None:
+    if args.weight is None:
         args.weight = args.image
         log.info('No --weight explicitly given. Assuming it lives in same file as the image. Setting --weight = %s' %args.weight)
-    if args.detweight==None:
+    if args.detweight is None:
         if os.path.abspath(args.image)!=os.path.abspath(args.weight):
             args.detweight = args.weight
         else:
             args.detweight = args.detimage
         log.info('No --detweight explicitly given. Assuming it lives in same file as the detimage. Setting --detweight = %s' %args.detimage)
 
-    if args.weightext==None and os.path.abspath(args.weight)==os.path.abspath(args.image):
+    if args.weightext is None and os.path.abspath(args.weight)==os.path.abspath(args.image):
         args.weight = os.path.abspath(args.weight)
         args.weightext = args.imageext + 1
         log.info('No --weightext explicitly given. Assuming it lives in the extension after the image. Setting --weightext = %s' %(args.weightext))
-    if args.weightext==None:
+    if args.weightext is None:
         args.weightext = 0
         log.info('No --weightext explicitly given. Assuming it lives in the 0th extension. Setting --weightext = 0')
-    if args.detweightext==None and os.path.abspath(args.detweight)==os.path.abspath(args.detimage):
+    if args.detweightext is None and os.path.abspath(args.detweight)==os.path.abspath(args.detimage):
         args.detweight = os.path.abspath(args.detweight)
         args.detweightext = args.detimageext + 1
         log.info('No --detweightext explicitly given. Assuming it lives in the extension after the detimage. Setting --detweightext = %s' %(args.detweightext))
-    if args.detweightext==None:
+    if args.detweightext is None:
         args.detweightext = 0
         log.info('No --detweightext explicitly given. Assuming it lives in the 0th extension. Setting --detweightext = 0')
 
-    if args.psf==None:
+    if args.psf is None:
         args.psf = os.path.join(indir, 'example.psf')
         log.info('No --psf explicitly given. Will use the default. Setting --psf = %s' %args.psf)
-    if args.detpsf==None:
+    if args.detpsf is None:
         args.detpsf = args.psf
         log.info('No --detpsf explicitly given. Assuming it is the same file as the image psf. Setting --detpsf = %s' %args.detpsf)
     
@@ -1370,7 +1360,7 @@ def ParseFloatKeyword(args, log):
 
 def FindSexFile(arg, log, configdir, default, label):
     default = os.path.join(configdir, default)
-    if arg==None:
+    if arg is None:
         arg = default
         log.info('No --%s explicitly given. Will use the default. Setting --%s = %s' %(label,label,arg))
     if not os.path.lexists(arg):
@@ -1379,68 +1369,81 @@ def FindSexFile(arg, log, configdir, default, label):
     return arg
 
 
-def SystemCall(cmd, ocmd=False, redirect=None):
-    if not ocmd:
-        oscmd = subprocess.list2cmdline(cmd)
-    else:
-        oscmd = cmd
+def SysInfoPrint(setup, msg, level='warning', exc_info=None):
+    if setup.redirect is not None:
+        if setup.kind=='system':
+            with open(setup.redirect, 'a') as f:
+                f.write(msg+'\n')
+        elif setup.kind=='popen':
+            if level=='warning':
+                setup.redirect.warning(msg)
+            elif level=='info':
+                setup.redirect.info(msg)
+            elif level=='error':
+                #setup.redirect.error(msg, exc_info=exc_info)
+                setup.redirect.error(msg, exc_info=exc_info)
 
-    """
-    syscmd = '/bin/bash -c "%s' %(oscmd)
-    if SystemCallSetup.sleep > 0:
-        syscmd = "%s; sleep %.2f"%(syscmd,SystemCallSetup.sleep)
-    if SystemCallSetup.touch:
-        syscmd = "%s; touch %s"%(syscmd, SystemCallSetup.touchfile)
-    syscmd = '%s"'%(syscmd)
-    if redirect is not None:
-        syscmd = '%s >> %s 2>&1'%(syscmd, redirect)
 
-    t1 = time.time()
-    rcode = os.system(syscmd)
-    t2 = time.time()
+def SystemCall(oscmd, setup=None):
+
+    if type(oscmd)==list:
+        oscmd = subprocess.list2cmdline(oscmd)
+
+    if setup is None:
+        raise Exception('system call exception')
+
+    kwargs = {'shell':True}
+    syscmd = '%s'%(oscmd)
+    #syscmd = '/bin/bash -c "%s' %(oscmd)
+    if setup.sleep > 0:
+        syscmd = "%s; sleep %.2f"%(syscmd,setup.sleep)
+    if setup.touch:
+        syscmd = "%s; touch %s"%(syscmd, setup.touchfile)
+    #syscmd = '%s"'%(syscmd)
+    if setup.redirect is not None:
+        if setup.kind=='system':
+            syscmd = '%s >> %s 2>&1'%(syscmd, setup.redirect)
+        elif setup.kind=='popen':
+            kwargs['stdout'] = subprocess.PIPE
+            kwargs['stderr'] = subprocess.PIPE
+
+    SysInfoPrint(setup, 'Doing system command:\n%s\n'%(syscmd), level='info')
+    if setup.kind=='system': 
+        t1 = time.time()
+        rcode = os.system(syscmd)
+        t2 = time.time()
+    elif setup.kind=='popen':
+        t1 = time.time()
+        stdout, stderr = subprocess.Popen(syscmd, **kwargs).communicate()
+        t2 = time.time()
+        rcode = 0
+        SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
+        SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
     tdiff = t2 - t1
 
-    if (SystemCallSetup.sleep > 0) and (tdiff < SystemCallSetup.sleep):
-        print 'Command returned to quickly. sleep: %f; Time diff: %f' %(SystemCallSetup.sleep, tdiff)
-        print rcode, oscmd
-        if SystemCallSetup.retry:
-            print 'Retrying the command'
-            rcode = SystemCall(cmd, ocmd=True, redirect=redirect)
+    if (setup.sleep > 0) and (tdiff < setup.sleep):
+        SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff))
+        SysInfoPrint(setup, 'rcode = %s'%(str(rcode)))
+        SysInfoPrint(setup, 'command: %s'%(oscmd))
+        if setup.retry:
+            SysInfoPrint(setup, 'Retrying the command')
+            rcode = SystemCall(cmd, setup=setup)
 
-    if (SystemCallSetup.touch) and (not os.path.exists(SystemCallSetup.touchfile)):
-        print 'Command did not succeed to touch file: %s' %(SystemCallSetup.touchfile)
-        print rcode, oscmd
-        if SystemCallSetup.retry:
-            print 'Retrying the command'
-            rcode = SystemCall(cmd, ocmd=True, redirect=redirect)
-    """
+    if (setup.touch) and (not os.path.exists(setup.touchfile)):
+        SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile))
+        SysInfoPrint(setup, 'rcode = %s'%(str(rcode))) 
+        SysInfoPrint(setup, 'command: %s'%(oscmd))
+        if setup.retry:
+            SysInfoPrint(setup, 'Retrying the command')
+            rcode = SystemCall(cmd, setup=setup)
 
-    if SystemCallSetup.sleep > 0:
-        if redirect is None:
-            t1 = time.time()
-            rcode = os.system( '/bin/bash -c "%s; sleep %.2f"'%(oscmd, SystemCallSetup.sleep) )
-            t2 = time.time()
-        else:
-            t1 = time.time()
-            rcode = os.system( '/bin/bash -c "%s; sleep %.2f" >> %s 2>&1'%(oscmd, SystemCallSetup.sleep, redirect) )
-            t2 = time.time()
-
-        tdiff = t2 - t1
-        if tdiff < SystemCallSetup.sleep:
-            print 'Command returned to quickly:'
-            print oscmd
-            if SystemCallSetup.retry:
-                print 'Retrying the command'
-                rcode = SystemCall(oscmd, ocmd=True, redirect=redirect)
-    else:
-        if redirect is not None:
-            oscmd = '%s >> %s 2>&1' %(oscmd, redirect)
-        rcode = os.system(oscmd)
+    if (setup.touch) and os.path.exists(setup.touchfile):
+        os.remove(setup.touchfile)
 
     return rcode
 
 
-def ParseSex(args, log, configdir):
+def ParseSex(args, log, configdir, setup=None):
     args.sexconfig = FindSexFile(args.sexconfig, log, configdir, 'sex.config', 'sexconfig')
     args.sexparam = FindSexFile(args.sexparam, log, configdir, 'bulge.param', 'sexparam')
     args.nosimsexparam = FindSexFile(args.nosimsexparam, log, configdir, 'sex.param', 'nosimsexparam')
@@ -1448,22 +1451,16 @@ def ParseSex(args, log, configdir):
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
     args.catfitstype = 'FITS_%s' %(args.catfitstype.upper())
 
-    '''
-    try:
-        sex = subprocess.check_output(['which', args.sexpath])
-    except:
-        raise SextractorPathError(140, args.sexpath)
-    '''
 
     cmd = 'which %s &> /dev/null' %(args.sexpath)
-    ret = SystemCall(cmd, ocmd=True)
+    ret = SystemCall(cmd, setup=setup)
 
     #ret = os.system(cmd)
     if ret!=0:
         raise SextractorPathError(140, args.sexpath)
 
 
-def ParseDefaultArgs(args,known):
+def ParseDefaultArgs(args,known, setup=None):
     args.pyconfig = known.pyconfig
     args.outdir = known.outdir
 
@@ -1474,7 +1471,7 @@ def ParseDefaultArgs(args,known):
     
     ParseImages(args, known.logs[0], indir)
     ParseFloatKeyword(args, known.logs[0]) 
-    ParseSex(args, known.logs[0], configdir)
+    ParseSex(args, known.logs[0], configdir, setup=setup)
 
     return args
 
@@ -1532,12 +1529,19 @@ def DefaultArgs(parser):
     parser.add_argument( "-ct", "--catfitstype", help="Type of FITS file for sextractor to write out.", type=str, default='ldac', choices=['ldac','1.0'])
 
 
-def RaiseException(log, fulltraceback=False, doraise=False):
+    # System call type stuff
+    parser.add_argument( "-syscmd", "--systemcmd", help="How to do system calls", type=str, default='popen', choices=['popen','system'])
+    parser.add_argument( "-sl", "--sleep", help="Length of time to do sleep trick", type=float, default=0)
+    parser.add_argument( "-to", "--touch", help="Do touch trick", action='store_true')
+    parser.add_argument( "-rt", "--retrycmd", help="Retry system commands is they fail", action='store_true')
+
+
+def RaiseException(log, fulltraceback=False, sendto=None):
+    exc_info = sys.exc_info()
+    err_list = traceback.extract_tb(exc_info[2])
 
     if not fulltraceback:
-        exc_info = sys.exc_info()
         config_errs = []
-        err_list = traceback.extract_tb(exc_info[2])
         for err in err_list: 
             file = err[0]
             if file.find('balrogexcept.py')!=-1:
@@ -1553,16 +1557,29 @@ def RaiseException(log, fulltraceback=False, doraise=False):
 
         keep = traceback.format_list(config_errs)
         keep_tb = ''.join(keep)
-        log.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
-        #logging.error('Run error caused Balrog to exit.\n%s' %(keep_tb), exc_info=(exc_info[0], exc_info[1], None))
+        if keep_tb!='':
+            keep_tb = '\n%s'%(keep_tb)
+        msg = 'Run error caused Balrog to exit.%s'%(keep_tb)
+        exc_info = (exc_info[0], exc_info[1], None)
+        if sendto is not None:
+            m = '%s' %(msg)
+            if sendto.kind=='system':
+                s = logging.Formatter().formatException(exc_info)
+                m = '%s\n%s'%(m, s)
+            SysInfoPrint(sendto, m, level='error', exc_info=exc_info)
+        log.error(msg, exc_info=exc_info)
+        sys.exit()
 
     else:
-        log.exception('Run error caused Balrog to exit.')
-        #logging.exception('Run error caused Balrog to exit.')
+        msg = 'Run error caused Balrog to exit.'
+        if sendto is not None:
+            m = '%s'%(msg)
+            if sendto.kind=='system':
+                s = logging.Formatter().formatException(exc_info)
+                m = '%s\n%s'%(m, s)
+            SysInfoPrint(sendto, m, level='error', exc_info=exc_info)
+        log.exception(msg)
 
-    if doraise:
-        raise
-    sys.exit()
 
 
 def GetNativeOptions():
@@ -1572,21 +1589,21 @@ def GetNativeOptions():
 
 
 def AddCustomOptions(parser, config, log):
-    if config!=None:
+    if config is not None:
         if 'CustomArgs' not in dir(config):
             log.warning('The function CustomArgs was not found in your Balrog python config file. Will continue without adding any custom command line arguments.')
         else:
             config.CustomArgs(parser) 
 
 
-def NativeParse(parser, known):
+def NativeParse(parser, known, setup=None):
     cmdline_opts = parser.parse_args()
     known.logs[2].info('# Exact command call')
     known.logs[2].info(' '.join(sys.argv))
     LogCmdlineOpts(cmdline_opts, cmdline_opts, known.logs[2], '\n# Values received for each possible command line option, filling with defaults if necessary')
     
-    ParseDefaultArgs(cmdline_opts, known)
-    BalrogSetup = ConfigureBalrog(cmdline_opts, known)
+    ParseDefaultArgs(cmdline_opts, known, setup=setup)
+    BalrogSetup = ConfigureBalrog(cmdline_opts, known, setup=setup)
     return cmdline_opts, BalrogSetup
 
 
@@ -1610,7 +1627,7 @@ def GetKnown(parser):
     thisdir = os.path.dirname( os.path.realpath(__file__) )
     defdir = os.path.join(thisdir, 'default_example')
     outdir = os.path.join(defdir, 'output')
-    if known.outdir==None:
+    if known.outdir is None:
         known.outdir = outdir
     #CreateDir(known.outdir)
     known.logdir = os.path.join(known.outdir, 'balrog_log')
@@ -1622,7 +1639,7 @@ def GetKnown(parser):
 
 def GetConfig(known):
 
-    if known.pyconfig==None:
+    if known.pyconfig is None:
         thisdir = os.path.dirname( os.path.realpath(__file__) )
         known.pyconfig = os.path.join(thisdir, 'config.py')
 
@@ -1647,8 +1664,8 @@ def GetConfig(known):
 #  @param parser Command line parser object made by argparse.ArgumentParser() which has had the native Balrog arguments added to it.
 #  @param known  Contains a few parsed arguments, namely those needed for logging which have already been set up.
 #
-def RunBalrog(parser, known):
-
+def RunBalrog(parser, known, setup):
+    
     # Find the user's config file
     config = GetConfig(known)
 
@@ -1656,7 +1673,7 @@ def RunBalrog(parser, known):
     AddCustomOptions(parser, config, known.logs[0])
 
     # Parse the command line agruments and interpret the user's settings for the simulation
-    cmdline_opts, BalrogSetup = NativeParse(parser, known)
+    cmdline_opts, BalrogSetup = NativeParse(parser, known, setup=setup)
     rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = CustomParse(cmdline_opts, BalrogSetup, config)
 
     # Take the the user's configurations and build the simulated truth catalog out of them.
@@ -1669,51 +1686,58 @@ def RunBalrog(parser, known):
     if not BalrogSetup.imageonly:
         # If desired, run sextractor over the image prior to inserting any simulated galaxies.
         if not BalrogSetup.nonosim:
-            NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog)
+            NosimRunSextractor(BalrogSetup, bigImage, subWeight, extra_sex_config, catalog, setup=setup)
 
     # Insert simulated galaxies.
     if not BalrogSetup.nodraw:
         bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
-        WriteImages(BalrogSetup, bigImage, subWeight)
-        WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog)
+        WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
+        WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog, setup=setup)
     else:
-        WriteImages(BalrogSetup, bigImage, subWeight)
+        WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
 
 
     if not BalrogSetup.imageonly:
 
         # Run sextractor over the simulated image.
-        RunSextractor(BalrogSetup, extra_sex_config, catalog)
+        RunSextractor(BalrogSetup, extra_sex_config, catalog, setup=setup)
 
         # Run sextractor over simulated image in noassoc mode, only saving seg mask
         if BalrogSetup.sim_noassoc_seg:
             BalrogSetup.noassoc = True
             extra_sex_config['CHECKIMAGE_TYPE']='SEGMENTATION'
             extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.sim_noassoc_seg
-            RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True)
+            RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True, setup=setup)
 
     # If chosen, clean up image files you don't need anymore
     if BalrogSetup.clean:
-        Cleanup(BalrogSetup)
+        Cleanup(BalrogSetup, setup=setup)
 
     # Log some  extra stuff Balrog used along the way
     LogDerivedOpts(cmdline_opts, BalrogSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
 
-    '''
-    del bigImage
-    del subWeight
-
-    import gc
-    gc.collect()
-    '''
-
-class SystemCallSetup:
-    sleep = 0
-    retry = False
-    touch = False
 
 
-def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False, touch=False):
+class SystemCallSetup(object):
+
+    def __init__(self, sleep=0, retry=False, touch=False, touchdir=None, touchfile=None, redirect=None, kind='popen'):
+        self.sleep = sleep
+        self.retry = retry
+        self.redirect = redirect
+        self.kind = kind
+
+        self.touch = touch
+        self.touchdir = touchdir
+        if self.touchdir is not None:
+            if touchfile is None:
+                touchfile = 'systemcall.tmp'
+            self.touchfile = os.path.join(self.touchdir, touchfile)
+        else:
+            self.touchfile = None
+
+
+
+def BalrogFunction(args=None, systemredirect=None, excredirect=None):
 
     if args is not None:
         argv = [os.path.realpath(__file__)]
@@ -1724,44 +1748,18 @@ def BalrogFunction(args=None, redirect=None, sleep=0, retrycmd=False, touch=Fals
 
     # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
     # Only a writable outdir is required to be able to get the output log file.
-
+    
     parser = GetNativeOptions()
     known = GetKnown(parser)
 
-
-    if sleep > 0:
-        SystemCallSetup.sleep = sleep
-    if retrycmd:
-        SystemCallSetup.retry = True
-    if touch:
-        SystemCallSetup.touch = True
-        SystemCallSetup.touchfile = os.path.join(known.logdir, 'systemcall.tmp')
-
-
-    if redirect is not None:
-        s = sys.stdout
-        e = sys.stderr
-        log = open(redirect, 'a')
-        sys.stdout = log
-        sys.stderr = log
-
+    SystemSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=systemredirect, kind=known.systemcmd)
 
     try:
-        RunBalrog(parser, known)
+        RunBalrog(parser, known, SystemSetup)
     except Exception as e:
-        if redirect is not None:
-            sys.stdout = s
-            sys.stderr = e
-            log.close()
-            RaiseException(known.logs[0], fulltraceback=known.fulltraceback, doraise=True)
-        else:
-            RaiseException(known.logs[0], fulltraceback=known.fulltraceback)
+        ExcSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=excredirect, kind=known.systemcmd)
+        RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=ExcSetup)
 
-   
-    if redirect is not None:
-        sys.stdout = s
-        sys.stderr = e
-        log.close()
 
 
 if __name__ == "__main__":
