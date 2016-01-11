@@ -1420,23 +1420,19 @@ def SystemCall(oscmd, setup=None):
         rcode = 0
         SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
         SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
-    tdiff = t2 - t1
 
+    tdiff = t2 - t1
     if (setup.sleep > 0) and (tdiff < setup.sleep):
         SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff))
-        SysInfoPrint(setup, 'rcode = %s'%(str(rcode)))
-        SysInfoPrint(setup, 'command: %s'%(oscmd))
         if setup.retry:
             SysInfoPrint(setup, 'Retrying the command')
-            rcode = SystemCall(cmd, setup=setup)
+            rcode = SystemCall(oscmd, setup=setup)
 
     if (setup.touch) and (not os.path.exists(setup.touchfile)):
         SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile))
-        SysInfoPrint(setup, 'rcode = %s'%(str(rcode))) 
-        SysInfoPrint(setup, 'command: %s'%(oscmd))
         if setup.retry:
             SysInfoPrint(setup, 'Retrying the command')
-            rcode = SystemCall(cmd, setup=setup)
+            rcode = SystemCall(oscmd, setup=setup)
 
     if (setup.touch) and os.path.exists(setup.touchfile):
         os.remove(setup.touchfile)
