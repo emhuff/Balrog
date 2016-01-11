@@ -1370,6 +1370,7 @@ def FindSexFile(arg, log, configdir, default, label):
 
 
 def SysInfoPrint(setup, msg, level='warning', exc_info=None):
+
     if setup.redirect is not None:
         if setup.kind=='system':
             with open(setup.redirect, 'a') as f:
@@ -1472,6 +1473,8 @@ def ParseDefaultArgs(args,known, setup=None):
     ParseImages(args, known.logs[0], indir)
     ParseFloatKeyword(args, known.logs[0]) 
     ParseSex(args, known.logs[0], configdir, setup=setup)
+
+    args.syslog = setup
 
     return args
 
@@ -1579,7 +1582,7 @@ def RaiseException(log, fulltraceback=False, sendto=None):
                 m = '%s\n%s'%(m, s)
             SysInfoPrint(sendto, m, level='error', exc_info=exc_info)
         log.exception(msg)
-
+        sys.exit()
 
 
 def GetNativeOptions():
@@ -1737,7 +1740,7 @@ class SystemCallSetup(object):
 
 
 
-def BalrogFunction(args=None, systemredirect=None, excredirect=None):
+def BalrogFunction(args=None, syslog=None):
 
     if args is not None:
         argv = [os.path.realpath(__file__)]
@@ -1745,20 +1748,18 @@ def BalrogFunction(args=None, systemredirect=None, excredirect=None):
             argv.append(arg)
         sys.argv = argv
 
-
     # First get the needed info to setup up the logger, which allows everything to be logged even if things fail at very early stages.
     # Only a writable outdir is required to be able to get the output log file.
     
     parser = GetNativeOptions()
     known = GetKnown(parser)
 
-    SystemSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=systemredirect, kind=known.systemcmd)
-
+    SystemSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=syslog, kind=known.systemcmd)
     try:
         RunBalrog(parser, known, SystemSetup)
     except Exception as e:
-        ExcSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=excredirect, kind=known.systemcmd)
-        RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=ExcSetup)
+        #ExcSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=excredirect, kind=known.systemcmd)
+        RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=SystemSetup)
 
 
 
