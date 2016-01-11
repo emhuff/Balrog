@@ -44,10 +44,10 @@ class nComponentSersic(object):
 
     def ComponentRule(self, component=0, key=None, rule=None):
         
-        if key==None:
+        if key is None:
             raise Exception('must indicate which field to give a rule for')
 
-        if rule==None:
+        if rule is None:
             raise Exception('must give a rule')
 
         self.componentrule[component][key] = rule
@@ -55,9 +55,9 @@ class nComponentSersic(object):
 
     def GalaxyRule(self, key=None, rule=None):
 
-        if key==None:
+        if key is None:
             raise Exception('must indicate which field to give a rule for')
-        if rule==None:
+        if rule is None:
             raise Exception('must give a rule')
 
         self.galaxyrule[key] = rule
@@ -86,7 +86,7 @@ class nComponentSersic(object):
 
     def DoCatalog(self, catalogs, BalrogSetup, used=None):
         '''
-        if used==None:
+        if used is None:
             used = []
         if len(used) > 0:
             pass
@@ -139,7 +139,7 @@ class nComponentSersic(object):
 
             index, key, mindex, mkey = component[i]
             c = self.ReturnComponent(mkey, mindex=mindex)
-            if c==None:
+            if c is None:
                 continue
 
             if index > -1:
@@ -290,7 +290,7 @@ class nComponentSersic(object):
        
         cat = pyfits.open(get_cat)[get_ext].data
         size = len(cat)
-        if get_rows==None:
+        if get_rows is None:
             get_rows = np.random.randint(0,high=size, size=self.ngal)
             used.append((get_cat, get_ext,get_rows))
         return cat[get_col][get_rows]
@@ -308,7 +308,7 @@ class nComponentSersic(object):
                 if table == tables[j][0]:
                     index = j
             
-            if index==None:
+            if index is None:
                 tables.append( [ (file,ext), [(ind,key,col)] ] )
             else:
                 tables[index][1].append( (ind,key,col) )
@@ -580,11 +580,11 @@ class Rule(object):
     def __init__(self, type=None, average=None, sigma=None, joint=False, value=None, array=None, component=None, minimum=None, maximum=None, function=None, args=None, catalog=None, ext=None, column=None, kwargs=None ):
 
         if type=='catalog':
-            if catalog==None:
+            if catalog is None:
                 raise CatalogArgError(503, 'a catalog file (file)')
-            if ext==None:
+            if ext is None:
                 raise CatalogArgError(503, 'a FITS extention index (ext)')
-            if column==None:
+            if column is None:
                 raise CatalogArgError(503, 'a column name (col)')
             
             try:
@@ -605,7 +605,7 @@ class Rule(object):
             self.param = [catalog,ext,column]
 
         elif type=='value':
-            if value==None:
+            if value is None:
                 raise Exception('must specify a value with sample type value')
             self.param = value
 
@@ -615,18 +615,18 @@ class Rule(object):
             self.param = array
 
         elif type=='component':
-            if component==None:
+            if component is None:
                 raise Exception('Same takes argument(s)')
             self.param = component
 
         elif type=='function':
-            if function==None:
+            if function is None:
                 raise FunctionArgError(502, 'a function name (function)')
-            if args==None:
+            if args is None:
                 raise FunctionArgError(502, 'the arguments to the function (args)')
             self.param = [function, args, kwargs]
 
-        elif type==None:
+        elif type is None:
             self.param = None
             type = None
 
@@ -639,7 +639,7 @@ def IsNone(rule):
     try:
         len(rule)
     except:
-        if rule==None:
+        if rule is None:
             return True
     return False
 
@@ -705,7 +705,7 @@ def DefineRules(ngal, galkeys, galrules, compkeys, comprules, nProfiles):
 
     keys = galkeys
     for g,k in zip(galrules,keys):
-        if g!=None:
+        if g is not None:
             if g.type=='component':
                 g = Tuplify(g,k)
                 g = MagFlux(g)
@@ -716,7 +716,7 @@ def DefineRules(ngal, galkeys, galrules, compkeys, comprules, nProfiles):
     keys = compkeys
     for j in range(len(comprules)):
         key = keys[j]
-        if comprules[j]!=None:
+        if comprules[j] is not None:
             size = len(comprules[j])
             if size!=nProfiles:
                 if key=='flux':
@@ -725,12 +725,12 @@ def DefineRules(ngal, galkeys, galrules, compkeys, comprules, nProfiles):
                     k = key
                 raise Exception('rules.%s has %i array element(s). Must match rules.nProfiles = %i.' %(k,size,nProfiles))
         for i in range(nProfiles):
-            if comprules[j]!=None:
+            if comprules[j] is not None:
                 comp = comprules[j][i]
             else:
                 comp = None
 
-            if comp!=None:
+            if comp is not None:
                 if comp.type=='component':
                     comp = Tuplify(comp, key)
                     comp = MagFlux(comp)
