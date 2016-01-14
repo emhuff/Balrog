@@ -450,6 +450,11 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     else:
         msg = '\n\n# Running sextractor after inserting simulated galaxies\n'
 
+
+    '''
+    if setup.redirect is not None:
+        logtosend = setup.redirect
+    '''
     if setup.kind=='system':
         logtosend = BalrogSetup.sexlog
     elif setup.kind=='popen':
@@ -1459,6 +1464,12 @@ def SystemCall(oscmd, setup=None):
             os.remove(setup.touchfile)
 
         done = (sdone and tdone)
+        if done and skip:
+            SysInfoPrint(setup, 'Finished on attempt %i\n'%(attempt), level='info')
+            if setup.kind=='popen':
+                SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
+                SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
+                
         attempt += 1
 
     return rcode
