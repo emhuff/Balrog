@@ -1408,34 +1408,58 @@ def SystemCall(oscmd, setup=None):
             kwargs['stdout'] = subprocess.PIPE
             kwargs['stderr'] = subprocess.PIPE
 
-    SysInfoPrint(setup, 'Doing system command:\n%s\n'%(syscmd), level='info')
-    if setup.kind=='system': 
-        t1 = time.time()
-        rcode = os.system(syscmd)
-        t2 = time.time()
-    elif setup.kind=='popen':
-        t1 = time.time()
-        stdout, stderr = subprocess.Popen(syscmd, **kwargs).communicate()
-        t2 = time.time()
-        rcode = 0
-        SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
-        SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
+    done = False
+    attempt = 0
+    while not done:
+        sdone = False
+        tdone = False
 
-    tdiff = t2 - t1
-    if (setup.sleep > 0) and (tdiff < setup.sleep):
-        SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff))
-        if setup.retry:
-            SysInfoPrint(setup, 'Retrying the command')
-            rcode = SystemCall(oscmd, setup=setup)
+        if attempt==1:
+            SysInfoPrint(setup, 'First retry: Doing system command:\n%s\n'%(syscmd), level='info')
 
-    if (setup.touch) and (not os.path.exists(setup.touchfile)):
-        SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile))
-        if setup.retry:
-            SysInfoPrint(setup, 'Retrying the command')
-            rcode = SystemCall(oscmd, setup=setup)
+        if (attempt%1000==0):
+            SysInfoPrint(setup, 'Attempt %i: Doing system command:\n%s\n'%(attempt, syscmd), level='info')
 
-    if (setup.touch) and os.path.exists(setup.touchfile):
-        os.remove(setup.touchfile)
+        if setup.kind=='system': 
+            t1 = time.time()
+            rcode = os.system(syscmd)
+            t2 = time.time()
+        elif setup.kind=='popen':
+            t1 = time.time()
+            stdout, stderr = subprocess.Popen(syscmd, **kwargs).communicate()
+            t2 = time.time()
+            rcode = 0
+            #SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
+            #SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
+
+        tdiff = t2 - t1
+        if (setup.sleep > 0) and (tdiff < setup.sleep):
+            #SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff))
+            if not setup.retry:
+                sdone = True
+            else:
+                #SysInfoPrint(setup, 'Retrying the command')
+                #rcode = SystemCall(oscmd, setup=setup)
+                pass
+        else:
+            sdone = True
+
+        if (setup.touch) and (not os.path.exists(setup.touchfile)):
+            #SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile))
+            if not setup.retry:
+                tdone = True
+            else:
+                #SysInfoPrint(setup, 'Retrying the command')
+                #rcode = SystemCall(oscmd, setup=setup)
+                pass
+        else:
+            tdone = True
+
+        if (setup.touch) and os.path.exists(setup.touchfile):
+            os.remove(setup.touchfile)
+
+        done = (sdone and tdone)
+        attempt += 1
 
     return rcode
 
