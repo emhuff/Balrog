@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import shutil
+import distutils.spawn
+
 import time
 import imp
 import copy
@@ -114,8 +117,7 @@ def WriteCatalog(sample, BalrogSetup, txt=None, fits=False, TruthCatExtra=None, 
         phdu = pyfits.PrimaryHDU()
         hdus = pyfits.HDUList([phdu,tbhdu])
         if os.path.lexists(BalrogSetup.catalogtruth):
-            #subprocess.call(['rm',BalrogSetup.catalogtruth])
-            SystemCall( ['rm',BalrogSetup.catalogtruth], setup=setup )
+            os.remove(BalrogSetup.catalogtruth)
         hdus.writeto(BalrogSetup.catalogtruth)
 
     if txt is not None:
@@ -195,8 +197,7 @@ def WritePsf(BalrogSetup, psfin, psfout, setup=None):
     psfhdus[1].header['POLZERO1'] = psfhdus[1].header['POLZERO1'] - (BalrogSetup.xmin - 1)
     psfhdus[1].header['POLZERO2'] = psfhdus[1].header['POLZERO2'] - (BalrogSetup.ymin - 1)
     if os.path.lexists(psfout):
-        #subprocess.call(['rm', psfout])
-        SystemCall( ['rm', psfout], setup=setup )
+        os.remove(psfout)
     psfhdus.writeto(psfout)
 
 
@@ -462,8 +463,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
 
 def rm_link(attr, setup=None):
     if os.path.lexists(attr):
-        #subprocess.call( ['rm', attr] )
-        SystemCall( ['rm', attr], setup=setup )
+        os.remove(attr)
 
 
 def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog, setup=None):
@@ -473,30 +473,24 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
         rm_link(BalrogSetup.nosim_imageout, setup=setup)
         rm_link(BalrogSetup.psfout, setup=setup)
         
-        #subprocess.call( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout] )
-        SystemCall( ['ln', '-s', BalrogSetup.psf, BalrogSetup.psfout], setup=setup )
-        #subprocess.call( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout] )
-        SystemCall( ['ln', '-s', BalrogSetup.image, BalrogSetup.nosim_imageout], setup=setup )
+        os.symlink(BalrogSetup.psf, BalrogSetup.psfout)
+        os.symlink(BalrogSetup.image, BalrogSetup.nosim_imageout)
 
         if BalrogSetup.psf!=BalrogSetup.detpsf:
             rm_link(BalrogSetup.detpsfout, setup=setup)
-            #subprocess.call( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout] )
-            SystemCall( ['ln', '-s', BalrogSetup.detpsf, BalrogSetup.detpsfout], setup=setup )
+            os.symlink(BalrogSetup.detpsf, BalrogSetup.detpsfout)
 
         if BalrogSetup.weight!=BalrogSetup.image:
             rm_link(BalrogSetup.weightout, setup=setup)
-            #subprocess.call( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout] )
-            SystemCall( ['ln', '-s', BalrogSetup.weight, BalrogSetup.weightout], setup=setup )
+            os.symlink(BalrogSetup.weight, BalrogSetup.weightout)
 
         if BalrogSetup.detweight!=BalrogSetup.detimage:
             rm_link(BalrogSetup.detweightout, setup=setup)
-            #subprocess.call( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout] )
-            SystemCall( ['ln', '-s', BalrogSetup.detweight, BalrogSetup.detweightout], setup=setup )
+            os.symlink(BalrogSetup.detweight, BalrogSetup.detweightout)
 
         if BalrogSetup.nosim_detimageout!=BalrogSetup.detimagein:
             rm_link(BalrogSetup.nosim_detimageout, setup=setup)
-            #subprocess.call( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout] )
-            SystemCall( ['ln', '-s', BalrogSetup.detimagein, BalrogSetup.nosim_detimageout], setup=setup )
+            os.symlink(BalrogSetup.detimagein, BalrogSetup.nosim_detimageout)
 
         BalrogSetup.psf_written = True
 
@@ -507,8 +501,7 @@ def Cleanup(BalrogSetup, setup=None):
     files = [BalrogSetup.imageout, BalrogSetup.psfout, BalrogSetup.weightout, BalrogSetup.nosim_imageout]
     for file in files:
         if os.path.lexists(file):
-            #subprocess.call(['rm',file])
-            SystemCall(['rm',file], setup=setup)
+            os.remove(file)
 
 
 def UserDefinitions(cmdline_args, BalrogSetup, config, galkeys, compkeys):
@@ -1029,10 +1022,8 @@ class DerivedArgs():
         basename = os.path.basename(file)
         outname = os.path.join(dir,basename)
         if os.path.exists(outname):
-            #subprocess.call(['rm', outname])
-            SystemCall(['rm', outname], setup=setup)
-        #subprocess.call(['cp', file, outname])
-        SystemCall(['cp', file, outname], setup=setup)
+            os.remove(outname)
+        shutil.copy(file, outname)
 
         
 class BalrogConfig():
@@ -1137,7 +1128,7 @@ def CmdlineListOrdered():
             "imageonly","nodraw","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
             "sim_noassoc_seg", "sim_noassoc_seg_param_file",
-            "systemcmd", "sleep", "touch", "retrycmd"]
+            "systemcmd", "sleep", "touch", "retrycmd", "usebash"]
     return args
 
 
@@ -1369,12 +1360,13 @@ def FindSexFile(arg, log, configdir, default, label):
     return arg
 
 
-def SysInfoPrint(setup, msg, level='warning', exc_info=None):
+def SysInfoPrint(setup, msg, level='warning', exc_info=None, skip=False):
 
-    if setup.redirect is not None:
+    if (not skip) and (setup.redirect is not None):
         if setup.kind=='system':
+            time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
             with open(setup.redirect, 'a') as f:
-                f.write(msg+'\n')
+                f.write('%s: %s\n'%(time, msg))
         elif setup.kind=='popen':
             if level=='warning':
                 setup.redirect.warning(msg)
@@ -1389,22 +1381,27 @@ def SystemCall(oscmd, setup=None):
 
     if type(oscmd)==list:
         oscmd = subprocess.list2cmdline(oscmd)
-
     if setup is None:
         raise Exception('system call exception')
 
-    kwargs = {'shell':True}
-    syscmd = '%s'%(oscmd)
-    #syscmd = '/bin/bash -c "%s' %(oscmd)
+
+    if setup.usebash:
+        syscmd = '/bin/bash -c "%s' %(oscmd)
+    else:
+        syscmd = '%s'%(oscmd)
+
+    if (setup.redirect is not None) and (setup.kind=='system'):
+        syscmd = '%s >> %s 2>&1'%(syscmd, setup.redirect)
     if setup.sleep > 0:
         syscmd = "%s; sleep %.2f"%(syscmd,setup.sleep)
     if setup.touch:
         syscmd = "%s; touch %s"%(syscmd, setup.touchfile)
-    #syscmd = '%s"'%(syscmd)
-    if setup.redirect is not None:
-        if setup.kind=='system':
-            syscmd = '%s >> %s 2>&1'%(syscmd, setup.redirect)
-        elif setup.kind=='popen':
+    if setup.usebash:
+        syscmd = '%s"'%(syscmd)
+
+    if setup.kind=='popen':
+        kwargs = {'shell':True}
+        if (setup.redirect is not None):
             kwargs['stdout'] = subprocess.PIPE
             kwargs['stderr'] = subprocess.PIPE
 
@@ -1413,12 +1410,17 @@ def SystemCall(oscmd, setup=None):
     while not done:
         sdone = False
         tdone = False
-
+        
+        '''
         if attempt==1:
             SysInfoPrint(setup, 'First retry: Doing system command:\n%s\n'%(syscmd), level='info')
+        '''
 
         if (attempt%1000==0):
-            SysInfoPrint(setup, 'Attempt %i: Doing system command:\n%s\n'%(attempt, syscmd), level='info')
+            skip = False
+        else:
+            skip = True
+        SysInfoPrint(setup, 'Attempt %i: Doing system command:\n%s\n'%(attempt, syscmd), level='info', skip=skip)
 
         if setup.kind=='system': 
             t1 = time.time()
@@ -1429,29 +1431,27 @@ def SystemCall(oscmd, setup=None):
             stdout, stderr = subprocess.Popen(syscmd, **kwargs).communicate()
             t2 = time.time()
             rcode = 0
-            #SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
-            #SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
+            SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info', skip=skip)
+            SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info', skip=skip)
 
         tdiff = t2 - t1
         if (setup.sleep > 0) and (tdiff < setup.sleep):
-            #SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff))
+            SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff), skip=skip)
             if not setup.retry:
                 sdone = True
             else:
-                #SysInfoPrint(setup, 'Retrying the command')
+                SysInfoPrint(setup, 'Retrying the command', skip=skip)
                 #rcode = SystemCall(oscmd, setup=setup)
-                pass
         else:
             sdone = True
 
         if (setup.touch) and (not os.path.exists(setup.touchfile)):
-            #SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile))
+            SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile), skip=skip)
             if not setup.retry:
                 tdone = True
             else:
-                #SysInfoPrint(setup, 'Retrying the command')
+                SysInfoPrint(setup, 'Retrying the command', skip=skip)
                 #rcode = SystemCall(oscmd, setup=setup)
-                pass
         else:
             tdone = True
 
@@ -1472,12 +1472,16 @@ def ParseSex(args, log, configdir, setup=None):
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
     args.catfitstype = 'FITS_%s' %(args.catfitstype.upper())
 
-
+    '''
     cmd = 'which %s &> /dev/null' %(args.sexpath)
     ret = SystemCall(cmd, setup=setup)
 
     #ret = os.system(cmd)
     if ret!=0:
+        raise SextractorPathError(140, args.sexpath)
+    '''
+    which = distutils.spawn.find_executable(args.sexpath)
+    if which is None:
         raise SextractorPathError(140, args.sexpath)
 
 
@@ -1557,6 +1561,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-sl", "--sleep", help="Length of time to do sleep trick", type=float, default=0)
     parser.add_argument( "-to", "--touch", help="Do touch trick", action='store_true')
     parser.add_argument( "-rt", "--retrycmd", help="Retry system commands is they fail", action='store_true')
+    parser.add_argument( "-ub", "--usebash", help="Do system commands in -c of bash", action='store_true')
 
 
 def RaiseException(log, fulltraceback=False, sendto=None):
@@ -1743,11 +1748,12 @@ def RunBalrog(parser, known, setup):
 
 class SystemCallSetup(object):
 
-    def __init__(self, sleep=0, retry=False, touch=False, touchdir=None, touchfile=None, redirect=None, kind='popen'):
+    def __init__(self, sleep=0, retry=False, touch=False, touchdir=None, touchfile=None, redirect=None, kind='popen', usebash=False):
         self.sleep = sleep
         self.retry = retry
         self.redirect = redirect
         self.kind = kind
+        self.usebash = usebash
 
         self.touch = touch
         self.touchdir = touchdir
