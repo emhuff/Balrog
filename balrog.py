@@ -1780,7 +1780,7 @@ def BalrogFunction(args=None, syslog=None):
     parser = GetNativeOptions()
     known = GetKnown(parser)
 
-    SystemSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=syslog, kind=known.systemcmd)
+    SystemSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=syslog, kind=known.systemcmd, usebash=known.usebash)
     try:
         RunBalrog(parser, known, SystemSetup)
     except Exception as e:
