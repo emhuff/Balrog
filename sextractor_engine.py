@@ -152,7 +152,7 @@ class SextractorEngine():
         self.config['CHECKIMAGE_NAME'] = nstr
     
 
-    def run(self, logger=None, after=None, msg=None):
+    def run(self, msg=None):
         args = [self.path, self.config['IMAGE']]
         for key in self.config.keys():
             if key=='IMAGE':
@@ -161,12 +161,7 @@ class SextractorEngine():
                 args.append( '-%s' %key )
             args.append( str(self.config[key]) )
    
-
-        if self.setup is not None:
-            self.setup.redirect = logger
-
         cmd = ' '.join(args)
         if msg is not None:
             balrog.SysInfoPrint(self.setup, msg, level='info')
         balrog.SystemCall(cmd, setup=self.setup)
-        self.setup.redirect = after

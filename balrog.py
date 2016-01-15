@@ -431,7 +431,18 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     #if not BalrogSetup.noassoc:
     config_file = WriteConfigFile(BalrogSetup, config_file, catalogmeasured)
 
-    eng = sextractor_engine.SextractorEngine(setup=setup)
+
+    '''
+    if setup.redirect is not None:
+        logtosend = setup.redirect
+    '''
+    if setup.kind=='system':
+        logtosend = BalrogSetup.sexlog
+    elif setup.kind=='popen':
+        logtosend = BalrogSetup.sexlogger
+    sexlogsetup = setup.Copy(redirect=logtosend)
+
+    eng = sextractor_engine.SextractorEngine(setup=sexlogsetup)
 
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
@@ -450,17 +461,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     else:
         msg = '\n\n# Running sextractor after inserting simulated galaxies\n'
 
-
-    '''
-    if setup.redirect is not None:
-        logtosend = setup.redirect
-    '''
-    if setup.kind=='system':
-        logtosend = BalrogSetup.sexlog
-    elif setup.kind=='popen':
-        logtosend = BalrogSetup.sexlogger
-
-    eng.run(logger=logtosend, after=setup.redirect, msg=msg)
+    eng.run(msg=msg)
 
     if not BalrogSetup.noassoc: #and not nosim:
         CopyAssoc(BalrogSetup, catalogmeasured)
@@ -1071,7 +1072,8 @@ def SetupLogger(known):
     ph = SetLevel(ph, known.stdverbosity)
     runlog.addHandler(ph)
 
-    sexlog = logging.getLogger('sex')
+    t = str(time.time())
+    sexlog = logging.getLogger('sex-%s'%(t))
     sexlog.setLevel(logging.INFO)
     known.sexlogfile = os.path.join(known.logdir, 'sex.log.txt')
     fh = logging.FileHandler(known.sexlogfile, mode='w')
@@ -1433,11 +1435,13 @@ def SystemCall(oscmd, setup=None):
             t2 = time.time()
         elif setup.kind=='popen':
             t1 = time.time()
-            stdout, stderr = subprocess.Popen(syscmd, **kwargs).communicate()
+            p = subprocess.Popen(syscmd, **kwargs)
+            stdout, stderr = p.communicate()
             t2 = time.time()
-            rcode = 0
+            rcode = p.returncode
             SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info', skip=skip)
             SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info', skip=skip)
+        SysInfoPrint(setup, 'returncode: %s'%(str(rcode)), level='info', skip=skip)
 
         tdiff = t2 - t1
         if (setup.sleep > 0) and (tdiff < setup.sleep):
@@ -1469,6 +1473,7 @@ def SystemCall(oscmd, setup=None):
             if setup.kind=='popen':
                 SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info')
                 SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info')
+                SysInfoPrint(setup, 'returncode: %s'%(str(rcode)), level='info')
                 
         attempt += 1
 
@@ -1758,6 +1763,11 @@ def RunBalrog(parser, known, setup):
 
 
 class SystemCallSetup(object):
+
+    def Copy(self, redirect=None):
+        if redirect is None:
+            raise Exception('Must give redirect')
+        return SystemCallSetup(sleep=self.sleep, retry=self.retry, touch=self.touch, touchdir=self.touchdir, touchfile=self.touchfile, redirect=redirect, kind=self.kind, usebash=self.usebash)
 
     def __init__(self, sleep=0, retry=False, touch=False, touchdir=None, touchfile=None, redirect=None, kind='popen', usebash=False):
         self.sleep = sleep
