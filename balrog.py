@@ -1135,7 +1135,8 @@ def CmdlineListOrdered():
             "imageonly","nodraw","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
             "sim_noassoc_seg", "sim_noassoc_seg_param_file",
-            "systemcmd", "sleep", "touch", "retrycmd", "usebash"]
+            "systemcmd", "retrycmd", "usebash"]
+
     return args
 
 
@@ -1399,10 +1400,6 @@ def SystemCall(oscmd, setup=None):
 
     if (setup.redirect is not None) and (setup.kind=='system'):
         syscmd = '%s >> %s 2>&1'%(syscmd, setup.redirect)
-    if setup.sleep > 0:
-        syscmd = "%s; sleep %.2f"%(syscmd,setup.sleep)
-    if setup.touch:
-        syscmd = "%s; touch %s"%(syscmd, setup.touchfile)
     if setup.usebash:
         syscmd = '%s"'%(syscmd)
 
@@ -1415,8 +1412,6 @@ def SystemCall(oscmd, setup=None):
     done = False
     attempt = 0
     while not done:
-        sdone = False
-        tdone = False
         
         '''
         if attempt==1:
@@ -1443,31 +1438,15 @@ def SystemCall(oscmd, setup=None):
             SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info', skip=skip)
         SysInfoPrint(setup, 'returncode: %s'%(str(rcode)), level='info', skip=skip)
 
-        tdiff = t2 - t1
-        if (setup.sleep > 0) and (tdiff < setup.sleep):
-            SysInfoPrint(setup, 'Command returned to quickly. sleep: %f; Time diff: %f' %(setup.sleep, tdiff), skip=skip)
+        if rcode==0:
+            done = True
+        else:
+            SysInfoPrint(setup, 'System call failed', skip=skip)
             if not setup.retry:
-                sdone = True
+                done = True
             else:
                 SysInfoPrint(setup, 'Retrying the command', skip=skip)
-                #rcode = SystemCall(oscmd, setup=setup)
-        else:
-            sdone = True
 
-        if (setup.touch) and (not os.path.exists(setup.touchfile)):
-            SysInfoPrint(setup, 'Command did not succeed to touch file: %s' %(setup.touchfile), skip=skip)
-            if not setup.retry:
-                tdone = True
-            else:
-                SysInfoPrint(setup, 'Retrying the command', skip=skip)
-                #rcode = SystemCall(oscmd, setup=setup)
-        else:
-            tdone = True
-
-        if (setup.touch) and os.path.exists(setup.touchfile):
-            os.remove(setup.touchfile)
-
-        done = (sdone and tdone)
         if done and skip:
             SysInfoPrint(setup, 'Finished on attempt %i\n'%(attempt), level='info')
             if setup.kind=='popen':
@@ -1574,8 +1553,6 @@ def DefaultArgs(parser):
 
     # System call type stuff
     parser.add_argument( "-syscmd", "--systemcmd", help="How to do system calls", type=str, default='popen', choices=['popen','system'])
-    parser.add_argument( "-sl", "--sleep", help="Length of time to do sleep trick", type=float, default=0)
-    parser.add_argument( "-to", "--touch", help="Do touch trick", action='store_true')
     parser.add_argument( "-rt", "--retrycmd", help="Retry system commands is they fail", action='store_true')
     parser.add_argument( "-ub", "--usebash", help="Do system commands in -c of bash", action='store_true')
 
@@ -1767,23 +1744,13 @@ class SystemCallSetup(object):
     def Copy(self, redirect=None):
         if redirect is None:
             raise Exception('Must give redirect')
-        return SystemCallSetup(sleep=self.sleep, retry=self.retry, touch=self.touch, touchdir=self.touchdir, touchfile=self.touchfile, redirect=redirect, kind=self.kind, usebash=self.usebash)
+        return SystemCallSetup(retry=self.retry, redirect=redirect, kind=self.kind, usebash=self.usebash)
 
-    def __init__(self, sleep=0, retry=False, touch=False, touchdir=None, touchfile=None, redirect=None, kind='popen', usebash=False):
-        self.sleep = sleep
+    def __init__(self, retry=False, redirect=None, kind='popen', usebash=False):
         self.retry = retry
         self.redirect = redirect
         self.kind = kind
         self.usebash = usebash
-
-        self.touch = touch
-        self.touchdir = touchdir
-        if self.touchdir is not None:
-            if touchfile is None:
-                touchfile = 'systemcall.tmp'
-            self.touchfile = os.path.join(self.touchdir, touchfile)
-        else:
-            self.touchfile = None
 
 
 
@@ -1801,11 +1768,11 @@ def BalrogFunction(args=None, syslog=None):
     parser = GetNativeOptions()
     known = GetKnown(parser)
 
-    SystemSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=syslog, kind=known.systemcmd, usebash=known.usebash)
+    SystemSetup = SystemCallSetup(retry=known.retrycmd, redirect=syslog, kind=known.systemcmd, usebash=known.usebash)
     try:
         RunBalrog(parser, known, SystemSetup)
     except Exception as e:
-        #ExcSetup = SystemCallSetup(sleep=known.sleep, retry=known.retrycmd, touch=known.touch, touchdir=known.logdir, redirect=excredirect, kind=known.systemcmd)
+        #ExcSetup = SystemCallSetup(retry=known.retrycmd, redirect=excredirect, kind=known.systemcmd, usebash=known.usebash)
         RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=SystemSetup)
 
 
