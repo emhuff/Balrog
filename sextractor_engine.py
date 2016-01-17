@@ -161,7 +161,9 @@ class SextractorEngine():
                 args.append( '-%s' %key )
             args.append( str(self.config[key]) )
    
-        cmd = ' '.join(args)
+        #cmd = ' '.join(args)
+        cmd = args
+
         if msg is not None:
             balrog.SysInfoPrint(self.setup, msg, level='info')
         balrog.SystemCall(cmd, setup=self.setup)

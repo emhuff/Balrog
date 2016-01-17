@@ -1135,7 +1135,7 @@ def CmdlineListOrdered():
             "imageonly","nodraw","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
             "sim_noassoc_seg", "sim_noassoc_seg_param_file",
-            "systemcmd", "retrycmd", "usebash"]
+            "systemcmd", "retrycmd", "useshell"]
 
     return args
 
@@ -1386,28 +1386,25 @@ def SysInfoPrint(setup, msg, level='warning', exc_info=None, skip=False):
 
 
 def SystemCall(oscmd, setup=None):
-
-    if type(oscmd)==list:
-        oscmd = subprocess.list2cmdline(oscmd)
     if setup is None:
         raise Exception('system call exception')
 
 
-    if setup.usebash:
-        syscmd = '/bin/bash -c "%s' %(oscmd)
-    else:
-        syscmd = '%s'%(oscmd)
-
-    if (setup.redirect is not None) and (setup.kind=='system'):
-        syscmd = '%s >> %s 2>&1'%(syscmd, setup.redirect)
-    if setup.usebash:
-        syscmd = '%s"'%(syscmd)
-
     if setup.kind=='popen':
-        kwargs = {'shell':True}
-        if (setup.redirect is not None):
+        kwargs = {}
+        if setup.useshell:
+            kwargs = {'shell':True}
+        if setup.redirect is not None:
             kwargs['stdout'] = subprocess.PIPE
             kwargs['stderr'] = subprocess.PIPE
+
+    if (setup.kind=='system') or (setup.useshell):
+        syscmd = subprocess.list2cmdline(oscmd)
+        if (setup.redirect is not None) and (setup.kind=='system'):
+            syscmd = '%s >> %s 2>&1'%(syscmd, setup.redirect)
+    else:
+        syscmd = oscmd
+
 
     done = False
     attempt = 0
@@ -1554,7 +1551,7 @@ def DefaultArgs(parser):
     # System call type stuff
     parser.add_argument( "-syscmd", "--systemcmd", help="How to do system calls", type=str, default='popen', choices=['popen','system'])
     parser.add_argument( "-rt", "--retrycmd", help="Retry system commands is they fail", action='store_true')
-    parser.add_argument( "-ub", "--usebash", help="Do system commands in -c of bash", action='store_true')
+    parser.add_argument( "-ush", "--useshell", help="Do Popen with shell=True", action='store_true')
 
 
 def RaiseException(log, fulltraceback=False, sendto=None):
@@ -1744,13 +1741,13 @@ class SystemCallSetup(object):
     def Copy(self, redirect=None):
         if redirect is None:
             raise Exception('Must give redirect')
-        return SystemCallSetup(retry=self.retry, redirect=redirect, kind=self.kind, usebash=self.usebash)
+        return SystemCallSetup(retry=self.retry, redirect=redirect, kind=self.kind, useshell=self.useshell)
 
-    def __init__(self, retry=False, redirect=None, kind='popen', usebash=False):
+    def __init__(self, retry=False, redirect=None, kind='popen', useshell=False):
         self.retry = retry
         self.redirect = redirect
         self.kind = kind
-        self.usebash = usebash
+        self.useshell = useshell
 
 
 
@@ -1768,11 +1765,10 @@ def BalrogFunction(args=None, syslog=None):
     parser = GetNativeOptions()
     known = GetKnown(parser)
 
-    SystemSetup = SystemCallSetup(retry=known.retrycmd, redirect=syslog, kind=known.systemcmd, usebash=known.usebash)
+    SystemSetup = SystemCallSetup(retry=known.retrycmd, redirect=syslog, kind=known.systemcmd, useshell=known.useshell)
     try:
         RunBalrog(parser, known, SystemSetup)
     except Exception as e:
-        #ExcSetup = SystemCallSetup(retry=known.retrycmd, redirect=excredirect, kind=known.systemcmd, usebash=known.usebash)
         RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=SystemSetup)
 
 
