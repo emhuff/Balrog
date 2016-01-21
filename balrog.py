@@ -1153,41 +1153,11 @@ def DefaultName(startfile, lookfor, replacewith, outdir):
 
 
 def CreateSubDir(subdir):
-    '''
-    err = 0
-    if not os.path.lexists(subdir):
-        err = subprocess.call(['mkdir', subdir], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    if err!=0:
-    '''
     if not os.path.lexists(subdir):
         try:
             os.makedirs(subdir)
         except:
             raise SubdirWriteError(202, subdir)
-
-'''
-def CreateDir(dir):
-    gdir = copy.copy(dir)
-    full = False
-    while dir[0]=='/':
-        dir = dir[1:]
-        full = True
-    while dir[-1]=='/':
-        dir = dir[:-1]
-    dirs = dir.strip().split('/')
-    if full:
-        subdir = '/'
-    else:
-        subdir = './'
-
-    err = 0
-    for dir in dirs:
-        subdir = os.path.join(subdir,dir)
-        if not os.path.lexists(subdir):
-            err = subprocess.call( ['mkdir', subdir], stderr=subprocess.PIPE, stdout=subprocess.PIPE )
-            if err!=0:
-                raise OutdirWriteError(201, gdir, subdir)
-'''
 
 
 def get_check_array_ext(args):
@@ -1476,14 +1446,6 @@ def ParseSex(args, log, configdir, setup=None):
     args.sexconv = FindSexFile(args.sexconv, log, configdir, 'sex.conv', 'sexconv')
     args.catfitstype = 'FITS_%s' %(args.catfitstype.upper())
 
-    '''
-    cmd = 'which %s &> /dev/null' %(args.sexpath)
-    ret = SystemCall(cmd, setup=setup)
-
-    #ret = os.system(cmd)
-    if ret!=0:
-        raise SextractorPathError(140, args.sexpath)
-    '''
     which = distutils.spawn.find_executable(args.sexpath)
     if which is None:
         raise SextractorPathError(140, args.sexpath)
@@ -1659,7 +1621,6 @@ def GetKnown(parser):
     outdir = os.path.join(defdir, 'output')
     if known.outdir is None:
         known.outdir = outdir
-    #CreateDir(known.outdir)
     known.logdir = os.path.join(known.outdir, 'balrog_log')
     CreateSubDir(known.logdir)
     
