@@ -3,6 +3,7 @@
 import shutil
 import distutils.spawn
 
+import re
 import time
 import imp
 import copy
@@ -1385,7 +1386,7 @@ def SysInfoPrint(setup, msg, level='warning', exc_info=None, skip=False):
                 setup.redirect.error(msg, exc_info=exc_info)
 
 
-def SystemCall(oscmd, setup=None, delfiles=[]):
+def SystemCall(oscmd, setup=None, delfiles=[], keeps=[]):
     if setup is None:
         raise Exception('system call exception')
 
@@ -1449,8 +1450,11 @@ def SystemCall(oscmd, setup=None, delfiles=[]):
                 base = os.path.basename(file)
                 files = os.listdir(dir)
                 for f in files:
+                    fullpath = os.path.join(dir,f)
+                    if fullpath in keeps:
+                        continue
                     if f.startswith(base):
-                        os.remove(os.path.join(dir,f))
+                        os.remove(fullpath)
 
         if done and skip:
             SysInfoPrint(setup, 'Finished on attempt %i\n'%(attempt), level='info')
