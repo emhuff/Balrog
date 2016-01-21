@@ -1385,7 +1385,7 @@ def SysInfoPrint(setup, msg, level='warning', exc_info=None, skip=False):
                 setup.redirect.error(msg, exc_info=exc_info)
 
 
-def SystemCall(oscmd, setup=None):
+def SystemCall(oscmd, setup=None, delfiles=[]):
     if setup is None:
         raise Exception('system call exception')
 
@@ -1443,6 +1443,14 @@ def SystemCall(oscmd, setup=None):
                 done = True
             else:
                 SysInfoPrint(setup, 'Retrying the command', skip=skip)
+
+            for file in delfiles:
+                dir = os.path.dirname(file)
+                base = os.path.basename(file)
+                files = os.listdir(dir)
+                for f in files:
+                    if f.startswith(base):
+                        os.remove(os.path.join(dir,f))
 
         if done and skip:
             SysInfoPrint(setup, 'Finished on attempt %i\n'%(attempt), level='info')
