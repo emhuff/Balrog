@@ -49,7 +49,8 @@ frame=tb,
 basicstyle=\ttfamily\selectfont
 }
 
-\newcommand{\codett}[1]{\lstinline{#1}}
+\newcommand{\codett}[1]{\texttt{#1}}
+\newcommand{\codettd}[1]{\texttt{\$}\lstinline{#1}}
 \newcommand{\tablett}[1]{\lstset{breaklines=true,basicstyle=\ttfamily\fontsize{11}{13}\selectfont} \lstinline{#1}}
 \lstnewenvironment{code}{\lstset{backgroundcolor=\color{pinkgrey},breaklines=true,breakatwhitespace=true,basicstyle=\ttfamily\fontsize{11}{13}\selectfont}}{}
 \lstnewenvironment{cmdline}{\lstset{backgroundcolor=\color{bluegrey},breaklines=true,breakatwhitespace=true,basicstyle=\ttfamily\fontsize{11}{13}\selectfont}}{}
@@ -807,6 +808,7 @@ Additionally, \balrog{} logs the exact value of each command line argument in th
 \codett{\$INSTALLDIR/default\_example/output/balrog\_log/args.log.txt}
 and redirects all \sex{}'s \codett{stdout} and \codett{stderr} to \codett{\$INSTALLDIR/default\_example/output/balrog\_log/sex.log.txt}.
 
+
 \begin{table}
 \caption{Definitions used throughout this manual to facilitate ease of command line calls.}
 \label{tab:def}
@@ -814,10 +816,11 @@ and redirects all \sex{}'s \codett{stdout} and \codett{stderr} to \codett{\$INST
 \begin{tabular}{l l}
 \toprule %\toprule
 \rowcolor{gray2} \textbf{Name} & \textbf{Meaning} \\ \midrule
-\codett{\$INSTALLDIR} & Directory \codett{git} clones for \balrog{}, i.e. where \balrog{} is installed \\
-\codett{runbalrog} & \codett{\$INSTALLDIR/balrog.py} \\ \bottomrule %\bottomrule
+\texttt{\$}\lstinline{INSTALLDIR} & Directory \lstinline{git} clones for \balrog{}, i.e. where \balrog{} is installed \\ %
+\lstinline{runbalrog} & \texttt{\$}\lstinline{INSTALLDIR/balrog.py} \\ \bottomrule %\bottomrule
 \end{tabular}
 \end{table}
+
 
 The command line arguments attempt to be rather intuitive as to what they mean,
 but one which may not be so obvious is \opt{pyconfig}.
@@ -945,6 +948,7 @@ These have been summarized in \autoref{tab:b2s}.
 \optstab{}
 
 
+
 \begin{table}[h]
 \caption{Translation between \balrog{} command line argument names and how \balrog{} automatically configures
 \sex{} with these arguments.} \label{tab:b2s}
@@ -970,7 +974,7 @@ These have been summarized in \autoref{tab:b2s}.
 \multicolumn{3}{c}{\balrog{}'s \hyperlink{hyper:assoc}{association mode} configuration} \\
 \rowcolor{gray1} \codett{if !--noassoc:} & & \\
 \rowcolor{gray1} \texttt{truth} & $\rightarrow$ & \codett{ASSOC\_DATA} \\
-\rowcolor{gray1} \texttt{truth['x'],truth['y']} & $\rightarrow$ & \codett{ASSOC\_PARAMS} \\
+\rowcolor{gray1} \texttt{truth[`x'],truth[`y']} & $\rightarrow$ & \codett{ASSOC\_PARAMS} \\
 \rowcolor{gray1} & & \codett{ASSOC\_RADIUS = 2.0} \\
 \rowcolor{gray1} & & \codett{ASSOC\_TYPE = NEAREST} \\
 \rowcolor{gray1} & & \codett{ASSOCSELEC\_TYPE = MATCHED} \\
@@ -1179,8 +1183,8 @@ Function & \codett{rules.y = Function(function=rand, args=[args.xmin,args.xmax,a
 %\catline{\sersic{}} \\ 
 \multicolumn{2}{p{6in}}{\dfill \sersic{} \dfill} \\ 
 \rowcolor{white} \multicolumn{2}{c}{(If \sersic{} attributes are multi-component, each list element uses  this default)} \\ \\
-\rules{sersicindex} & \codett{Catalog(`cosmos.fits',1,`SERSIC_INDEX')} \\
-\rules{halflightradius} & \codett{Catalog(`cosmos.fits',1,`HALF_LIGHT_RADIUS')} \\
+\rules{sersicindex} & \codett{Catalog(`cosmos.fits',1,`SERSIC\_INDEX')} \\
+\rules{halflightradius} & \codett{Catalog(`cosmos.fits',1,`HALF\_LIGHT\_RADIUS')} \\
 \rules{magnitude} & \codett{Catalog(`cosmos.fits',1,`IMAG')} \\
 \rules{axisratio} & 1 \\
 \rules{beta} & 0 \\ \bottomrule %\bottomrule
@@ -1217,10 +1221,10 @@ We have summarized the \codett{Catalog}/\codett{Table} functionality below.
 
 \begin{code}
 #These two blocks of code are equivalent
-rules.magnitude = Catalog(file='cosmos.fits', ext=1, col='IMAG')
+rules.magnitude = Catalog(file=`cosmos.fits', ext=1, col=`IMAG')
 
 tab = Table(file=args.catalog, ext=args.ext)
-rules.magnitude = tab.Column('IMAG')
+rules.magnitude = tab.Column(`IMAG')
 \end{code}
 
 Last but not least, the fourth assignable sampling type to \simrules{} is a function. 
@@ -1349,7 +1353,7 @@ Here is a concrete example.
 
 \begin{code}
 def SimulationRules(args, rules, sampled, TruthCat):
-    nc = Catalog(file='cosmos.fits',ext=1,col='SERSIC_INDEX')
+    nc = Catalog(file=`cosmos.fits',ext=1,col=`SERSIC_INDEX')
     n = Function(function=g, args=[1, 0.05, args.ngal, nc])
     rules.sersicindex = n
 
@@ -1395,7 +1399,7 @@ For example:
 
 \begin{code}
 def SimulationRules(args, rules, sampled, TruthCat):
-    ns = Function(function=exact, args=[np.ones(args.ngal)], kwargs={'i2':np.ones(args.ngal)})
+    ns = Function(function=exact, args=[np.ones(args.ngal)], kwargs={`i2':np.ones(args.ngal)})
     n = Function(function=g, args=[4, 0.05, args.ngal, ns])
     rules.sersicindex = n
 
@@ -1428,9 +1432,9 @@ Here are a couple examples:
 \begin{code}
 def SimulationRules(args, rules, sampled, TruthCat):
     tab = Table(file=args.catalog, ext=args.ext)
-    TruthCat.AddColumn(tab.Column('Z'), name='redshift')
-    TruthCat.AddColumn(Catalog('cosmos.fit',1,'IMAG'))
-    TruthCat.AddColumn(args.seed, name='SEED', fmt='J')
+    TruthCat.AddColumn(tab.Column(`Z'), name=`redshift')
+    TruthCat.AddColumn(Catalog(`cosmos.fit',1,`IMAG'))
+    TruthCat.AddColumn(args.seed, name=`SEED', fmt=`J')
 \end{code}
 
 \simfunc{} is written to be handle errors.
@@ -1645,35 +1649,35 @@ These are the ordered values of the \codett{VECTOR\_ASSOC} array along with thei
 For example, we can print the relevant header information from the default example runs in \autoref{sec:quick}:
 \begin{cmdline}
 % listhead "default_example/output/balrog_cat/example.measuredcat.sim.fits[2]" | grep V | grep " ="
-TTYPE1  = 'VECTOR_ASSOC'       / ASSOCiated parameter vector
-V0      = 'not_drawn'
-VUNIT0  = 'dimensionless'
-V1      = 'g2      '
-VUNIT1  = 'dimensionless'
-V2      = 'g1      '
-VUNIT2  = 'dimensionless'
-V3      = 'flux_noiseless'
-VUNIT3  = 'ADU     '
-V4      = 'magnification'
-VUNIT4  = 'dimensionless'
-V5      = 'balrog_index'
-VUNIT5  = 'dimensionless'
-V6      = 'y       '
-VUNIT6  = 'pix     '
-V7      = 'x       '
-VUNIT7  = 'pix     '
-V8      = 'flux_noised'
-VUNIT8  = 'ADU     '
-V9      = 'halflightradius_0'
-VUNIT9  = 'arcsec  '
-V10     = 'beta_0  '
-VUNIT10 = 'deg     '
-V11     = 'sersicindex_0'
-VUNIT11 = 'dimensionless'
-V12     = 'axisratio_0'
-VUNIT12 = 'dimensionless'
-V13     = 'flux_0  '
-VUNIT13 = 'ADU     '
+TTYPE1  = `VECTOR_ASSOC'       / ASSOCiated parameter vector
+V0      = `not_drawn'
+VUNIT0  = `dimensionless'
+V1      = `g2      '
+VUNIT1  = `dimensionless'
+V2      = `g1      '
+VUNIT2  = `dimensionless'
+V3      = `flux_noiseless'
+VUNIT3  = `ADU     '
+V4      = `magnification'
+VUNIT4  = `dimensionless'
+V5      = `balrog_index'
+VUNIT5  = `dimensionless'
+V6      = `y       '
+VUNIT6  = `pix     '
+V7      = `x       '
+VUNIT7  = `pix     '
+V8      = `flux_noised'
+VUNIT8  = `ADU     '
+V9      = `halflightradius_0'
+VUNIT9  = `arcsec  '
+V10     = `beta_0  '
+VUNIT10 = `deg     '
+V11     = `sersicindex_0'
+VUNIT11 = `dimensionless'
+V12     = `axisratio_0'
+VUNIT12 = `dimensionless'
+V13     = `flux_0  '
+VUNIT13 = `ADU     '
 \end{cmdline}
 Think of \codett{`V'} as shorthand for \codett{`VECTOR'}. The indices then label the components of this vector.
 Since a truth catalog itself is written by \balrog{} it is not strictly necessary to include the truth
