@@ -3,6 +3,7 @@
 import shutil
 import distutils.spawn
 
+import warnings
 import re
 import time
 import imp
@@ -232,14 +233,18 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
                         d[key] = int(gspcatalog.galaxy[key][i])
                 else:
                     d[key] = gspcatalog.galaxy[key][i]
-        gsparams = galsim.GSParams(**d)
 
-        try:
-            combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
-        except:
-            simulatedgals.galaxy['not_drawn'][i] = 1
-            #print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
-            continue
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=galsim.GalSimDeprecationWarning)
+
+            gsparams = galsim.GSParams(**d)
+
+            try:
+                combinedObjConv = simulatedgals.GetConvolved(psfmodel, i, wcs, gsparams, BalrogSetup)
+            except:
+                simulatedgals.galaxy['not_drawn'][i] = 1
+                #print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+                continue
 
         ix = int(simulatedgals.galaxy['x'][i])
         iy = int(simulatedgals.galaxy['y'][i])
@@ -256,12 +261,15 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         localscale = np.sqrt(local.dudx * local.dvdy)
         #smallImage = combinedObjConv.draw(scale=localscale)
 
-        try:
-            smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
-        except:
-            simulatedgals.galaxy['not_drawn'][i] = 1
-            #print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
-            continue
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=galsim.GalSimDeprecationWarning)
+
+            try:
+                smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
+            except:
+                simulatedgals.galaxy['not_drawn'][i] = 1
+                #print simulatedgals.component[0]['sersicindex'][i],simulatedgals.component[0]['halflightradius'][i],simulatedgals.component[0]['flux'][i],simulatedgals.component[0]['axisratio'][i],simulatedgals.component[0]['beta'][i], simulatedgals.galaxy['magnification'][i]; sys.stdout.flush()
+                continue
 
         smallImage.setCenter(ix,iy)
 
