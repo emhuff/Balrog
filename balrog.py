@@ -235,7 +235,10 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
                     d[key] = gspcatalog.galaxy[key][i]
 
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=galsim.GalSimDeprecationWarning)
+            try:
+                warnings.simplefilter("ignore", category=galsim.GalSimDeprecationWarning)
+            except:
+                pass
 
             gsparams = galsim.GSParams(**d)
 
@@ -262,7 +265,10 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
         #smallImage = combinedObjConv.draw(scale=localscale)
 
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=galsim.GalSimDeprecationWarning)
+            try:
+                warnings.simplefilter("ignore", category=galsim.GalSimDeprecationWarning)
+            except:
+                pass
 
             try:
                 smallImage = combinedObjConv.draw(scale=localscale, use_true_center=False)
