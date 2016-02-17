@@ -180,12 +180,19 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     else:
         imageout = BalrogSetup.imageout
 
-    if BalrogSetup.weight==BalrogSetup.image:
-        galsim.fits.writeMulti(image_list=[image,weight], file_name=imageout)
+    if BalrogSetup.nodraw:
+        rm_link(imageout)
+        os.symlink(BalrogSetup.image, imageout)
+        if BalrogSetup.weight==BalrogSetup.image:
+            rm_link(weightout)
+            os.symlink(BalrogSetup.weight, weightout)
     else:
-        galsim.fits.write(image=image, file_name=imageout)
-        if BalrogSetup.nonosim or nosim:
-            galsim.fits.write(image=weight, file_name=weightout)
+        if BalrogSetup.weight==BalrogSetup.image:
+            galsim.fits.writeMulti(image_list=[image,weight], file_name=imageout)
+        else:
+            galsim.fits.write(image=image, file_name=imageout)
+            if BalrogSetup.nonosim or nosim:
+                galsim.fits.write(image=weight, file_name=weightout)
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psf, BalrogSetup.psfout, setup=setup)
@@ -482,7 +489,7 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
         CopyAssoc(BalrogSetup, catalogmeasured)
 
 
-def rm_link(attr, setup=None):
+def rm_link(attr):
     if os.path.lexists(attr):
         os.remove(attr)
 
@@ -491,26 +498,26 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
     if BalrogSetup.subsample:
         WriteImages(BalrogSetup, bigImage, subweight, nosim=True, setup=setup)
     else:
-        rm_link(BalrogSetup.nosim_imageout, setup=setup)
-        rm_link(BalrogSetup.psfout, setup=setup)
+        rm_link(BalrogSetup.nosim_imageout)
+        rm_link(BalrogSetup.psfout)
         
         os.symlink(BalrogSetup.psf, BalrogSetup.psfout)
         os.symlink(BalrogSetup.image, BalrogSetup.nosim_imageout)
 
         if BalrogSetup.psf!=BalrogSetup.detpsf:
-            rm_link(BalrogSetup.detpsfout, setup=setup)
+            rm_link(BalrogSetup.detpsfout)
             os.symlink(BalrogSetup.detpsf, BalrogSetup.detpsfout)
 
         if BalrogSetup.weight!=BalrogSetup.image:
-            rm_link(BalrogSetup.weightout, setup=setup)
+            rm_link(BalrogSetup.weightout)
             os.symlink(BalrogSetup.weight, BalrogSetup.weightout)
 
         if BalrogSetup.detweight!=BalrogSetup.detimage:
-            rm_link(BalrogSetup.detweightout, setup=setup)
+            rm_link(BalrogSetup.detweightout)
             os.symlink(BalrogSetup.detweight, BalrogSetup.detweightout)
 
         if BalrogSetup.nosim_detimageout!=BalrogSetup.detimagein:
-            rm_link(BalrogSetup.nosim_detimageout, setup=setup)
+            rm_link(BalrogSetup.nosim_detimageout)
             os.symlink(BalrogSetup.detimagein, BalrogSetup.nosim_detimageout)
 
         BalrogSetup.psf_written = True
@@ -1670,24 +1677,31 @@ def GetConfig(known):
 #  @param known  Contains a few parsed arguments, namely those needed for logging which have already been set up.
 #
 def RunBalrog(parser, known, setup):
-    
+   
+    #SysInfoPrint(setup, 'Starting RunBalrog', level='info')
     # Find the user's config file
     config = GetConfig(known)
 
+    #SysInfoPrint(setup, 'Reading user options', level='info')
     # Add the user's command line options
     AddCustomOptions(parser, config, known.logs[0])
 
+    #SysInfoPrint(setup, 'Parsing options', level='info')
     # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser, known, setup=setup)
     rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = CustomParse(cmdline_opts, BalrogSetup, config)
 
+    #SysInfoPrint(setup, 'Getting simulated parameters', level='info')
     # Take the the user's configurations and build the simulated truth catalog out of them.
     catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy, TruthCatExtra)
    
+    #SysInfoPrint(setup, 'Reading images', level='info')
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
 
 
+    #SysInfoPrint(setup, 'Nosim sex', level='info')
+    # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     if not BalrogSetup.imageonly:
         # If desired, run sextractor over the image prior to inserting any simulated galaxies.
         if not BalrogSetup.nonosim:
@@ -1695,13 +1709,18 @@ def RunBalrog(parser, known, setup):
 
     # Insert simulated galaxies.
     if not BalrogSetup.nodraw:
+        #SysInfoPrint(setup, 'Insert objects', level='info')
         bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
+        #SysInfoPrint(setup, 'Write out', level='info')
         WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
+        #SysInfoPrint(setup, 'Write catalog', level='info')
         WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog, setup=setup)
     else:
+        #SysInfoPrint(setup, 'Write out', level='info')
         WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
 
 
+    #SysInfoPrint(setup, 'Sim sex', level='info')
     if not BalrogSetup.imageonly:
 
         # Run sextractor over the simulated image.
@@ -1714,10 +1733,12 @@ def RunBalrog(parser, known, setup):
             extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.sim_noassoc_seg
             RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True, setup=setup)
 
+    #SysInfoPrint(setup, 'Cleanup', level='info')
     # If chosen, clean up image files you don't need anymore
     if BalrogSetup.clean:
         Cleanup(BalrogSetup, setup=setup)
 
+    #SysInfoPrint(setup, 'Writing some logs', level='info')
     # Log some  extra stuff Balrog used along the way
     LogDerivedOpts(cmdline_opts, BalrogSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
 
