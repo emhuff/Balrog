@@ -1549,7 +1549,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-ush", "--useshell", help="Do Popen with shell=True", action='store_true')
 
 
-def RaiseException(log, fulltraceback=False, sendto=None, ascmd=False):
+def RaiseException(log, fulltraceback=False, sendto=None, message=None):
     exc_info = sys.exc_info()
     err_list = traceback.extract_tb(exc_info[2])
 
@@ -1572,7 +1572,12 @@ def RaiseException(log, fulltraceback=False, sendto=None, ascmd=False):
         keep_tb = ''.join(keep)
         if keep_tb!='':
             keep_tb = '\n%s'%(keep_tb)
-        msg = 'Run error caused Balrog to exit.%s'%(keep_tb)
+
+        if message is None:
+            msg = 'Run error caused Balrog to exit.%s'%(keep_tb)
+        else:
+            msg = '%s%s'%(message,keep_tb)
+
         exc_info = (exc_info[0], exc_info[1], None)
         if sendto is not None:
             m = '%s' %(msg)
@@ -1580,22 +1585,23 @@ def RaiseException(log, fulltraceback=False, sendto=None, ascmd=False):
                 s = logging.Formatter().formatException(exc_info)
                 m = '%s\n%s'%(m, s)
             SysInfoPrint(sendto, m, level='error', exc_info=exc_info)
-        log.error(msg, exc_info=exc_info)
+        if log is not None:
+            log.error(msg, exc_info=exc_info)
 
     else:
-        msg = 'Run error caused Balrog to exit.'
+        if message is None:
+            msg = 'Run error caused Balrog to exit.'
+        else:
+            msg = message
+
         if sendto is not None:
             m = '%s'%(msg)
             if sendto.kind=='system':
                 s = logging.Formatter().formatException(exc_info)
                 m = '%s\n%s'%(m, s)
             SysInfoPrint(sendto, m, level='error', exc_info=exc_info)
-        log.exception(msg)
-
-    if ascmd:
-        sys.exit(1)
-    else:
-        return 1
+        if log is not None:
+            log.exception(msg)
 
 
 def GetNativeOptions():
@@ -1762,7 +1768,7 @@ class SystemCallSetup(object):
 
 
 
-def BalrogFunction(args=None, syslog=None, ascmd=False):
+def BalrogFunction(args=None, syslog=None):
 
     if args is not None:
         argv = [os.path.realpath(__file__)]
@@ -1779,14 +1785,15 @@ def BalrogFunction(args=None, syslog=None, ascmd=False):
     SystemSetup = SystemCallSetup(retry=known.retrycmd, redirect=syslog, kind=known.systemcmd, useshell=known.useshell)
     try:
         RunBalrog(parser, known, SystemSetup)
+        ret = 0
     except Exception as e:
-        RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=SystemSetup, ascmd=ascmd)
+        RaiseException(known.logs[0], fulltraceback=known.fulltraceback, sendto=SystemSetup)
+        ret = 1
 
-    if not ascmd:
-        return 0
+    return ret
 
 
 if __name__ == "__main__":
    
-    BalrogFunction(ascmd=True)
-    sys.exit(0)
+    ret = BalrogFunction()
+    sys.exit(ret)
