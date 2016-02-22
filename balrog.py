@@ -1678,29 +1678,29 @@ def GetConfig(known):
 #
 def RunBalrog(parser, known, setup):
    
-    #SysInfoPrint(setup, 'Starting RunBalrog', level='info')
+    SysInfoPrint(setup, 'Starting RunBalrog', level='info')
     # Find the user's config file
     config = GetConfig(known)
 
-    #SysInfoPrint(setup, 'Reading user options', level='info')
+    SysInfoPrint(setup, 'Reading user options', level='info')
     # Add the user's command line options
     AddCustomOptions(parser, config, known.logs[0])
 
-    #SysInfoPrint(setup, 'Parsing options', level='info')
+    SysInfoPrint(setup, 'Parsing options', level='info')
     # Parse the command line agruments and interpret the user's settings for the simulation
     cmdline_opts, BalrogSetup = NativeParse(parser, known, setup=setup)
     rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = CustomParse(cmdline_opts, BalrogSetup, config)
 
-    #SysInfoPrint(setup, 'Getting simulated parameters', level='info')
+    SysInfoPrint(setup, 'Getting simulated parameters', level='info')
     # Take the the user's configurations and build the simulated truth catalog out of them.
     catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy, TruthCatExtra)
    
-    #SysInfoPrint(setup, 'Reading images', level='info')
+    SysInfoPrint(setup, 'Reading images', level='info')
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
 
 
-    #SysInfoPrint(setup, 'Nosim sex', level='info')
+    SysInfoPrint(setup, 'Nosim sex', level='info')
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     if not BalrogSetup.imageonly:
         # If desired, run sextractor over the image prior to inserting any simulated galaxies.
@@ -1709,18 +1709,18 @@ def RunBalrog(parser, known, setup):
 
     # Insert simulated galaxies.
     if not BalrogSetup.nodraw:
-        #SysInfoPrint(setup, 'Insert objects', level='info')
+        SysInfoPrint(setup, 'Insert objects', level='info')
         bigImage = InsertSimulatedGalaxies(bigImage, catalog, psfmodel, BalrogSetup, wcs, gspcatalog)
-        #SysInfoPrint(setup, 'Write out', level='info')
+        SysInfoPrint(setup, 'Write out', level='info')
         WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
-        #SysInfoPrint(setup, 'Write catalog', level='info')
+        SysInfoPrint(setup, 'Write catalog', level='info')
         WriteCatalog(catalog, BalrogSetup, txt=None, fits=True, TruthCatExtra=TruthCatExtra, extracatalog=extracatalog, setup=setup)
     else:
-        #SysInfoPrint(setup, 'Write out', level='info')
+        SysInfoPrint(setup, 'Write out', level='info')
         WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
 
 
-    #SysInfoPrint(setup, 'Sim sex', level='info')
+    SysInfoPrint(setup, 'Sim sex', level='info')
     if not BalrogSetup.imageonly:
 
         # Run sextractor over the simulated image.
@@ -1733,12 +1733,12 @@ def RunBalrog(parser, known, setup):
             extra_sex_config['CHECKIMAGE_NAME']=BalrogSetup.sim_noassoc_seg
             RunSextractor(BalrogSetup, extra_sex_config, catalog, sim_noassoc_seg=True, setup=setup)
 
-    #SysInfoPrint(setup, 'Cleanup', level='info')
+    SysInfoPrint(setup, 'Cleanup', level='info')
     # If chosen, clean up image files you don't need anymore
     if BalrogSetup.clean:
         Cleanup(BalrogSetup, setup=setup)
 
-    #SysInfoPrint(setup, 'Writing some logs', level='info')
+    SysInfoPrint(setup, 'Writing some logs', level='info')
     # Log some  extra stuff Balrog used along the way
     LogDerivedOpts(cmdline_opts, BalrogSetup, '\n#Psuedo-args. Other values derived from the command line arguments.')
 
