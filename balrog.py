@@ -154,6 +154,9 @@ def CopyAssoc(BalrogSetup, outfile):
 
 
 def ReadImages(BalrogSetup):
+    if BalrogSetup.nodraw and (not BalrogSetup.subsample):
+        return [None]*4
+
     image = galsim.fits.read(BalrogSetup.image, hdu=BalrogSetup.imageext)
     weight = galsim.fits.read(BalrogSetup.weight, hdu=BalrogSetup.weightext)
     if image.wcs==galsim.PixelScale(1):
@@ -180,7 +183,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     else:
         imageout = BalrogSetup.imageout
 
-    if BalrogSetup.nodraw:
+    if (BalrogSetup.nodraw) and (not Balrog.subsample):
         rm_link(imageout)
         os.symlink(BalrogSetup.image, imageout)
         if BalrogSetup.weight==BalrogSetup.image:
@@ -469,12 +472,14 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
+    '''
     if BalrogSetup.nonosim:
         detweightout = BalrogSetup.detweight
         weightout = BalrogSetup.weight
         if BalrogSetup.nodraw:
             detimageout = BalrogSetup.detimage
             imageout = BalrogSetup.image
+    '''
 
     AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
 
