@@ -1104,8 +1104,10 @@ def SetupLogger(known):
     log = logging.getLogger()
     log.setLevel(logging.NOTSET)
 
-    r = np.random.random()
-    runlog = logging.getLogger('run-%f'%(r))
+    #r = np.random.random()
+    r = time.time()
+    i = known.indexstart
+    runlog = logging.getLogger('run_%f_%i'%(r,i))
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     known.runlogfile = os.path.join(known.logdir, 'run.log.txt')
@@ -1118,7 +1120,7 @@ def SetupLogger(known):
     ph = SetLevel(ph, known.stdverbosity)
     runlog.addHandler(ph)
 
-    sexlog = logging.getLogger('sex-%f'%(r))
+    sexlog = logging.getLogger('sex_%f'%(r))
     sexlog.setLevel(logging.INFO)
     known.sexlogfile = os.path.join(known.logdir, 'sex.log.txt')
     fh = logging.FileHandler(known.sexlogfile, mode='w')
@@ -1130,7 +1132,7 @@ def SetupLogger(known):
         os.remove(known.sexlogfile)
     '''
 
-    arglog = logging.getLogger('arg-%f'%(r))
+    arglog = logging.getLogger('arg_%f'%(r))
     arglog.setLevel(logging.INFO)
     known.arglogfile = os.path.join(known.logdir, 'args.log.txt')
     fh = logging.FileHandler(known.arglogfile, mode='w')
