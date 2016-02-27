@@ -156,7 +156,8 @@ def CopyAssoc(BalrogSetup, outfile):
 def ReadImages(BalrogSetup):
     if BalrogSetup.nodraw and (not BalrogSetup.subsample):
         return [None]*4
-
+    
+    matchwcs = False
     image = galsim.fits.read(BalrogSetup.image, hdu=BalrogSetup.imageext)
     weight = galsim.fits.read(BalrogSetup.weight, hdu=BalrogSetup.weightext)
     if image.wcs==galsim.PixelScale(1):
@@ -173,6 +174,11 @@ def ReadImages(BalrogSetup):
     weight = weight[subBounds]
     psfmodel = galsim.des.DES_PSFEx(BalrogSetup.psf, BalrogSetup.wcshead)
 
+
+    #weight = None
+    #if not BalrogSetup.nooutweight:
+
+
     return image, weight, psfmodel, wcs
 
 
@@ -187,7 +193,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     if (BalrogSetup.nodraw) and (not BalrogSetup.subsample):
         rm_link(imageout)
         os.symlink(BalrogSetup.image, imageout)
-        if BalrogSetup.weight==BalrogSetup.image:
+        if BalrogSetup.weight!=BalrogSetup.image:
             rm_link(weightout)
             os.symlink(BalrogSetup.weight, weightout)
     else:
@@ -475,8 +481,8 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
 
     if BalrogSetup.nonosim:
         if (BalrogSetup.nodraw) and (not BalrogSetup.subsample):
-            detweightout = BalrogSetup.detweight
-            weightout = BalrogSetup.weight
+            #detweightout = BalrogSetup.detweight
+            #weightout = BalrogSetup.weight
             detimageout = BalrogSetup.detimage
             imageout = BalrogSetup.image
 
@@ -988,6 +994,10 @@ class DerivedArgs():
             if self.subsample:
                 raise Exception('subsampling with different measurement and deteciton images is not supported currently, though may be some day.')
 
+        if args.weight!=args.detweight:
+            if self.subsample:
+                raise Exception('subsampling with different measurement and deteciton images is not supported currently, though may be some day.')
+
 
         self.psfout = DefaultName(args.psf, '.psf', '.psf', self.imgdir)
         if args.psf!=args.detpsf:
@@ -1026,8 +1036,10 @@ class DerivedArgs():
             else:
                 self.detweightout = self.nosim_detimageout
         else:
-            self.detweightout = DefaultName(args.detweight, '.fits', '.weight.det.fits', self.imgdir)
+            #self.detweightout = DefaultName(args.detweight, '.fits', '.weight.det.fits', self.imgdir)
+            self.detweightout = args.detweight
             self.outdetweightext = 0
+
 
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
@@ -1092,7 +1104,9 @@ def SetupLogger(known):
     log = logging.getLogger()
     log.setLevel(logging.NOTSET)
 
-    runlog = logging.getLogger('run')
+    r = np.random.random()
+    runlog = logging.getLogger('run-%f'%(r))
+
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     known.runlogfile = os.path.join(known.logdir, 'run.log.txt')
     fh = logging.FileHandler(known.runlogfile, mode='w')
@@ -1104,8 +1118,7 @@ def SetupLogger(known):
     ph = SetLevel(ph, known.stdverbosity)
     runlog.addHandler(ph)
 
-    t = str(time.time())
-    sexlog = logging.getLogger('sex-%s'%(t))
+    sexlog = logging.getLogger('sex-%f'%(r))
     sexlog.setLevel(logging.INFO)
     known.sexlogfile = os.path.join(known.logdir, 'sex.log.txt')
     fh = logging.FileHandler(known.sexlogfile, mode='w')
@@ -1117,7 +1130,7 @@ def SetupLogger(known):
         os.remove(known.sexlogfile)
     '''
 
-    arglog = logging.getLogger('arg')
+    arglog = logging.getLogger('arg-%f'%(r))
     arglog.setLevel(logging.INFO)
     known.arglogfile = os.path.join(known.logdir, 'args.log.txt')
     fh = logging.FileHandler(known.arglogfile, mode='w')
