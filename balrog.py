@@ -183,6 +183,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     else:
         imageout = BalrogSetup.imageout
 
+
     if (BalrogSetup.nodraw) and (not BalrogSetup.subsample):
         rm_link(imageout)
         os.symlink(BalrogSetup.image, imageout)
@@ -472,14 +473,13 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
     for key in ExtraSexConfig.keys():
         eng.config[key] = ExtraSexConfig[key]
 
-    '''
     if BalrogSetup.nonosim:
-        detweightout = BalrogSetup.detweight
-        weightout = BalrogSetup.weight
-        if BalrogSetup.nodraw:
+        if (BalrogSetup.nodraw) and (not BalrogSetup.subsample):
+            detweightout = BalrogSetup.detweight
+            weightout = BalrogSetup.weight
             detimageout = BalrogSetup.detimage
             imageout = BalrogSetup.image
-    '''
+
 
     AutoConfig(BalrogSetup, detimageout, imageout, detweightout, weightout, catalogmeasured, config_file, param_file, afile, eng, nosim)
 
@@ -969,14 +969,24 @@ class DerivedArgs():
 
         self.imageout = DefaultName(args.image, '.fits', '.sim.fits', self.imgdir)
         #self.detimageout = DefaultName(args.image, '.fits', '.sim.det.fits', self.imgdir)
+
+        ext = '.nosim.fits'
+        dext = '.nosim.det.fits'
+        self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
+        #self.nosim_detimageout = '%s%s' %(self.detimageout[:-dlength],dext)
+        #self.nosim_detimageout = DefaultName(args.detimage, '.fits', '.nosim.det.fits', self.imgdir)
+
         if args.detimage==args.image:
             self.detimagein = args.image
             self.detimageout = self.imageout
-            self.nosim_detimageout = self.detimagein
+            #self.nosim_detimageout = self.detimagein
+            self.nosim_detimageout = self.nosim_imageout
         else:
             self.detimagein = args.detimage
             self.detimageout = args.detimage
             self.nosim_detimageout = DefaultName(args.detimage, '.fits', '.nosim.det.fits', self.imgdir)
+            if self.subsample:
+                raise Exception('subsampling with different measurement and deteciton images is not supported currently, though may be some day.')
 
 
         self.psfout = DefaultName(args.psf, '.psf', '.psf', self.imgdir)
@@ -994,11 +1004,6 @@ class DerivedArgs():
         self.psf_written = False
         self.wcshead = args.image
 
-        ext = '.nosim.fits'
-        dext = '.nosim.det.fits'
-        self.nosim_imageout = '%s%s' %(self.imageout[:-length],ext)
-        #self.nosim_detimageout = '%s%s' %(self.detimageout[:-dlength],dext)
-        #self.nosim_detimageout = DefaultName(args.detimage, '.fits', '.nosim.det.fits', self.imgdir)
 
 
         self.nosim_catalogmeasured = '%s%s' %(self.catalogmeasured[:-length],ext)
