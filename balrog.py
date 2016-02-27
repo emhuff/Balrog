@@ -183,7 +183,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     else:
         imageout = BalrogSetup.imageout
 
-    if (BalrogSetup.nodraw) and (not Balrog.subsample):
+    if (BalrogSetup.nodraw) and (not BalrogSetup.subsample):
         rm_link(imageout)
         os.symlink(BalrogSetup.image, imageout)
         if BalrogSetup.weight==BalrogSetup.image:
