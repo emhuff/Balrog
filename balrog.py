@@ -159,24 +159,25 @@ def ReadImages(BalrogSetup):
     
     matchwcs = False
     image = galsim.fits.read(BalrogSetup.image, hdu=BalrogSetup.imageext)
-    weight = galsim.fits.read(BalrogSetup.weight, hdu=BalrogSetup.weightext)
     if image.wcs==galsim.PixelScale(1):
         thisdir = os.path.dirname( os.path.realpath(__file__) )
         file = os.path.join(thisdir, 'fiducialwcs.fits')
         image.wcs = galsim.GSFitsWCS(file)
-        weight.wcs = image.wcs
+        matchwcs = True
         BalrogSetup.wcshead = file
         BalrogSetup.runlogger.warning('No WCS was found in the input image header. Using default pixel scale of 0.263 arcsec/pixel.')
     wcs = image.wcs
 
     subBounds = galsim.BoundsI(BalrogSetup.xmin,BalrogSetup.xmax,BalrogSetup.ymin,BalrogSetup.ymax)
     image = image[subBounds]
-    weight = weight[subBounds]
     psfmodel = galsim.des.DES_PSFEx(BalrogSetup.psf, BalrogSetup.wcshead)
-
-
-    #weight = None
-    #if not BalrogSetup.nooutweight:
+    
+    weight = None
+    if not BalrogSetup.noweightread:
+        weight = galsim.fits.read(BalrogSetup.weight, hdu=BalrogSetup.weightext)
+        if matchwcs:
+            weight.wcs = image.wcs
+        weight = weight[subBounds]
 
 
     return image, weight, psfmodel, wcs
@@ -193,16 +194,24 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
     if (BalrogSetup.nodraw) and (not BalrogSetup.subsample):
         rm_link(imageout)
         os.symlink(BalrogSetup.image, imageout)
-        if BalrogSetup.weight!=BalrogSetup.image:
+        if (BalrogSetup.weight!=BalrogSetup.image) and (not BalrogSetup.noweightread):
             rm_link(weightout)
             os.symlink(BalrogSetup.weight, weightout)
     else:
         if BalrogSetup.weight==BalrogSetup.image:
-            galsim.fits.writeMulti(image_list=[image,weight], file_name=imageout)
+            if not BalrogSetup.noweightread:
+                galsim.fits.writeMulti(image_list=[image,weight], file_name=imageout)
+            else:
+                galsim.fits.writeMulti(image_list=[image], file_name=imageout)
         else:
             galsim.fits.write(image=image, file_name=imageout)
-            if BalrogSetup.nonosim or nosim:
-                galsim.fits.write(image=weight, file_name=weightout)
+            if not BalrogSeutp.noweightread:
+                if (BalrogSetup.nonosim) or (nosim):
+                    if BalrogSetup.subsample:
+                        galsim.fits.write(image=weight, file_name=weightout)
+                    else:
+                        rm_link(weightout)
+                        os.symlink(BalrogSetup.weight, weightout)
 
     if not BalrogSetup.psf_written:
         WritePsf(BalrogSetup, BalrogSetup.psf, BalrogSetup.psfout, setup=setup)
@@ -438,9 +447,9 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
         detimageout = BalrogSetup.detimageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
-        if BalrogSetup.image==BalrogSetup.weight:
+        if (BalrogSetup.image==BalrogSetup.weight) and (not BalrogSetup.noweightread):
             weightout = imageout
-        if BalrogSetup.detimage==BalrogSetup.detweight:
+        if (BalrogSetup.detimage==BalrogSetup.detweight) and (not BalrogSetup.noweightread):
             detweightout = detimageout
     else:
         catalogmeasured = BalrogSetup.sim_noassoc_catalogmeasured
@@ -448,9 +457,9 @@ def RunSextractor(BalrogSetup, ExtraSexConfig, catalog, nosim=False, sim_noassoc
         detimageout = BalrogSetup.detimageout
         if not BalrogSetup.noassoc:
             afile = BalrogSetup.assoc_simfile
-        if BalrogSetup.image==BalrogSetup.weight:
+        if (BalrogSetup.image==BalrogSetup.weight) and (not BalrogSetup.noweightread):
             weightout = imageout
-        if BalrogSetup.detimage==BalrogSetup.detweight:
+        if (BalrogSetup.detimage==BalrogSetup.detweight) and (not BalrogSetup.noweightread):
             detweightout = detimageout
 
     if not BalrogSetup.noassoc:
@@ -519,13 +528,14 @@ def NosimRunSextractor(BalrogSetup, bigImage, subweight, ExtraSexConfig, catalog
             rm_link(BalrogSetup.detpsfout)
             os.symlink(BalrogSetup.detpsf, BalrogSetup.detpsfout)
 
-        if BalrogSetup.weight!=BalrogSetup.image:
+        if (BalrogSetup.weight!=BalrogSetup.image) and (not BalrogSetup.noweightread):
             rm_link(BalrogSetup.weightout)
             os.symlink(BalrogSetup.weight, BalrogSetup.weightout)
 
-        if BalrogSetup.detweight!=BalrogSetup.detimage:
-            rm_link(BalrogSetup.detweightout)
-            os.symlink(BalrogSetup.detweight, BalrogSetup.detweightout)
+        if (BalrogSetup.detweight!=BalrogSetup.detimage) and (not BalrogSetup.noweightread):
+            if BalrogSetup.detweightout!=BalrogSetup.weightout:
+                rm_link(BalrogSetup.detweightout)
+                os.symlink(BalrogSetup.detweight, BalrogSetup.detweightout)
 
         if BalrogSetup.nosim_detimageout!=BalrogSetup.detimagein:
             rm_link(BalrogSetup.nosim_detimageout)
@@ -963,6 +973,8 @@ class DerivedArgs():
         self.subsample = True
         if args.xmin==1 and args.ymin==1 and args.xmax==pyfits.open(args.image)[args.imageext].header['NAXIS1'] and args.ymax==pyfits.open(args.image)[args.imageext].header['NAXIS2']:
             self.subsample = False
+        if self.subsample and args.noweightread:
+            raise Exception("--noweightread and subsampling isn't possible.")
 
         length = len('.sim.fits')
         #dlength = len('.sim.det.fits')
@@ -1040,6 +1052,12 @@ class DerivedArgs():
             self.detweightout = args.detweight
             self.outdetweightext = 0
 
+
+        if args.noweightread:
+            self.weightout = args.weight
+            self.outweightext = args.weightext
+            self.detweightout = args.detweight
+            self.outdetweightext = args.detweightext
 
         CreateSubDir(self.imgdir)
         CreateSubDir(self.catdir)
@@ -1528,6 +1546,7 @@ def DefaultArgs(parser):
     parser.add_argument( "-we", "--weightext", help="FITS extension where the weight map lives in the input weight file.", type=int, default=None)
     parser.add_argument( "-dw", "--detweight", help="Weight map of input detection image.", type=str, default=None)
     parser.add_argument( "-dwe", "--detweightext", help="FITS extension where the detection weight map lives in the input weight file.", type=int, default=None)
+    parser.add_argument( "-nwr", "--noweightread", help="Skip any weight map reading/writing, because you don't actually need to. But as a consequence you get less nicely organized image output.", action="store_true")
 
     parser.add_argument( "-p", "--psf", help="PSF of the input image.", type=str, default=None)
     parser.add_argument( "-dp", "--detpsf", help="PSF of the input detimage.", type=str, default=None)
@@ -1703,32 +1722,8 @@ def GetConfig(known):
 
     return config
 
-## @namespace balrog
-#  Balrog stuff is in this namespace.
 
-## The main function called to run Balrog.
-#  @param parser Command line parser object made by argparse.ArgumentParser() which has had the native Balrog arguments added to it.
-#  @param known  Contains a few parsed arguments, namely those needed for logging which have already been set up.
-#
-def RunBalrog(parser, known, setup):
-   
-    SysInfoPrint(setup, 'Starting RunBalrog', level='info')
-    # Find the user's config file
-    config = GetConfig(known)
-
-    SysInfoPrint(setup, 'Reading user options', level='info')
-    # Add the user's command line options
-    AddCustomOptions(parser, config, known.logs[0])
-
-    SysInfoPrint(setup, 'Parsing options', level='info')
-    # Parse the command line agruments and interpret the user's settings for the simulation
-    cmdline_opts, BalrogSetup = NativeParse(parser, known, setup=setup)
-    rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = CustomParse(cmdline_opts, BalrogSetup, config)
-
-    SysInfoPrint(setup, 'Getting simulated parameters', level='info')
-    # Take the the user's configurations and build the simulated truth catalog out of them.
-    catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy, TruthCatExtra)
-   
+def ImgOpenIfNeeded(setup, BalrogSetup, extra_sex_config, catalog, gspcatalog, TruthCatExtra, extracatalog):
     SysInfoPrint(setup, 'Reading images', level='info')
     # Get the subsampled flux and weightmap images, along with the PSF model and WCS.
     bigImage, subWeight, psfmodel, wcs = ReadImages(BalrogSetup)
@@ -1753,6 +1748,27 @@ def RunBalrog(parser, known, setup):
         SysInfoPrint(setup, 'Write out', level='info')
         WriteImages(BalrogSetup, bigImage, subWeight, setup=setup)
 
+def RunBalrog(parser, known, setup):
+   
+    SysInfoPrint(setup, 'Starting RunBalrog', level='info')
+    # Find the user's config file
+    config = GetConfig(known)
+
+    SysInfoPrint(setup, 'Reading user options', level='info')
+    # Add the user's command line options
+    AddCustomOptions(parser, config, known.logs[0])
+
+    SysInfoPrint(setup, 'Parsing options', level='info')
+    # Parse the command line agruments and interpret the user's settings for the simulation
+    cmdline_opts, BalrogSetup = NativeParse(parser, known, setup=setup)
+    rules, extra_sex_config, cmdline_opts_copy, TruthCatExtra = CustomParse(cmdline_opts, BalrogSetup, config)
+
+    SysInfoPrint(setup, 'Getting simulated parameters', level='info')
+    # Take the the user's configurations and build the simulated truth catalog out of them.
+    catalog, gspcatalog, extracatalog, TruthCatExtra = GetSimulatedGalaxies(BalrogSetup, rules, config, cmdline_opts_copy, TruthCatExtra)
+  
+    # Do it like this so the image doesn't need to be open when sim sextractor is running
+    ImgOpenIfNeeded(setup, BalrogSetup, extra_sex_config, catalog, gspcatalog, TruthCatExtra, extracatalog)
 
     SysInfoPrint(setup, 'Sim sex', level='info')
     if not BalrogSetup.imageonly:
