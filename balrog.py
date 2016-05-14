@@ -3,6 +3,7 @@
 import shutil
 import distutils.spawn
 
+import signal
 import warnings
 import re
 import time
@@ -1420,7 +1421,7 @@ def SysInfoPrint(setup, msg, level='warning', exc_info=None, skip=False):
                 setup.redirect.error(msg, exc_info=exc_info)
 
 
-def SystemCall(oscmd, setup=None, delfiles=[], keeps=[]):
+def SystemCall(oscmd, setup=None, delfiles=[], keeps=[], timeout=None):
     if setup is None:
         raise Exception('system call exception')
 
@@ -1457,14 +1458,26 @@ def SystemCall(oscmd, setup=None, delfiles=[], keeps=[]):
         SysInfoPrint(setup, 'Attempt %i: Doing system command:\n%s\n'%(attempt, syscmd), level='info', skip=skip)
 
         if setup.kind=='system': 
-            t1 = time.time()
             rcode = os.system(syscmd)
-            t2 = time.time()
+
         elif setup.kind=='popen':
-            t1 = time.time()
-            p = subprocess.Popen(syscmd, **kwargs)
+            p = subprocess.Popen(syscmd, preexec_fn=os.setsid, **kwargs)
+
+            if timeout is not None:
+                dt = 0
+                t1 = time.time()
+                while True:
+                    status = p.poll()
+                    if status is not None:
+                        SysInfoPrint(setup, 'Timed command exited after %.2f seconds'%(dt), level='info', skip=skip)
+                        break
+                    if dt > timeout:
+                        os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                        SysInfoPrint(setup, 'Command timed out after %.2f seconds'%(dt), level='info', skip=skip)
+                        break
+                    dt = time.time() - t1
+
             stdout, stderr = p.communicate()
-            t2 = time.time()
             rcode = p.returncode
             SysInfoPrint(setup, 'stdout:\n%s\n'%(stdout), level='info', skip=skip)
             SysInfoPrint(setup, 'stderr:\n%s\n'%(stderr), level='info', skip=skip)
