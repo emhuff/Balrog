@@ -308,7 +308,11 @@ def InsertSimulatedGalaxies(bigImage, simulatedgals, psfmodel, BalrogSetup, wcs,
 
         t1 = datetime.datetime.now()
         dt = t1 - t0
-        micro = long( (dt.days*24*60*60 + dt.seconds)*1.0e6 + dt.microseconds ) + rt + i
+
+        if BalrogSetup.noiseseed is None:
+            micro = long( (dt.days*24*60*60 + dt.seconds)*1.0e6 + dt.microseconds ) + rt + i
+        else:
+            micro = BalrogSetup.noiseseed + i
 
         bounds = smallImage.bounds & bigImage.bounds
         simulatedgals.galaxy['flux_noiseless'][i] = smallImage.added_flux 
@@ -1197,7 +1201,7 @@ def CmdlineListOrdered():
             "image", "imageext", "detimage", "detimageext",
             "weight", "weightext", "detweight", "detweightext",
             "psf","detpsf", 
-            "xmin", "xmax", "ymin", "ymax","ngal", "gain", "zeropoint", "seed", 
+            "xmin", "xmax", "ymin", "ymax","ngal", "gain", "zeropoint", "seed", "noiseseed",
             "imageonly","nodraw","clean","stdverbosity", "logverbosity", "fulltraceback", "pyconfig","indexstart",
             "sexpath", "sexconfig", "sexparam", "sexnnw", "sexconv", "noassoc", "nonosim", "nosimsexparam",  "catfitstype",
             "sim_noassoc_seg", "sim_noassoc_seg_param_file",
@@ -1572,7 +1576,8 @@ def DefaultArgs(parser):
     parser.add_argument( "-n", "--ngal", help="Number of simulated galaxies", type=int, default=50)
     parser.add_argument( "-g", "--gain", help="Gain, needed for adding noise. Can be a float or a keyword from the image header.", default='GAIN')
     parser.add_argument( "-z", "--zeropoint", help="Zeropoint used to convert simulated magnitude to flux. Sextractor runs with this zeropoint. Can be a float or a keyword from the image header.", default='SEXMGZPT')
-    parser.add_argument( "-s", "--seed", help="Seed for random number generation when simulating galaxies. This does not apply to noise realizations, which are always random.", type=int, default=None)
+    parser.add_argument( "-s", "--seed", help="Seed for random number generation when simulating galaxies. This does not apply to noise realizations.", type=int, default=None)
+    parser.add_argument( "-nse", "--noiseseed", help="Seed for random number generation noise", type=int, default=None)
 
     # Other Balrog stuff
     parser.add_argument( "-io", "--imageonly", help="Only write the image, don't run sextractor", action="store_true")
