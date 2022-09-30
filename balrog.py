@@ -206,7 +206,7 @@ def WriteImages(BalrogSetup, image, weight, nosim=False, setup=None):
                 galsim.fits.writeMulti(image_list=[image], file_name=imageout)
         else:
             galsim.fits.write(image=image, file_name=imageout)
-            if not BalrogSeutp.noweightread:
+            if not BalrogSetup.noweightread:
                 if (BalrogSetup.nonosim) or (nosim):
                     if BalrogSetup.subsample:
                         galsim.fits.write(image=weight, file_name=weightout)
